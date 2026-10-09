@@ -7,6 +7,8 @@
   --font-sans: var(--ff-inter), ui-sans-serif, system-ui, sans-serif;
   --font-display: var(--ff-grotesk), var(--ff-inter), sans-serif;
   --font-mono: var(--ff-jb), ui-monospace, monospace;
+  --font-geist: var(--ff-geist), var(--ff-inter), sans-serif;
+  --font-gmono: var(--ff-geist-mono), ui-monospace, monospace;
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -135,5 +137,56 @@ body { min-height: 100dvh; }
   .title-ribbon { letter-spacing: 2px !important; font-size: 6px !important; padding: 7px 10px !important; white-space: nowrap; }
 }
 @media (max-width: 760px) {
-  .toast-pos { bottom: auto !important; top: 196px; }
+  .toast-pos { top: auto !important; bottom: 150px !important; left: 14px !important; right: 14px !important; width: auto !important; }
+}
+
+/* arcade */
+@keyframes blink-soft { 0%, 100% { opacity: 1; } 50% { opacity: .65; } }
+.blink-soft { animation: blink-soft 1.4s ease-in-out infinite; }
+@keyframes score-pop { from { transform: translate(-50%, 0) scale(.8); opacity: 1; } to { transform: translate(-50%, -34px) scale(1.15); opacity: 0; } }
+.score-pop { animation: score-pop .7s ease-out forwards; pointer-events: none; }
+
+/* quick view */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+.island-tag {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; cursor: pointer;
+  font-family: var(--font-geist); font-size: 12px; font-weight: 500; color: #fff;
+  padding: 6px 10px 6px 8px; border-radius: 999px;
+  background: rgba(12, 9, 24, 0.72); border: 1px solid rgba(255,255,255,.18); backdrop-filter: blur(8px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.35); transition: transform .2s ease, border-color .2s ease;
+}
+.island-tag:hover { transform: translateY(-2px) scale(1.05); border-color: var(--c); }
+.island-tag .dot { width: 7px; height: 7px; border-radius: 9px; background: var(--c); box-shadow: 0 0 10px var(--c); }
+html.lenis, html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+
+/* title screen */
+.title-map {
+  position: absolute; left: 0; top: 0; width: 4032px; height: 3072px;
+  background: url(/village-map.png) 0 0 / 100% 100% no-repeat;
+  image-rendering: pixelated; image-rendering: crisp-edges;
+  animation: title-pan 70s ease-in-out infinite alternate;
+  will-change: transform;
+}
+@keyframes title-pan {
+  0%   { transform: translate(calc(50vw - 1900px), calc(50vh - 1250px)); }
+  50%  { transform: translate(calc(50vw - 2500px), calc(50vh - 1500px)); }
+  100% { transform: translate(calc(50vw - 1300px), calc(50vh - 1750px)); }
+}
+.hero-walk {
+  width: 64px; height: 64px; image-rendering: pixelated;
+  background-size: 256px 448px; background-position-x: 0;
+  animation: hero-walk .6s steps(4) infinite, float-pixel 2.4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 0 rgba(0,0,0,.25));
+}
+@keyframes hero-walk { from { background-position-y: 0; } to { background-position-y: -256px; } }
+.petals span {
+  position: absolute; top: -20px; width: 6px; height: 4px; background: #ffc0d3; border-radius: 2px;
+  animation-name: petal; animation-timing-function: linear; animation-iteration-count: infinite; opacity: .85;
+}
+.petals span:nth-child(3n) { background: #fff4c2; }
+@keyframes petal {
+  0% { transform: translate(0, 0) rotate(0); }
+  50% { transform: translate(60px, 55vh) rotate(180deg); }
+  100% { transform: translate(-20px, 110vh) rotate(360deg); }
 }

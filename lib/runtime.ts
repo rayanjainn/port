@@ -4,27 +4,25 @@
 export type Facing = "up" | "down" | "left" | "right"
 
 export const runtime = {
-  player: { x: 0, y: 0 },
+  scene: "village",
+  player: { x: 0, y: 0 },          // scene px (native, 16px tiles)
   facing: "down" as Facing,
-  nearBuilding: null as string | null,
+  nearLabel: null as string | null,
   /** 0 = full day, 1 = full night (smoothed) */
   night: 0,
   nightTarget: 0,
   /** analog input from the touch joystick, -1..1 */
   joy: { x: 0, y: 0 },
-  /** set by HUD/minimap to request a teleport to a building door */
+  /** set by HUD/minimap to request travel to a building */
   teleportTo: null as string | null,
   /** set by the touch action button */
   actionPressed: false,
-  combat: false,
-  hp: 10,
-  maxHp: 10,
+  attackPressed: false,
   kills: 0,
-  weapon: "DAGGER",
-  /** pre-rendered world (native res) shared with the map overlay */
-  baseCanvas: null as HTMLCanvasElement | null,
-  propsCanvas: null as HTMLCanvasElement | null,
-  buildingSprites: {} as Record<string, { canvas: HTMLCanvasElement; offY: number }>,
+  /** village map (native px) shared with the minimap and world map */
+  mapCanvas: null as HTMLCanvasElement | null,
+  mapSize: { w: 0, h: 0 },
+  doors: {} as Record<string, { x: number; y: number }>,
 }
 
 export function requestTeleport(id: string) {

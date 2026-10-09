@@ -3,48 +3,79 @@ import { gameAchievements } from "./data"
 
 export type BuildingId = "townhall" | "tavern" | "academy" | "gallery" | "forge" | "wizard" | "cave" | null
 
+export interface DialogState {
+  name: string
+  face?: string
+  lines: string[]
+  onDone?: () => void
+}
+
 interface GameStore {
   phase: "title" | "playing" | "building"
   activeBuilding: BuildingId
+  focus: string | null
   unlockedAchievements: Set<string>
   visited: Set<string>
   toastQueue: Array<{ id: string; title: string; icon: string; description: string }>
   sfxEnabled: boolean
+  musicEnabled: boolean
   mapOpen: boolean
+  dialog: DialogState | null
+  arcade: string | null
+  areaTitle: { title: string; sub: string; key: number } | null
+  sceneId: string
   startGame: () => void
-  openBuilding: (id: BuildingId) => void
+  openBuilding: (id: BuildingId, focus?: string | null) => void
   closeBuilding: () => void
   unlockAchievement: (unlockedBy: string) => void
   popToast: () => void
   toggleSfx: () => void
+  toggleMusic: () => void
   setMapOpen: (v: boolean) => void
+  say: (d: DialogState | null) => void
+  openArcade: (id: string | null) => void
+  showArea: (title: string, sub: string) => void
+  setScene: (id: string) => void
+  markVisited: (id: string) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   phase: "title",
   activeBuilding: null,
+  focus: null,
   unlockedAchievements: new Set(),
   visited: new Set(),
   toastQueue: [],
   sfxEnabled: true,
+  musicEnabled: true,
   mapOpen: false,
+  dialog: null,
+  arcade: null,
+  areaTitle: null,
+  sceneId: "village",
 
   startGame: () => {
     set({ phase: "playing" })
-    setTimeout(() => get().unlockAchievement("game_start"), 900)
+    setTimeout(() => get().unlockAchievement("game_start"), 1200)
   },
 
-  openBuilding: (id) => {
+  openBuilding: (id, focus = null) => {
     if (!id) return
-    const visited = new Set(get().visited)
-    visited.add(id)
-    set({ activeBuilding: id, phase: "building", visited, mapOpen: false })
-    get().unlockAchievement(`visit_${id}`)
+    set({ activeBuilding: id, focus, phase: "building", mapOpen: false, dialog: null })
+    get().markVisited(id)
   },
 
   closeBuilding: () => {
     if (!get().activeBuilding) return
-    set({ activeBuilding: null, phase: "playing" })
+    set({ activeBuilding: null, focus: null, phase: "playing" })
+  },
+
+  markVisited: (id) => {
+    if (get().visited.has(id)) return
+    const visited = new Set(get().visited)
+    visited.add(id)
+    set({ visited })
+    get().unlockAchievement(`visit_${id}`)
   },
 
   unlockAchievement: (unlockedBy) => {
@@ -60,5 +91,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   popToast: () => set((s) => ({ toastQueue: s.toastQueue.slice(1) })),
   toggleSfx: () => set((s) => ({ sfxEnabled: !s.sfxEnabled })),
+  toggleMusic: () => set((s) => ({ musicEnabled: !s.musicEnabled })),
   setMapOpen: (v) => set({ mapOpen: v }),
+  say: (d) => set({ dialog: d }),
+  openArcade: (id) => set({ arcade: id, phase: id ? "building" : "playing", mapOpen: false }),
+  showArea: (title, sub) => set({ areaTitle: { title, sub, key: Date.now() } }),
+  setScene: (id) => set({ sceneId: id }),
 }))

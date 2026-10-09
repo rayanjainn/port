@@ -5,7 +5,7 @@ import { GraduationCap, Medal, ExternalLink, BookOpen } from "lucide-react"
 
 const TEAL = "#2a8a80"
 
-export default function AcademyModal() {
+export default function AcademyModal({ focus }: { focus?: string | null }) {
   const { education, achievements } = useContent()
   return (
     <div style={{ padding: "26px clamp(16px, 3vw, 30px) 30px" }}>
@@ -37,6 +37,7 @@ export default function AcademyModal() {
 
       {achievements.length > 0 && (
         <>
+          <div ref={(el) => { if (el && focus === "honours") setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 250) }} />
           <Label icon={<Medal size={13} />} text="HONOURS & BADGES" />
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
             {achievements.map((a, i) => {

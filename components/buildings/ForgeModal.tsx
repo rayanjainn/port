@@ -14,7 +14,7 @@ function tier(level: number) {
   return { name: "UNCOMMON", col: "#4f9a3f" }
 }
 
-export default function ForgeModal() {
+export default function ForgeModal({ focus }: { focus?: string | null }) {
   const { skills } = useContent()
   const [lit, setLit] = useState(false)
   useEffect(() => { const t = setTimeout(() => setLit(true), 80); return () => clearTimeout(t) }, [])
@@ -29,7 +29,7 @@ export default function ForgeModal() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
         {skills.map((g, gi) => (
-          <div key={g.group} style={{ background: INK.ink, border: `3px solid ${INK.ink}`, boxShadow: `0 4px 0 ${INK.lineDk}` }}>
+          <div key={g.group} style={{ background: INK.ink, border: `3px solid ${INK.ink}`, boxShadow: focus === g.group ? `0 0 0 3px #ffd76a, 0 0 24px rgba(255,190,80,.6)` : `0 4px 0 ${INK.lineDk}`, transform: focus === g.group ? "translateY(-3px)" : "none" }}>
             <div style={{
               display: "flex", alignItems: "center", gap: 8, padding: "12px 14px",
               fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 1, color: "#ffd76a",

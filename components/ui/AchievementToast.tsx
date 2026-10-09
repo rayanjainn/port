@@ -26,7 +26,7 @@ export default function AchievementToast() {
     <div
       className={`toast-pos ${exiting ? "toast-out" : "toast-in"}`}
       style={{
-        position: "fixed", bottom: 70, left: "50%", marginLeft: -150, width: 300,
+        position: "fixed", top: 72, right: 14, width: 300,
         background: "linear-gradient(180deg, #ede0bd 0%, #d8c79a 100%)",
         border: "4px solid #5e3a18",
         boxShadow: "inset 0 0 0 2px #c79a5e, 0 5px 0 #4a2e12, 0 12px 24px rgba(0,0,0,0.35)",

@@ -1,8 +1,8 @@
 "use client"
-import { useEffect } from "react"
+import { useEffect, type ComponentType } from "react"
 import { useGameStore } from "@/lib/store"
 import { playSound } from "@/lib/audio"
-import { BUILDINGS } from "@/lib/tilemap"
+import { BUILDINGS } from "@/lib/world/village"
 import { X } from "lucide-react"
 import TownHallModal from "@/components/buildings/TownHallModal"
 import TavernModal from "@/components/buildings/TavernModal"
@@ -10,16 +10,14 @@ import AcademyModal from "@/components/buildings/AcademyModal"
 import GalleryModal from "@/components/buildings/GalleryModal"
 import ForgeModal from "@/components/buildings/ForgeModal"
 import WizardModal from "@/components/buildings/WizardModal"
-import CaveModal from "@/components/buildings/CaveModal"
 
-const MODALS = {
+const MODALS: Record<string, ComponentType<{ focus?: string | null }>> = {
   townhall: TownHallModal,
   tavern: TavernModal,
   academy: AcademyModal,
   gallery: GalleryModal,
   forge: ForgeModal,
   wizard: WizardModal,
-  cave: CaveModal,
 }
 
 function Rivet({ style }: { style: React.CSSProperties }) {
@@ -34,7 +32,7 @@ function Rivet({ style }: { style: React.CSSProperties }) {
 }
 
 export default function BuildingModal() {
-  const { activeBuilding, closeBuilding } = useGameStore()
+  const { activeBuilding, closeBuilding, focus } = useGameStore()
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -101,7 +99,7 @@ export default function BuildingModal() {
           boxShadow: "inset 0 0 0 2px #d8bd84, inset 0 0 40px rgba(140, 96, 40, 0.25)",
         }}>
           <div style={{ paddingTop: 10 }}>
-            <Modal />
+            <Modal focus={focus} />
           </div>
         </div>
 

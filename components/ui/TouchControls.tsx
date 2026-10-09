@@ -53,7 +53,7 @@ export default function TouchControls() {
           boxShadow: "inset 0 3px 0 rgba(255,255,255,.3), 0 5px 0 #1d1006", touchAction: "none",
         }}
       >
-        {runtime.nearBuilding ? "ENTER" : "A"}
+        {runtime.nearLabel ? "GO" : "A"}
       </button>
     </>
   )

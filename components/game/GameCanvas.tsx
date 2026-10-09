@@ -2,213 +2,213 @@
 
 import { useEffect, useRef } from "react"
 import { useGameStore, type BuildingId } from "@/lib/store"
-import { playSound } from "@/lib/audio"
-import { WORLD_MAP, WORLD_W, WORLD_H, TILE_PX, SCALE, WALKABLE, BUILDINGS, PLAYER_START, T, DECOR, SOLID_DECOR } from "@/lib/tilemap"
-import { NPCS } from "@/lib/npcs"
-import { buildBase, buildBuilding, buildProps, hash2, MARGIN, TS, tsrc, type BuildingSprite } from "@/lib/worldRender"
-import { CHAR_SHEET, composeHero } from "@/lib/hero"
-import { runtime, toggleNight, type Facing } from "@/lib/runtime"
+import { playSound, playMusic } from "@/lib/audio"
 import { useContentStore } from "@/lib/content"
+import { runtime, toggleNight } from "@/lib/runtime"
 import { fontFamily } from "@/lib/fonts"
+import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
+import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type ActorDef, type Hotspot, type Box, type Action } from "@/lib/world/core"
+import { buildVillage, BUILDINGS, doorOf, VILLAGE_PRELOAD } from "@/lib/world/village"
+import { buildInteriors, INTERIOR_PRELOAD } from "@/lib/world/interiors"
 import TitleScreen from "@/components/ui/TitleScreen"
 import HUD from "@/components/ui/HUD"
 import AchievementToast from "@/components/ui/AchievementToast"
 import BuildingModal from "@/components/ui/BuildingModal"
 import TouchControls from "@/components/ui/TouchControls"
+import DialogBox from "@/components/ui/DialogBox"
+import AreaTitle from "@/components/ui/AreaTitle"
+import Arcade from "@/components/arcade/Arcade"
 
-const PLAYER_SPEED = 200 // world px / sec
-const INTERACT_DIST = TILE_PX * 1.6
-const STEP_INTERVAL = 0.3
+const SPEED = 62           // native px / sec
+const FOOT = { w: 10, h: 6 }
 
-const ACCENT: Record<string, string> = {
-  townhall: "#5b8fd6", tavern: "#e09a3a", academy: "#3fb3a6", gallery: "#9a7be0",
-  forge: "#e2683a", wizard: "#8e66e8", cave: "#9a8a72",
-}
-const SECTION: Record<string, string> = {
-  townhall: "ABOUT", tavern: "EXPERIENCE", academy: "EDUCATION", gallery: "PROJECTS",
-  forge: "SKILLS", wizard: "CONTACT", cave: "???",
-}
-
-// ── Characters ────────────────────────────────────────────────
-// Sprites have no walk frames, so the walk is procedural: bob + lean +
-// squash, plus two boots that alternate under the body.
-function drawCharacter(
-  ctx: CanvasRenderingContext2D, src: CanvasImageSource, sx: number, sy: number,
-  px: number, py: number, facing: Facing, animT: number, size = 40, boot = "#2b2f3a",
-) {
-  const moving = animT > 0
-  const cyc = Math.sin(animT * 11)
-  const cyc2 = Math.cos(animT * 11)
-  const step = moving && cyc > 0 ? 1 : -1
-  const bob = moving ? Math.abs(cyc) * 2.6 : Math.sin(performance.now() / 420) * 0.6
-  const lean = moving ? cyc * 0.06 : 0
-  const sqY = moving ? 1 - Math.abs(cyc) * 0.05 : 1
-  const sqX = moving ? 1 + Math.abs(cyc) * 0.04 : 1
-  const flip = facing === "left" ? -1 : 1
-  const w = size, h = size * 1.25
-
-  ctx.fillStyle = "rgba(10,30,10,0.32)"
-  ctx.beginPath()
-  ctx.ellipse(px, py + 3, size * 0.32 + bob * 0.5, size * 0.12 - bob * 0.15, 0, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.save()
-  ctx.translate(Math.round(px), Math.round(py - bob))
-  ctx.rotate(lean)
-  ctx.scale(flip * sqX, sqY)
-  ctx.imageSmoothingEnabled = false
-  const bodyH = (h * 12) / 16
-  ctx.drawImage(src, sx, sy, 16, 12, -w / 2, -h + 8, w, bodyH)
-  const bw = Math.round(size / 6.5), bh = Math.round(size / 6)
-  const baseY = -h + 8 + bodyH - 2
-  if (moving) {
-    ctx.fillStyle = "#151821"
-    ctx.fillRect(-bw - 1 - step * 2.4, baseY + 1, bw, bh - 1)
-    ctx.fillStyle = boot
-    ctx.fillRect(1 + step * 2.4, baseY, bw, bh)
-  } else {
-    ctx.fillStyle = boot
-    ctx.fillRect(-bw - 1, baseY + 1, bw, bh - 1)
-    ctx.fillRect(1, baseY + 1, bw, bh - 1)
-  }
-  if ((facing === "left" || facing === "right") && moving) {
-    ctx.fillStyle = "#2f9c95"
-    ctx.fillRect(w / 2 - 7, -h * 0.55 + cyc2 * 2.5, 5, 8)
-    ctx.fillStyle = "#c49a72"
-    ctx.fillRect(w / 2 - 7, -h * 0.55 + cyc2 * 2.5 + 8, 5, 3)
-  }
-  ctx.restore()
+interface ActorRT {
+  def: ActorDef
+  x: number; y: number
+  facing: Facing
+  animT: number
+  moving: boolean
+  tx: number | null; ty: number | null
+  idle: number
+  talkT: number
+  barkI: number
+  hurt: number
+  dead: number
 }
 
-// ── Combat (opt-in with [T]) ──────────────────────────────────
-interface Monster {
-  x: number; y: number; type: string; hp: number; maxHp: number; hurt: number
-  facing: Facing; animT: number; wTx: number | null; wTy: number | null; wIdle: number
-}
-interface Projectile { x: number; y: number; vx: number; vy: number; life: number }
-const MONSTER_TYPES: Record<string, { hp: number; speed: number; dmg: number; tile: number }> = {
-  slime: { hp: 2, speed: 44, dmg: 1, tile: 108 },
-  spider: { hp: 3, speed: 78, dmg: 1, tile: 122 },
-  ghost: { hp: 4, speed: 60, dmg: 2, tile: 121 },
-  brute: { hp: 7, speed: 54, dmg: 2, tile: 110 },
-}
-function currentWeapon(kills: number) {
-  if (kills >= 16) return { name: "WAND", dmg: 5, range: 0, ranged: true, tile: 130 }
-  if (kills >= 6) return { name: "SWORD", dmg: 4, range: 58, ranged: false, tile: 104 }
-  return { name: "DAGGER", dmg: 2, range: 44, ranged: false, tile: 103 }
+interface SceneRT {
+  scene: Scene
+  solids: SolidIndex
+  actors: ActorRT[]
 }
 
-interface Npc {
-  x: number; y: number; homeX: number; homeY: number; tile: number
-  facing: Facing; animT: number; tx: number | null; ty: number | null; idleT: number; speed: number
-  line: number; talkT: number
-}
-interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; kind: "dust" | "leaf" | "spark"; col: string }
+interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; col: string; size: number; kind?: "smoke" }
+
+const footBox = (x: number, y: number): Box => ({ x: x - FOOT.w / 2, y: y - FOOT.h, w: FOOT.w, h: FOOT.h })
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const assets = useRef<{
-    tt: HTMLImageElement | null; chars: HTMLImageElement | null; td: HTMLImageElement | null
-    base: HTMLCanvasElement | null; props: HTMLCanvasElement | null; hero: HTMLCanvasElement | null
-    bsprites: Record<string, BuildingSprite>
-  }>({ tt: null, chars: null, td: null, base: null, props: null, hero: null, bsprites: {} })
-
-  const gRef = useRef({
-    player: { ...PLAYER_START },
-    facing: "down" as Facing,
-    moving: false, animT: 0, stepT: 0,
+  const phase = useGameStore((s) => s.phase)
+  const scenes = useRef<Record<string, SceneRT>>({})
+  const st = useRef({
+    scene: "village",
+    hero: { x: 0, y: 0, facing: "down" as Facing, animT: 0, moving: false, attackT: 0, hurtT: 0, path: [] as { x: number; y: number }[], pending: null as Hotspot | null, pendingNpc: null as ActorRT | null },
     keys: {} as Record<string, boolean>,
-    camera: { x: PLAYER_START.x, y: PLAYER_START.y, init: false },
-    near: null as string | null,
-    last: 0,
-    npcs: [] as Npc[],
-    monsters: [] as Monster[],
-    projectiles: [] as Projectile[],
+    cam: { x: 0, y: 0, init: false },
     particles: [] as Particle[],
-    attackT: 0, attackCd: 0, hurtT: 0, spawnT: 3, deadT: 0,
-    caveSeen: false,
+    fade: { a: 1, dir: -1 as 1 | -1, then: null as (() => void) | null },
+    near: null as Hotspot | null,
+    nearNpc: null as ActorRT | null,
+    returnTo: null as { x: number; y: number } | null,
+    chests: new Set<string>(),
+    ready: false,
+    last: 0,
+    scale: 4,
   })
 
-  const phase = useGameStore((s) => s.phase)
-  const openBuilding = useGameStore((s) => s.openBuilding)
-
-  // seed NPCs
+  // ── build world once the art is loaded
   useEffect(() => {
-    const g = gRef.current
-    if (g.npcs.length) return
-    g.npcs = NPCS.map((n, i) => ({
-      x: (n.x + 0.5) * TILE_PX, y: (n.y + 1) * TILE_PX,
-      homeX: (n.x + 0.5) * TILE_PX, homeY: (n.y + 1) * TILE_PX,
-      tile: n.tile, facing: "down", animT: 0, tx: null, ty: null,
-      idleT: Math.random() * 1.5, speed: 28 + Math.random() * 14, line: i, talkT: 0,
-    }))
-    // night by default when it is night for the visitor
+    let cancelled = false
+    loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD]).then(() => {
+      if (cancelled) return
+      const content = useContentStore.getState().data
+      const all: Record<string, Scene> = { village: buildVillage(), ...buildInteriors(content) }
+      for (const [id, sc] of Object.entries(all)) scenes.current[id] = prepare(sc)
+      // shared village map for the minimap / world map
+      const v = all.village
+      const { c, ctx } = canvas(v.w * TS, v.h * TS)
+      ctx.drawImage(v.ground, 0, 0)
+      for (const s of [...v.sprites].sort((a, b) => a.baseY - b.baseY)) {
+        const src = typeof s.src === "function" ? s.src() : s.src
+        if (src) ctx.drawImage(src, s.rect[0], s.rect[1], s.rect[2], s.rect[3], Math.round(s.x), Math.round(s.y), s.rect[2], s.rect[3])
+      }
+      runtime.mapCanvas = c
+      runtime.mapSize = { w: v.w * TS, h: v.h * TS }
+      for (const b of BUILDINGS) if (b.section) { const d = doorOf(b); runtime.doors[b.id] = { x: d.x, y: d.y + 10 } }
+      const S = st.current
+      S.hero.x = v.spawn.x; S.hero.y = v.spawn.y; S.hero.facing = v.spawn.facing
+      S.ready = true
+      if (process.env.NODE_ENV !== "production") {
+        // dev-only hooks for automated screenshots
+        (window as unknown as { __rw: unknown }).__rw = { goTo, doAction, hero: S.hero, mapURL: () => runtime.mapCanvas?.toDataURL(), trees: () => scenes.current.village.scene.meta?.trees }
+      }
+    })
     const h = new Date().getHours()
     runtime.nightTarget = h >= 19 || h < 6 ? 1 : 0
     runtime.night = runtime.nightTarget
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // assets
-  useEffect(() => {
-    const a = assets.current
-    const tt = new Image()
-    tt.onload = () => {
-      a.tt = tt
-      a.base = buildBase(tt)
-      a.props = buildProps(tt)
-      runtime.baseCanvas = a.base
-      runtime.propsCanvas = a.props
-      for (const b of BUILDINGS) a.bsprites[b.id] = buildBuilding(tt, b)
-      runtime.buildingSprites = a.bsprites
+  function prepare(scene: Scene): SceneRT {
+    const solids = new SolidIndex(scene.w)
+    for (let r = 0; r < scene.h; r++)
+      for (let c = 0; c < scene.w; c++) if (scene.blocked[r * scene.w + c]) solids.add({ x: c * TS, y: r * TS, w: TS, h: TS })
+    for (const s of scene.sprites) if (s.solid) solids.add(s.solid)
+    const actors: ActorRT[] = scene.actors.map((def) => ({
+      def, x: def.x, y: def.y, facing: def.facing ?? "down", animT: 0, moving: false, tx: null, ty: null,
+      idle: Math.random() * 2, talkT: 0, barkI: 0, hurt: 0, dead: 0,
+    }))
+    // nudge anyone spawned inside a wall
+    for (const a of actors) {
+      for (let k = 0; k < 40 && solids.hits(footBox(a.x, a.y)); k++) { a.x += (k % 2 ? 1 : -1) * k; a.y += 2 }
     }
-    tt.src = "/assets/tiny-town/Tilemap/tilemap.png"
-    const ch = new Image()
-    ch.onload = () => { a.chars = ch; a.hero = composeHero(ch) }
-    ch.src = CHAR_SHEET
-    const td = new Image()
-    td.onload = () => { a.td = td }
-    td.src = "/assets/tiny-dungeon/Tilemap/tilemap.png"
-  }, [])
-
-  // walkability
-  const walkable = (px: number, py: number) => {
-    const col = Math.floor(px / TILE_PX), row = Math.floor(py / TILE_PX)
-    if (col < 0 || col >= WORLD_W || row < 0 || row >= WORLD_H) return false
-    if (!WALKABLE.has(WORLD_MAP[row][col])) return false
-    if (SOLID_DECOR.has(`${col},${row}`)) return false
-    for (const b of BUILDINGS) {
-      if (col === b.doorX && row === b.doorY) continue
-      if (px > b.x * TILE_PX + 4 && px < (b.x + b.w) * TILE_PX - 4 && py > b.y * TILE_PX + 4 && py < (b.y + b.h) * TILE_PX - 4) return false
-    }
-    return true
+    return { scene, solids, actors }
   }
 
-  // input
+  // ── scene switching with an iris fade
+  function goTo(id: string, at?: { x: number; y: number; facing?: Facing }) {
+    const S = st.current
+    S.fade = {
+      a: 0, dir: 1, then: () => {
+        const rt = scenes.current[id]
+        if (!rt) return
+        S.scene = id
+        runtime.scene = id
+        useGameStore.getState().setScene(id)
+        const sp = at ?? rt.scene.spawn
+        S.hero.x = sp.x; S.hero.y = sp.y; S.hero.facing = at?.facing ?? rt.scene.spawn.facing
+        S.hero.path = []; S.cam.init = false
+        playMusic(rt.scene.music)
+        if (id !== "village") {
+          const b = BUILDINGS.find((x) => x.id === id)
+          useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? "")
+          useGameStore.getState().markVisited(id)
+        } else useGameStore.getState().showArea("THE VILLAGE", "WELCOME BACK")
+      },
+    }
+  }
+
+  function doAction(a: Action) {
+    const store = useGameStore.getState()
+    const S = st.current
+    if (a.type === "door") {
+      playSound("open")
+      S.returnTo = runtime.doors[a.to] ?? { x: S.hero.x, y: S.hero.y + 12 }
+      goTo(a.to)
+    } else if (a.type === "exit") {
+      playSound("close")
+      goTo("village", S.returnTo ? { ...S.returnTo, facing: "down" } : undefined)
+    } else if (a.type === "section") {
+      playSound("open")
+      store.openBuilding(a.id as BuildingId, a.focus ?? null)
+    } else if (a.type === "game") {
+      playSound("magic")
+      store.openArcade(a.id)
+    } else if (a.type === "sign") {
+      playSound("menu")
+      store.say({ name: "Signpost", lines: a.lines })
+    } else if (a.type === "chest") {
+      if (S.chests.has(a.id)) { store.say({ name: "Chest", lines: ["It's empty now. You already took the loot!"] }); return }
+      S.chests.add(a.id)
+      playSound("secret")
+      for (let i = 0; i < 24; i++) S.particles.push({ x: S.hero.x, y: S.hero.y - 20, vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 60, life: 0.9, max: 0.9, col: i % 2 ? "#ffd76a" : "#fff4c2", size: 2 })
+      store.unlockAchievement("chest_mine")
+      const c = useContentStore.getState().data
+      store.say({ name: "Treasure!", lines: [`You found a scroll: "${c.profile.motto}"`, `It's signed ${c.profile.name}. Thanks for exploring this far ✦`] })
+    }
+  }
+
+  function talkTo(a: ActorRT) {
+    const store = useGameStore.getState()
+    const S = st.current
+    // face each other
+    const dx = S.hero.x - a.x, dy = S.hero.y - a.y
+    a.facing = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : (dy < 0 ? "up" : "down")
+    a.tx = null; a.idle = 4
+    if (a.def.kind !== "npc") return
+    const lines = a.def.lines ?? (a.def.bark ? [a.def.bark[a.barkI % a.def.bark.length]] : ["Hello there!"])
+    a.barkI++
+    playSound(Math.random() < 0.5 ? "talk" : "talk2")
+    store.say({
+      name: a.def.name ?? "Villager", face: a.def.face, lines,
+      onDone: a.def.action ? () => doAction(a.def.action!) : undefined,
+    })
+  }
+
+  // ── input
   useEffect(() => {
     const interact = () => {
-      const g = gRef.current
-      const st = useGameStore.getState()
-      if (st.phase !== "playing") return
-      if (g.near) {
-        openBuilding(g.near as BuildingId)
-        playSound("open")
-      }
+      const S = st.current
+      const store = useGameStore.getState()
+      if (store.phase !== "playing" || store.dialog || store.mapOpen) return
+      if (S.nearNpc) talkTo(S.nearNpc)
+      else if (S.near) doAction(S.near.action)
     }
     const down = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault()
-      gRef.current.keys[k] = true
-      if (useGameStore.getState().phase === "title") return
-      if (k === "e" || k === "enter") interact()
-      if (k === "n" && !e.repeat) { toggleNight(); playSound("click") }
-      if (k === "t" && !e.repeat) {
-        runtime.combat = !runtime.combat
-        playSound(runtime.combat ? "bong" : "close")
-        if (!runtime.combat) { gRef.current.monsters = []; gRef.current.projectiles = [] }
-      }
+      const S = st.current
+      S.keys[k] = true
+      if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(k)) S.hero.path = []
+      const store = useGameStore.getState()
+      if (store.phase === "title") return
+      if ((k === "e" || k === "enter") && !e.repeat) interact()
+      if (k === " " && !e.repeat) attack()
+      if (k === "n" && !e.repeat && S.scene === "village") { toggleNight(); playSound("click") }
     }
-    const up = (e: KeyboardEvent) => { gRef.current.keys[e.key.toLowerCase()] = false }
-    const blur = () => { gRef.current.keys = {} }
+    const up = (e: KeyboardEvent) => { st.current.keys[e.key.toLowerCase()] = false }
+    const blur = () => { st.current.keys = {} }
     window.addEventListener("keydown", down)
     window.addEventListener("keyup", up)
     window.addEventListener("blur", blur)
@@ -217,535 +217,453 @@ export default function GameCanvas() {
       window.removeEventListener("keyup", up)
       window.removeEventListener("blur", blur)
     }
-  }, [openBuilding])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // main loop
+  function attack() {
+    const S = st.current
+    if (S.hero.attackT > 0) return
+    S.hero.attackT = 0.28
+    playSound("sword")
+    const rt = scenes.current[S.scene]
+    if (!rt) return
+    const fx = S.hero.facing === "left" ? -1 : S.hero.facing === "right" ? 1 : 0
+    const fy = S.hero.facing === "up" ? -1 : S.hero.facing === "down" ? 1 : 0
+    const hx = S.hero.x + fx * 12, hy = S.hero.y - 6 + fy * 12
+    for (const a of rt.actors) {
+      if (a.def.kind !== "monster" || a.dead > 0) continue
+      if (Math.hypot(a.x - hx, a.y - 6 - hy) < 16) {
+        a.dead = 6 + Math.random() * 4
+        playSound("kill")
+        runtime.kills++
+        if (runtime.kills >= 10) useGameStore.getState().unlockAchievement("kills_10")
+        S.particles.push({ x: a.x, y: a.y - 8, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "", size: 32, kind: "smoke" })
+      }
+    }
+  }
+
+  // tap / click to walk (and interact on arrival)
+  useEffect(() => {
+    const cv = canvasRef.current
+    if (!cv) return
+    const onDown = (e: PointerEvent) => {
+      const S = st.current
+      const store = useGameStore.getState()
+      if (store.phase !== "playing" || store.dialog || !S.ready) return
+      const rt = scenes.current[S.scene]
+      const wx = e.clientX / S.scale + S.cam.x, wy = e.clientY / S.scale + S.cam.y
+      // clicked a hotspot or an NPC?
+      const hs = rt.scene.hotspots.find((h) => wx >= h.box.x - 6 && wx <= h.box.x + h.box.w + 6 && wy >= h.box.y - 30 && wy <= h.box.y + h.box.h + 6)
+      const npc = rt.actors.find((a) => a.def.kind === "npc" && Math.abs(a.x - wx) < 10 && wy > a.y - 20 && wy < a.y + 4)
+      const target = npc ? { x: npc.x, y: npc.y + 12 } : hs ? { x: hs.box.x + hs.box.w / 2, y: hs.box.y + hs.box.h / 2 } : { x: wx, y: wy }
+      const path = findPath(rt, S.hero.x, S.hero.y, target.x, target.y)
+      if (path) {
+        S.hero.path = path
+        S.hero.pending = npc ? null : hs ?? null
+        S.hero.pendingNpc = npc ?? null
+        S.particles.push({ x: target.x, y: target.y, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "#fff4c2", size: 3 })
+      }
+    }
+    cv.addEventListener("pointerdown", onDown)
+    return () => cv.removeEventListener("pointerdown", onDown)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase === "title"])
+
+  function findPath(rt: SceneRT, sx: number, sy: number, tx: number, ty: number) {
+    const { w, h } = rt.scene
+    const free = (c: number, r: number) => c >= 0 && r >= 0 && c < w && r < h && !rt.solids.hits({ x: c * TS + 3, y: r * TS + 6, w: 10, h: 6 })
+    const sc = Math.floor(sx / TS), sr = Math.floor((sy - 3) / TS)
+    let tc = Math.floor(tx / TS), tr = Math.floor((ty - 3) / TS)
+    if (!free(tc, tr)) {
+      // nearest free tile to the target
+      let best: [number, number] | null = null, bd = 1e9
+      for (let r = tr - 3; r <= tr + 3; r++) for (let c = tc - 3; c <= tc + 3; c++) if (free(c, r)) { const d = Math.hypot(c - tc, r - tr); if (d < bd) { bd = d; best = [c, r] } }
+      if (!best) return null
+      ;[tc, tr] = best
+    }
+    const prev = new Int32Array(w * h).fill(-2)
+    const q = [sr * w + sc]
+    prev[sr * w + sc] = -1
+    while (q.length) {
+      const i = q.shift()!
+      if (i === tr * w + tc) break
+      const c = i % w, r = (i / w) | 0
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nc = c + dx, nr = r + dy, j = nr * w + nc
+        if (!free(nc, nr) || prev[j] !== -2) continue
+        prev[j] = i
+        q.push(j)
+      }
+    }
+    if (prev[tr * w + tc] === -2) return null
+    const out: { x: number; y: number }[] = []
+    for (let i = tr * w + tc; i !== -1; i = prev[i]) out.push({ x: (i % w) * TS + 8, y: Math.floor(i / w) * TS + 12 })
+    out.reverse()
+    out.shift()
+    return out
+  }
+
+  // ── main loop
   useEffect(() => {
     if (phase === "title") return
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")!
+    const cv = canvasRef.current
+    if (!cv) return
+    const ctx = cv.getContext("2d")!
+    const frame = document.createElement("canvas")
+    const fctx = frame.getContext("2d")!
     const light = document.createElement("canvas")
     const lctx = light.getContext("2d")!
-    let raf = 0
-    let cw = 0, ch = 0
-
+    let raf = 0, cw = 0, ch = 0
     const resize = () => {
-      const dpr = 1 // pixel art: keep 1:1 CSS pixels for crisp nearest-neighbour scaling
+      const dpr = Math.min(2, window.devicePixelRatio || 1)
       cw = window.innerWidth; ch = window.innerHeight
-      canvas.width = cw * dpr; canvas.height = ch * dpr
-      light.width = Math.ceil(cw / 4); light.height = Math.ceil(ch / 4)
-      ctx.imageSmoothingEnabled = false
+      cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr)
+      cv.style.width = `${cw}px`; cv.style.height = `${ch}px`
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     }
     resize()
     window.addEventListener("resize", resize)
-
-    const g = gRef.current
-    const npcLines = (() => {
-      const c = useContentStore.getState().data
-      const top = c.projects[0]?.title ?? "something big"
-      return [
-        "The Gallery holds every project. Go look!",
-        `I hear ${c.profile.name.split(" ")[0]} is building ${top}...`,
-        "Lost? Press M for the map.",
-        "The Wizard Tower delivers messages. Fast.",
-        "Try pressing N when the sun goes down ✦",
-        "The Forge smells like Rust. Literally.",
-        "Tavern folk tell tales of past quests.",
-        "They say a cave hides deep in the south-east...",
-        "Ship fast. Break things. Fix faster!",
-        "Psst, press T if you're feeling brave.",
-      ]
-    })()
+    playMusic("village")
+    const S = st.current
+    const heroImg = img(charSheet(CHARS.hero))
+    const smoke = img(SHEETS.smoke)
 
     const loop = (time: number) => {
       raf = requestAnimationFrame(loop)
-      const a = assets.current
-      const dt = Math.min((time - g.last) / 1000, 0.05)
-      g.last = time
+      const dt = Math.min((time - S.last) / 1000, 0.05)
+      S.last = time
       const now = time / 1000
-      const st = useGameStore.getState()
-      const paused = st.phase !== "playing"
+      if (!S.ready) { ctx.fillStyle = "#0c0a1a"; ctx.fillRect(0, 0, cw, ch); return }
+      const store = useGameStore.getState()
+      const paused = store.phase !== "playing" || !!store.dialog || store.mapOpen || S.fade.dir === 1
+      const rt = scenes.current[S.scene]
+      const sc = rt.scene
+      const H = S.hero
 
-      runtime.night += (runtime.nightTarget - runtime.night) * Math.min(1, dt * 2.2)
-      const night = runtime.night
+      // fade
+      if (S.fade.dir === 1) { S.fade.a = Math.min(1, S.fade.a + dt * 3.2); if (S.fade.a >= 1) { S.fade.then?.(); S.fade.then = null; S.fade.dir = -1 } }
+      else S.fade.a = Math.max(0, S.fade.a - dt * 2.4)
 
-      // ── teleport (fast travel from map)
+      // night (village only)
+      runtime.night += (runtime.nightTarget - runtime.night) * Math.min(1, dt * 2)
+
+      // fast travel
       if (runtime.teleportTo) {
-        const b = BUILDINGS.find((x) => x.id === runtime.teleportTo)
+        const id = runtime.teleportTo
         runtime.teleportTo = null
-        if (b) {
-          g.player.x = (b.doorX + 0.5) * TILE_PX
-          g.player.y = (b.doorY + 1.7) * TILE_PX
-          g.facing = "up"
-          for (let i = 0; i < 26; i++) {
-            const ang = (i / 26) * Math.PI * 2
-            g.particles.push({ x: g.player.x, y: g.player.y - 20, vx: Math.cos(ang) * 120, vy: Math.sin(ang) * 120, life: 0.6, max: 0.6, kind: "spark", col: "#ffe39a" })
-          }
-          playSound("achievement")
+        const d = runtime.doors[id]
+        if (d) {
+          if (S.scene !== "village") goTo("village", { x: d.x, y: d.y + 4, facing: "up" })
+          else { H.x = d.x; H.y = d.y + 4; H.facing = "up"; H.path = []; S.cam.init = false; playSound("magic") }
         }
       }
 
-      // ── movement
+      // ── hero movement
       let dx = 0, dy = 0
-      if (!paused && g.deadT <= 0) {
-        const k = g.keys
+      if (!paused) {
+        const k = S.keys
         if (k["arrowleft"] || k["a"]) dx -= 1
         if (k["arrowright"] || k["d"]) dx += 1
         if (k["arrowup"] || k["w"]) dy -= 1
         if (k["arrowdown"] || k["s"]) dy += 1
-        if (Math.abs(runtime.joy.x) > 0.15 || Math.abs(runtime.joy.y) > 0.15) { dx = runtime.joy.x; dy = runtime.joy.y }
+        if (Math.abs(runtime.joy.x) > 0.2 || Math.abs(runtime.joy.y) > 0.2) { dx = runtime.joy.x; dy = runtime.joy.y; H.path = [] }
+        if (dx === 0 && dy === 0 && H.path.length) {
+          const p = H.path[0]
+          const ddx = p.x - H.x, ddy = p.y - H.y
+          if (Math.hypot(ddx, ddy) < 2) H.path.shift()
+          else { dx = ddx; dy = ddy }
+          if (!H.path.length) {
+            if (H.pendingNpc) { const n = H.pendingNpc; H.pendingNpc = null; setTimeout(() => talkTo(n), 0) }
+            else if (H.pending) { const hs = H.pending; H.pending = null; setTimeout(() => doAction(hs.action), 0) }
+          }
+        }
         if (runtime.actionPressed) {
           runtime.actionPressed = false
-          if (g.near) { openBuilding(g.near as BuildingId); playSound("open") }
-          else if (runtime.combat) {
-            g.keys[" "] = true
-            setTimeout(() => { g.keys[" "] = false }, 80)
-          }
+          if (S.nearNpc) talkTo(S.nearNpc); else if (S.near) doAction(S.near.action); else attack()
         }
       }
-      g.moving = dx !== 0 || dy !== 0
-      if (g.moving) {
-        if (Math.abs(dx) > Math.abs(dy)) g.facing = dx < 0 ? "left" : "right"
-        else g.facing = dy < 0 ? "up" : "down"
+      H.moving = dx !== 0 || dy !== 0
+      if (H.moving) {
         const len = Math.hypot(dx, dy)
         const mag = Math.min(1, len)
-        const vx = (dx / len) * PLAYER_SPEED * mag * dt
-        const vy = (dy / len) * PLAYER_SPEED * mag * dt
-        const pad = 12
-        const nx = g.player.x + vx, ny = g.player.y + vy
-        if (walkable(nx + pad * Math.sign(vx || 1), g.player.y) && walkable(nx + pad * Math.sign(vx || 1), g.player.y - 8)) g.player.x = nx
-        if (walkable(g.player.x - pad + 2, ny) && walkable(g.player.x + pad - 2, ny)) g.player.y = ny
-        g.animT += dt
-        g.stepT += dt
-        if (g.stepT >= STEP_INTERVAL) {
-          g.stepT = 0
-          playSound("step")
-          g.particles.push({ x: g.player.x + (Math.random() - 0.5) * 10, y: g.player.y, vx: -vx * 4 + (Math.random() - 0.5) * 20, vy: -12, life: 0.45, max: 0.45, kind: "dust", col: "#e8d9b0" })
+        if (Math.abs(dx) > Math.abs(dy) * 1.1) H.facing = dx < 0 ? "left" : "right"
+        else if (Math.abs(dy) > 0.01) H.facing = dy < 0 ? "up" : "down"
+        const vx = (dx / len) * SPEED * mag * dt, vy = (dy / len) * SPEED * mag * dt
+        if (!rt.solids.hits(footBox(H.x + vx, H.y))) H.x += vx
+        else if (!H.path.length) {
+          // slide around corners
+          if (!rt.solids.hits(footBox(H.x + vx, H.y - 3))) { H.x += vx; H.y -= 1.5 } else if (!rt.solids.hits(footBox(H.x + vx, H.y + 3))) { H.x += vx; H.y += 1.5 }
         }
-      } else g.animT = 0
-      runtime.player.x = g.player.x
-      runtime.player.y = g.player.y
-      runtime.facing = g.facing
+        if (!rt.solids.hits(footBox(H.x, H.y + vy))) H.y += vy
+        else if (!H.path.length) {
+          if (!rt.solids.hits(footBox(H.x - 3, H.y + vy))) { H.y += vy; H.x -= 1.5 } else if (!rt.solids.hits(footBox(H.x + 3, H.y + vy))) { H.y += vy; H.x += 1.5 }
+        }
+        H.animT += dt
+        if (Math.random() < dt * 6) S.particles.push({ x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: S.scene === "village" ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
+      } else H.animT = 0
+      H.attackT = Math.max(0, H.attackT - dt)
+      H.hurtT = Math.max(0, H.hurtT - dt)
+      runtime.player.x = H.x; runtime.player.y = H.y; runtime.facing = H.facing
 
-      // ── nearest door
-      g.near = null
-      let best = INTERACT_DIST
-      for (const b of BUILDINGS) {
-        const d = Math.hypot(g.player.x - (b.doorX + 0.5) * TILE_PX, g.player.y - (b.doorY + 0.9) * TILE_PX)
-        if (d < best) { best = d; g.near = b.id }
-      }
-      if (g.near === "cave" && !g.caveSeen) { g.caveSeen = true; playSound("achievement") }
-      runtime.nearBuilding = g.near
-
-      // ── NPCs
-      for (const n of g.npcs) {
-        n.talkT = Math.max(0, n.talkT - dt)
-        const dp = Math.hypot(n.x - g.player.x, n.y - g.player.y)
-        if (dp < TILE_PX * 1.3 && n.talkT <= 0) { n.talkT = 4; n.line = (n.line + 3) % npcLines.length; n.facing = g.player.x < n.x ? "left" : "right"; n.tx = null; n.idleT = 3 }
-        if (n.idleT > 0) { n.idleT -= dt; n.animT = 0; continue }
-        if (n.tx === null || n.ty === null) {
-          let ok = false
-          for (let i = 0; i < 12; i++) {
-            const ang = Math.random() * Math.PI * 2, r = TILE_PX + Math.random() * TILE_PX * 4
-            const tx = n.homeX + Math.cos(ang) * r, ty = n.homeY + Math.sin(ang) * r
-            if (walkable(tx, ty)) { n.tx = tx; n.ty = ty; ok = true; break }
-          }
-          if (!ok) { n.idleT = 1; continue }
+      // ── actors
+      const pb = footBox(H.x, H.y)
+      for (const a of rt.actors) {
+        a.talkT = Math.max(0, a.talkT - dt)
+        a.hurt = Math.max(0, a.hurt - dt)
+        if (a.dead > 0) { a.dead -= dt; continue }
+        const dp = Math.hypot(a.x - H.x, a.y - H.y)
+        if (a.def.kind === "npc" && a.def.bark && dp < 28 && a.talkT <= 0 && !a.def.lines) { a.talkT = 3.5; a.barkI++ }
+        if (paused) { a.moving = false; continue }
+        const wander = a.def.wander ?? 0
+        if (wander <= 0 || (a.def.kind === "npc" && dp < 22)) { a.moving = false; a.animT = 0; continue }
+        // monsters lazily drift towards the hero when close
+        if (a.def.kind === "monster" && dp < 60 && dp > 10) { a.tx = H.x; a.ty = H.y }
+        if (a.idle > 0) { a.idle -= dt; a.moving = false; a.animT = 0; continue }
+        if (a.tx === null || a.ty === null) {
+          const ang = Math.random() * Math.PI * 2, r = 8 + Math.random() * wander
+          a.tx = a.def.x + Math.cos(ang) * r; a.ty = a.def.y + Math.sin(ang) * r
         }
-        const ddx = (n.tx as number) - n.x, ddy = (n.ty as number) - n.y
-        const d = Math.hypot(ddx, ddy)
-        if (d < 4) { n.tx = null; n.idleT = 1 + Math.random() * 2.5; n.animT = 0; continue }
-        const nx = n.x + (ddx / d) * n.speed * dt, ny = n.y + (ddy / d) * n.speed * dt
-        if (Math.hypot(nx - g.player.x, ny - g.player.y) < 30) { n.tx = null; n.idleT = 0.6; continue }
-        if (walkable(nx, ny)) {
-          n.x = nx; n.y = ny
-          n.facing = Math.abs(ddx) > Math.abs(ddy) ? (ddx < 0 ? "left" : "right") : (ddy < 0 ? "up" : "down")
-          n.animT += dt
-        } else { n.tx = null; n.idleT = 0.4 }
-      }
-
-      // ── combat
-      const wpn = currentWeapon(runtime.kills)
-      runtime.weapon = wpn.name
-      if (g.deadT > 0) {
-        g.deadT -= dt
-        if (g.deadT <= 0) { g.player = { ...PLAYER_START }; runtime.hp = runtime.maxHp; g.monsters = []; g.projectiles = [] }
-      } else if (!paused) {
-        g.attackT = Math.max(0, g.attackT - dt)
-        g.attackCd = Math.max(0, g.attackCd - dt)
-        g.hurtT = Math.max(0, g.hurtT - dt)
-        g.spawnT -= dt
-        if (runtime.combat && g.spawnT <= 0 && g.monsters.length < 8) {
-          g.spawnT = 2.4
-          const roll = Math.random()
-          let type = "slime"
-          if (runtime.kills > 12 && roll < 0.32) type = "brute"
-          else if (runtime.kills > 6 && roll < 0.5) type = "ghost"
-          else if (roll < 0.45) type = "spider"
-          for (let i = 0; i < 24; i++) {
-            const ang = Math.random() * Math.PI * 2, dist = (7 + Math.random() * 6) * TILE_PX
-            const mx = g.player.x + Math.cos(ang) * dist, my = g.player.y + Math.sin(ang) * dist
-            if (walkable(mx, my)) {
-              const mt = MONSTER_TYPES[type]
-              g.monsters.push({ x: mx, y: my, type, hp: mt.hp, maxHp: mt.hp, hurt: 0, facing: "down", animT: 0, wTx: null, wTy: null, wIdle: Math.random() })
-              break
-            }
-          }
+        const ddx = a.tx - a.x, ddy = (a.ty as number) - a.y, d = Math.hypot(ddx, ddy)
+        if (d < 2) { a.tx = null; a.ty = null; a.idle = 1 + Math.random() * 3; a.moving = false; continue }
+        const sp = (a.def.speed ?? 20) * dt
+        const nx = a.x + (ddx / d) * sp, ny = a.y + (ddy / d) * sp
+        const nb = footBox(nx, ny)
+        if (!rt.solids.hits(nb) && (a.def.kind === "monster" || !overlaps(nb, pb))) {
+          a.x = nx; a.y = ny; a.moving = true; a.animT += dt
+          a.facing = Math.abs(ddx) > Math.abs(ddy) ? (ddx < 0 ? "left" : "right") : (ddy < 0 ? "up" : "down")
+        } else { a.tx = null; a.ty = null; a.idle = 0.5; a.moving = false }
+        if (a.def.kind === "monster" && dp < 9 && H.hurtT <= 0) {
+          H.hurtT = 1
+          playSound("hit")
+          const kx = (H.x - a.x) / (dp || 1), ky = (H.y - a.y) / (dp || 1)
+          for (let s = 0; s < 8; s++) if (!rt.solids.hits(footBox(H.x + kx * 2, H.y + ky * 2))) { H.x += kx * 2; H.y += ky * 2 }
         }
-        if (runtime.combat && g.keys[" "] && g.attackCd <= 0) {
-          g.attackCd = wpn.ranged ? 0.34 : 0.42
-          g.attackT = 0.25
-          playSound("click")
-          const fx = g.facing === "left" ? -1 : g.facing === "right" ? 1 : 0
-          const fy = g.facing === "up" ? -1 : g.facing === "down" ? 1 : 0
-          if (wpn.ranged) g.projectiles.push({ x: g.player.x, y: g.player.y - 18, vx: fx * 360, vy: fy * 360, life: 1.1 })
-          else {
-            const ax = g.player.x + fx * wpn.range * 0.6, ay = g.player.y - 16 + fy * wpn.range * 0.6
-            for (const m of g.monsters) if (Math.hypot(m.x - ax, m.y - ay) < wpn.range) {
-              m.hp -= wpn.dmg; m.hurt = 0.18
-              const kl = Math.hypot(m.x - g.player.x, m.y - g.player.y) || 1
-              m.x += ((m.x - g.player.x) / kl) * 18; m.y += ((m.y - g.player.y) / kl) * 18
-            }
-          }
-        }
-        for (const p of g.projectiles) {
-          p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt
-          for (const m of g.monsters) if (m.hp > 0 && Math.hypot(m.x - p.x, m.y - p.y) < 24) { m.hp -= wpn.dmg; m.hurt = 0.18; p.life = 0; break }
-        }
-        g.projectiles = g.projectiles.filter((p) => p.life > 0)
-        for (const m of g.monsters) {
-          m.hurt = Math.max(0, m.hurt - dt)
-          const mt = MONSTER_TYPES[m.type]
-          const mdx = g.player.x - m.x, mdy = g.player.y - m.y
-          const ml = Math.hypot(mdx, mdy) || 1
-          let vx = 0, vy = 0, moved = false
-          if (ml < TILE_PX * 7 || m.hurt > 0) {
-            vx = (mdx / ml) * mt.speed * dt; vy = (mdy / ml) * mt.speed * dt
-            if (walkable(m.x + vx, m.y)) { m.x += vx; moved = true }
-            if (walkable(m.x, m.y + vy)) { m.y += vy; moved = true }
-          } else if (m.wIdle > 0) m.wIdle -= dt
-          else if (m.wTx === null || m.wTy === null) {
-            const ang = Math.random() * Math.PI * 2, r = TILE_PX * (2 + Math.random() * 3)
-            const tx = m.x + Math.cos(ang) * r, ty = m.y + Math.sin(ang) * r
-            if (walkable(tx, ty)) { m.wTx = tx; m.wTy = ty } else m.wIdle = 0.8
-          } else {
-            const wdx = m.wTx - m.x, wdy = m.wTy - m.y, wd = Math.hypot(wdx, wdy)
-            if (wd < 4) { m.wTx = null; m.wIdle = 0.6 + Math.random() * 1.6 }
-            else {
-              vx = (wdx / wd) * mt.speed * 0.45 * dt; vy = (wdy / wd) * mt.speed * 0.45 * dt
-              if (walkable(m.x + vx, m.y + vy)) { m.x += vx; m.y += vy; moved = true } else { m.wTx = null; m.wIdle = 0.4 }
-            }
-          }
-          if (moved) { m.facing = Math.abs(vx) > Math.abs(vy) ? (vx < 0 ? "left" : "right") : (vy < 0 ? "up" : "down"); m.animT += dt } else m.animT = 0
-          if (ml < 28 && g.hurtT <= 0) {
-            runtime.hp -= mt.dmg; g.hurtT = 0.9; playSound("error")
-            if (runtime.hp <= 0) { runtime.hp = 0; g.deadT = 2.6 }
-          }
-        }
-        g.monsters = g.monsters.filter((m) => {
-          if (m.hp > 0) return true
-          runtime.kills += 1
-          for (let i = 0; i < 10; i++) g.particles.push({ x: m.x, y: m.y - 12, vx: (Math.random() - 0.5) * 160, vy: -Math.random() * 140, life: 0.5, max: 0.5, kind: "spark", col: "#ffd76a" })
-          return false
-        })
       }
 
-      // ── camera (snapped to the pixel grid so tiles never shimmer)
-      const tx = g.player.x - cw / 2, ty = g.player.y - ch / 2 - 20
-      if (!g.camera.init) { g.camera.x = tx; g.camera.y = ty; g.camera.init = true }
-      g.camera.x += (tx - g.camera.x) * Math.min(1, dt * 7)
-      g.camera.y += (ty - g.camera.y) * Math.min(1, dt * 7)
-      const minX = -MARGIN * TILE_PX, maxX = (WORLD_W + MARGIN) * TILE_PX - cw
-      const minY = -MARGIN * TILE_PX, maxY = (WORLD_H + MARGIN) * TILE_PX - ch
-      g.camera.x = Math.max(minX, Math.min(maxX, g.camera.x))
-      g.camera.y = Math.max(minY, Math.min(maxY, g.camera.y))
-      const camX = Math.round(g.camera.x / SCALE) * SCALE
-      const camY = Math.round(g.camera.y / SCALE) * SCALE
+      // ── nearest interaction
+      S.near = null; S.nearNpc = null
+      let bestD = 30
+      for (const a of rt.actors) {
+        if (a.def.kind !== "npc" || (!a.def.lines && !a.def.bark)) continue
+        const d = Math.hypot(a.x - H.x, a.y - H.y)
+        if (d < bestD) { bestD = d; S.nearNpc = a }
+      }
+      if (!S.nearNpc) {
+        for (const h of rt.scene.hotspots) if (overlaps(pb, h.box)) { S.near = h; break }
+      }
+      runtime.nearLabel = S.nearNpc ? `TALK TO ${(S.nearNpc.def.name ?? "").toUpperCase()}` : S.near?.label ?? null
 
-      ctx.imageSmoothingEnabled = false
-      ctx.fillStyle = "#3d7a3a"
-      ctx.fillRect(0, 0, cw, ch)
+      // ── camera + scale
+      const fit = Math.min(cw / (sc.w * TS + 24), ch / (sc.h * TS + 72))
+      const base = Math.max(2, Math.min(5, Math.round(Math.min(cw / (16 * 21), ch / (16 * 12.5)))))
+      const scale = sc.scale ? Math.max(2, Math.min(sc.scale + (cw > 1700 ? 1 : 0), Math.floor(fit) || 2)) : base
+      S.scale = scale
+      const vw = Math.ceil(cw / scale), vh = Math.ceil(ch / scale)
+      if (frame.width !== vw || frame.height !== vh) { frame.width = vw; frame.height = vh; light.width = vw; light.height = vh }
+      const sw = sc.w * TS, sh = sc.h * TS
+      let tx = H.x - vw / 2, ty = H.y - 8 - vh / 2
+      tx = sw <= vw ? (sw - vw) / 2 : Math.max(0, Math.min(sw - vw, tx))
+      ty = sh <= vh ? (sh - vh) / 2 - 6 : Math.max(0, Math.min(sh - vh, ty))
+      if (!S.cam.init) { S.cam.x = tx; S.cam.y = ty; S.cam.init = true }
+      S.cam.x += (tx - S.cam.x) * Math.min(1, dt * 8)
+      S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 8)
+      const camX = Math.round(S.cam.x), camY = Math.round(S.cam.y)
 
-      if (!a.base || !a.tt) return
-      // ── ground + props
-      const sx = camX / SCALE + MARGIN * TS, sy = camY / SCALE + MARGIN * TS
-      const sw = Math.ceil(cw / SCALE) + 1, sh = Math.ceil(ch / SCALE) + 1
-      ctx.drawImage(a.base, sx, sy, sw, sh, 0, 0, sw * SCALE, sh * SCALE)
+      // ── draw (native resolution)
+      fctx.imageSmoothingEnabled = false
+      fctx.fillStyle = sc.bg ?? "#4d7a2e"
+      fctx.fillRect(0, 0, vw, vh)
+      fctx.drawImage(sc.ground, -camX, -camY)
 
       // water: drifting glints
-      const c0 = Math.max(0, Math.floor(camX / TILE_PX)), c1 = Math.min(WORLD_W - 1, Math.ceil((camX + cw) / TILE_PX))
-      const r0 = Math.max(0, Math.floor(camY / TILE_PX)), r1 = Math.min(WORLD_H - 1, Math.ceil((camY + ch) / TILE_PX))
-      for (let r = r0; r <= r1; r++) for (let c = c0; c <= c1; c++) {
-        if (WORLD_MAP[r][c] !== T.POND) continue
-        for (let k = 0; k < 2; k++) {
-          const ph = (now * 0.35 + hash2(c, r, k)) % 1
-          if (ph > 0.55) continue
-          const gx = c * TILE_PX + Math.floor(hash2(c, r, k + 7) * 12 + 2) * SCALE + Math.floor(ph * 6) * SCALE - camX
-          const gy = r * TILE_PX + Math.floor(hash2(c, r, k + 3) * 10 + 3) * SCALE - camY
-          ctx.globalAlpha = Math.sin((ph / 0.55) * Math.PI) * 0.8
-          ctx.fillStyle = "#eaf8ff"
-          ctx.fillRect(gx, gy, SCALE * 3, SCALE)
+      if (sc.water) {
+        for (const w of sc.water) {
+          const x = w.c * TS - camX, y = w.r * TS - camY
+          if (x < -16 || y < -16 || x > vw || y > vh) continue
+          for (let k = 0; k < 2; k++) {
+            const ph = (now * 0.4 + hash(w.c, w.r, k)) % 1
+            if (ph > 0.6) continue
+            fctx.globalAlpha = Math.sin((ph / 0.6) * Math.PI) * 0.75
+            fctx.fillStyle = "#f2fdff"
+            fctx.fillRect(Math.round(x + 2 + hash(w.c, w.r, k + 5) * 9 + ph * 3), Math.round(y + 3 + hash(w.c, w.r, k + 9) * 10), 3, 1)
+          }
         }
-      }
-      ctx.globalAlpha = 1
-
-      if (a.props) ctx.drawImage(a.props, sx, sy, sw, sh, 0, 0, sw * SCALE, sh * SCALE)
-
-      // ── door highlight under entities
-      if (g.near) {
-        const b = BUILDINGS.find((x) => x.id === g.near)!
-        const dxp = (b.doorX + 0.5) * TILE_PX - camX, dyp = (b.doorY + 1.05) * TILE_PX - camY
-        const pulse = 0.5 + 0.5 * Math.sin(now * 5)
-        ctx.fillStyle = `rgba(255, 230, 140, ${0.25 + pulse * 0.25})`
-        ctx.beginPath(); ctx.ellipse(dxp, dyp, 30 + pulse * 4, 10 + pulse, 0, 0, Math.PI * 2); ctx.fill()
+        fctx.globalAlpha = 1
       }
 
-      // ── y-sorted sprites
+      // door / hotspot markers on the ground
+      for (const h of sc.hotspots) {
+        if (!h.marker) continue
+        const near = S.near === h
+        if (!near && h.action.type !== "door" && h.action.type !== "game") continue
+        const x = h.box.x + h.box.w / 2 - camX, y = h.box.y + h.box.h / 2 - camY
+        fctx.globalAlpha = near ? 0.55 + Math.sin(now * 6) * 0.2 : 0.22
+        fctx.fillStyle = "#fff2b8"
+        fctx.beginPath(); fctx.ellipse(x, y, 10, 4, 0, 0, Math.PI * 2); fctx.fill()
+        fctx.globalAlpha = 1
+      }
+
+      // y-sorted sprites + actors
       type Item = { y: number; draw: () => void }
       const items: Item[] = []
-      for (const b of BUILDINGS) {
-        const spr = a.bsprites[b.id]
-        if (!spr) continue
-        const bx = b.x * TILE_PX - camX, by = b.y * TILE_PX - camY
-        if (bx > cw + 100 || bx + b.w * TILE_PX < -100 || by > ch + 100 || by + b.h * TILE_PX < -200) continue
-        items.push({ y: (b.y + b.h) * TILE_PX, draw: () => {
-          // contact shadow
-          ctx.fillStyle = "rgba(20, 40, 10, 0.28)"
-          ctx.fillRect(bx + 6, by + b.h * TILE_PX - 6, b.w * TILE_PX, 12)
-          if (b.id === "cave" && !g.caveSeen) {
-            // the cave is disguised as thicket until you stumble onto it
-            for (let i = 0; i < b.w; i++) {
-              const [tsx, tsy] = tsrc(i % 2 ? 16 : 28)
-              ctx.drawImage(a.tt!, tsx, tsy, 16, 16, bx + i * TILE_PX, by + TILE_PX * 0.5, TILE_PX, TILE_PX)
-            }
-            return
-          }
-          ctx.drawImage(spr.canvas, bx - 4 * SCALE, by - spr.offY * SCALE, spr.canvas.width * SCALE, spr.canvas.height * SCALE)
+      for (const s of sc.sprites) {
+        const x = s.x - camX, y = s.y - camY
+        if (x > vw + 8 || y > vh + 8 || x + s.rect[2] < -8 || y + s.rect[3] < -8) continue
+        items.push({ y: s.baseY, draw: () => {
+          const src = typeof s.src === "function" ? s.src() : s.src
+          if (!src) return
+          let sx = s.rect[0]
+          if (s.anim) sx += (Math.floor(now * s.anim.fps) % s.anim.frames) * s.anim.dx
+          if (s.sway) {
+            // canopy sways (top rows offset), trunk stays put
+            const off = Math.round(Math.sin(now * 1.3 + s.x * 0.05) * s.sway)
+            const split = s.rect[3] - 10
+            fctx.drawImage(src, sx, s.rect[1], s.rect[2], split, Math.round(x) + off, Math.round(y), s.rect[2], split)
+            fctx.drawImage(src, sx, s.rect[1] + split, s.rect[2], s.rect[3] - split, Math.round(x), Math.round(y) + split, s.rect[2], s.rect[3] - split)
+          } else fctx.drawImage(src, sx, s.rect[1], s.rect[2], s.rect[3], Math.round(x), Math.round(y), s.rect[2], s.rect[3])
         } })
       }
-      for (const n of g.npcs) {
-        if (n.x - camX < -60 || n.x - camX > cw + 60 || n.y - camY < -80 || n.y - camY > ch + 60) continue
-        items.push({ y: n.y, draw: () => {
-          if (a.chars) drawCharacter(ctx, a.chars, (n.tile % 54) * 17, Math.floor(n.tile / 54) * 17, n.x - camX, n.y - camY, n.facing, n.animT, 36, "#3a2418")
-        } })
+      for (const a of rt.actors) {
+        if (a.dead > 0) continue
+        const x = a.x - camX, y = a.y - camY
+        if (x < -20 || y < -24 || x > vw + 20 || y > vh + 24) continue
+        items.push({ y: a.y, draw: () => drawActor(fctx, a, x, y, now) })
       }
-      for (const m of g.monsters) {
-        items.push({ y: m.y, draw: () => {
-          if (!a.td) return
-          const mt = MONSTER_TYPES[m.type]
-          const [msx, msy] = tsrc(mt.tile)
-          const bob = m.animT > 0 ? Math.abs(Math.sin(m.animT * 9)) * 2.2 : 0
-          const mx = m.x - camX, my = m.y - camY
-          ctx.fillStyle = "rgba(10,20,10,.32)"
-          ctx.beginPath(); ctx.ellipse(mx, my + 3, 12, 4.5, 0, 0, Math.PI * 2); ctx.fill()
-          ctx.save(); ctx.translate(mx, my - bob); ctx.scale(m.facing === "left" ? -1 : 1, 1)
-          if (m.hurt > 0) ctx.filter = "brightness(1.8)"
-          ctx.drawImage(a.td, msx, msy, 16, 16, -18, -34, 36, 36)
-          ctx.filter = "none"; ctx.restore()
-          if (m.hp < m.maxHp) {
-            ctx.fillStyle = "#2a1a0a"; ctx.fillRect(mx - 14, my - 42, 28, 5)
-            ctx.fillStyle = "#e0523f"; ctx.fillRect(mx - 13, my - 41, 26 * (m.hp / m.maxHp), 3)
-          }
-        } })
-      }
-      items.push({ y: g.player.y, draw: () => {
-        if (!a.hero) return
-        if (g.hurtT > 0.5 && Math.floor(now * 20) % 2) return
-        drawCharacter(ctx, a.hero, 0, 0, g.player.x - camX, g.player.y - camY, g.facing, g.moving ? g.animT : 0, 40)
+      items.push({ y: H.y, draw: () => {
+        if (H.hurtT > 0 && Math.floor(now * 16) % 2) return
+        drawShadow(fctx, H.x - camX, H.y - camY)
+        if (!ready(heroImg)) return
+        const col = DIR_COL[H.facing]
+        const row = H.attackT > 0 ? 4 : H.moving ? Math.floor(H.animT * 9) % 4 : 0
+        const bob = H.moving ? 0 : Math.round(Math.sin(now * 2.2) * 0.5)
+        fctx.drawImage(heroImg, col * 16, row * 16, 16, 16, Math.round(H.x - camX - 8), Math.round(H.y - camY - 15 + bob), 16, 16)
+        if (H.attackT > 0) drawSlash(fctx, H.x - camX, H.y - camY - 7, H.facing, 1 - H.attackT / 0.28)
       } })
       items.sort((p, q) => p.y - q.y)
       for (const it of items) it.draw()
 
-      // weapon swing + projectiles
-      if (a.td && g.attackT > 0) {
-        const prog = 1 - g.attackT / 0.25
-        const fx = g.facing === "left" ? -1 : g.facing === "right" ? 1 : 0
-        const fy = g.facing === "up" ? -1 : g.facing === "down" ? 1 : 0
-        const [wsx, wsy] = tsrc(wpn.tile)
-        ctx.save()
-        ctx.translate(g.player.x - camX + fx * 26, g.player.y - camY - 18 + fy * 24)
-        ctx.rotate((g.facing === "left" ? -1 : 1) * (prog - 0.5) * 1.8)
-        ctx.drawImage(a.td, wsx, wsy, 16, 16, -15, -15, 30, 30)
-        ctx.restore()
-      }
-      for (const p of g.projectiles) {
-        ctx.fillStyle = "#c4a5ff"; ctx.fillRect(p.x - camX - 5, p.y - camY - 5, 10, 10)
-        ctx.fillStyle = "#fff"; ctx.fillRect(p.x - camX - 2, p.y - camY - 2, 4, 4)
-      }
-
-      // ── chimney smoke + building labels
-      for (const b of BUILDINGS) {
-        const spr = a.bsprites[b.id]
-        if (!spr) continue
-        const bx = b.x * TILE_PX - camX, by = b.y * TILE_PX - camY
-        if (bx > cw + 200 || bx + b.w * TILE_PX < -200 || by > ch + 200 || by + b.h * TILE_PX < -260) continue
-        if (spr.chimney) {
-          const cx0 = bx + spr.chimney.x * SCALE, cy0 = by + spr.chimney.y * SCALE
-          for (let i = 0; i < 5; i++) {
-            const t = (now * 0.35 + i / 5 + b.x * 0.13) % 1
-            const r = 3 + t * 9
-            ctx.globalAlpha = (1 - t) * 0.5
-            ctx.fillStyle = night > 0.5 ? "#8d8aa8" : "#ece6dc"
-            ctx.fillRect(Math.round(cx0 + Math.sin(t * 5 + i) * 8 + t * 14 - r / 2), Math.round(cy0 - t * 70 - r / 2), Math.round(r), Math.round(r))
-          }
-          ctx.globalAlpha = 1
-        }
-      }
-
-      // ── particles
-      for (const p of g.particles) {
-        p.life -= dt
-        p.x += p.vx * dt; p.y += p.vy * dt
-        p.vx *= 0.92; p.vy = p.kind === "spark" ? p.vy + 260 * dt : p.vy * 0.92
+      // particles
+      for (const p of S.particles) {
+        p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.kind === "smoke" ? 0 : 60 * dt
         const k = Math.max(0, p.life / p.max)
-        ctx.globalAlpha = k * (p.kind === "dust" ? 0.6 : 1)
-        ctx.fillStyle = p.col
-        const s = p.kind === "dust" ? 6 - k * 3 : 4
-        ctx.fillRect(Math.round(p.x - camX - s / 2), Math.round(p.y - camY - s / 2), s, s)
-      }
-      ctx.globalAlpha = 1
-      g.particles = g.particles.filter((p) => p.life > 0)
-      if (g.particles.length > 220) g.particles.splice(0, g.particles.length - 220)
-
-      // ── ambient: butterflies & petals by day, fireflies by night (world-anchored)
-      for (let i = 0; i < 40; i++) {
-        const hx = hash2(i, 1), hy = hash2(i, 2)
-        const wx = hx * WORLD_W * TILE_PX + Math.sin(now * (0.3 + hx * 0.4) + i) * 60
-        const wy = hy * WORLD_H * TILE_PX + Math.cos(now * (0.25 + hy * 0.3) + i * 2) * 40
-        const px = wx - camX, py = wy - camY
-        if (px < -10 || px > cw + 10 || py < -10 || py > ch + 10) continue
-        if (night > 0.3) {
-          const gl = 0.5 + 0.5 * Math.sin(now * 3 + i * 1.7)
-          ctx.globalAlpha = night * gl * 0.35
-          ctx.fillStyle = "#fff7a8"
-          ctx.fillRect(Math.round(px) - 4, Math.round(py) - 4, 9, 9)
-          ctx.globalAlpha = night * (0.4 + gl * 0.6)
-          ctx.fillRect(Math.round(px) - 1, Math.round(py) - 1, 3, 3)
-        } else if (i % 3 === 0) {
-          const flap = Math.sin(now * 16 + i) > 0 ? 3 : 1
-          ctx.globalAlpha = 1 - night
-          ctx.fillStyle = ["#ffffff", "#ffd76a", "#ff9ecf", "#9ad9ff"][i % 4]
-          ctx.fillRect(Math.round(px) - flap - 1, Math.round(py), flap, 3)
-          ctx.fillRect(Math.round(px) + 1, Math.round(py), flap, 3)
-          ctx.fillStyle = "#3a2418"
-          ctx.fillRect(Math.round(px), Math.round(py), 1, 3)
+        if (p.kind === "smoke") {
+          if (ready(smoke)) { const f = Math.min(5, Math.floor((1 - k) * 6)); fctx.drawImage(smoke, f * 32, 0, 32, 32, Math.round(p.x - camX - 16), Math.round(p.y - camY - 16), 32, 32) }
+          continue
         }
+        fctx.globalAlpha = k
+        fctx.fillStyle = p.col
+        fctx.fillRect(Math.round(p.x - camX), Math.round(p.y - camY), p.size, p.size)
       }
-      ctx.globalAlpha = 1
+      fctx.globalAlpha = 1
+      S.particles = S.particles.filter((p) => p.life > 0)
 
-      // ── day: drifting cloud shadows + warm grade
-      if (night < 0.95) {
-        for (let i = 0; i < 6; i++) {
-          const wx = ((hash2(i, 9) * 4000 + now * 18) % 4400) - 400 - camX * 0.9
-          const wy = hash2(i, 10) * WORLD_H * TILE_PX - camY * 0.9
-          const rx = 240 + hash2(i, 11) * 160
-          if (wx < -rx || wx > cw + rx || wy < -rx || wy > ch + rx) continue
-          ctx.save()
-          ctx.translate(wx, wy); ctx.scale(1, 0.45)
-          const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, rx)
-          grd.addColorStop(0, `rgba(10, 40, 20, ${0.11 * (1 - night)})`)
-          grd.addColorStop(1, "rgba(10, 40, 20, 0)")
-          ctx.fillStyle = grd
-          ctx.fillRect(-rx, -rx, rx * 2, rx * 2)
-          ctx.restore()
+      // ambient life: butterflies by day, fireflies at night / in the mine
+      const nightAmt = sc.id === "village" ? runtime.night : 0
+      if (sc.id === "village" || sc.id === "cave") {
+        for (let i = 0; i < 46; i++) {
+          const wx = hash(i, 1, sc.w) * sw + Math.sin(now * (0.4 + hash(i, 3) * 0.5) + i) * 30
+          const wy = hash(i, 2, sc.h) * sh + Math.cos(now * (0.3 + hash(i, 4) * 0.4) + i * 2) * 20
+          const x = Math.round(wx - camX), y = Math.round(wy - camY)
+          if (x < -4 || y < -4 || x > vw + 4 || y > vh + 4) continue
+          if (nightAmt > 0.3 || sc.id === "cave") {
+            const gl = 0.5 + 0.5 * Math.sin(now * 3 + i * 1.7)
+            fctx.globalAlpha = gl * 0.9
+            fctx.fillStyle = sc.id === "cave" ? "#9fe8ff" : "#fff7a8"
+            fctx.fillRect(x, y, 1, 1)
+          } else if (i % 3 === 0) {
+            const flap = Math.sin(now * 14 + i) > 0 ? 2 : 1
+            fctx.fillStyle = ["#ffffff", "#ffd76a", "#ff9ecf", "#9ad9ff"][i % 4]
+            fctx.fillRect(x - flap, y, flap, 2); fctx.fillRect(x + 1, y, flap, 2)
+          }
         }
+        fctx.globalAlpha = 1
       }
 
-      // ── night lighting: darken, then punch light holes
-      if (night > 0.01) {
-        const LS = 4 // light map is quarter-res; it is smooth by nature
+      // ── lighting
+      const dark = sc.id === "village" ? runtime.night * 0.78 : sc.dark
+      if (dark > 0.02) {
         lctx.globalCompositeOperation = "source-over"
-        lctx.clearRect(0, 0, light.width, light.height)
-        lctx.fillStyle = `rgba(8, 12, 44, ${0.72 * night})`
-        lctx.fillRect(0, 0, light.width, light.height)
+        lctx.clearRect(0, 0, vw, vh)
+        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.id === "village" ? `rgba(14,18,58,${dark})` : `rgba(24,14,8,${dark})`
+        lctx.fillRect(0, 0, vw, vh)
         lctx.globalCompositeOperation = "destination-out"
         const hole = (x: number, y: number, r: number, s: number) => {
-          const lx = (x - camX) / LS, ly = (y - camY) / LS, lr = r / LS
-          if (lx < -lr || ly < -lr || lx > light.width + lr || ly > light.height + lr) return
-          const grd = lctx.createRadialGradient(lx, ly, 0, lx, ly, lr)
-          grd.addColorStop(0, `rgba(0,0,0,${s})`)
-          grd.addColorStop(1, "rgba(0,0,0,0)")
-          lctx.fillStyle = grd
-          lctx.fillRect(lx - lr, ly - lr, lr * 2, lr * 2)
+          if (x < -r || y < -r || x > vw + r || y > vh + r) return
+          const gr = lctx.createRadialGradient(x, y, 0, x, y, r)
+          gr.addColorStop(0, `rgba(0,0,0,${s})`); gr.addColorStop(1, "rgba(0,0,0,0)")
+          lctx.fillStyle = gr; lctx.fillRect(x - r, y - r, r * 2, r * 2)
         }
-        const flick = (s: number) => 0.92 + Math.sin(now * 9 + s) * 0.04 + Math.sin(now * 23 + s * 3) * 0.03
-        hole(g.player.x, g.player.y - 20, 190, 0.85)
-        for (const d of DECOR) if (d.kind === "lamp") hole((d.x + 0.5) * TILE_PX, d.y * TILE_PX + 4, 150 * flick(d.x), 0.95)
-        for (const b of BUILDINGS) {
-          const spr = a.bsprites[b.id]
-          if (!spr || (b.id === "cave" && !g.caveSeen)) continue
-          for (const w of spr.windows) hole(b.x * TILE_PX + w.x * SCALE, b.y * TILE_PX + w.y * SCALE + 20, 90 * flick(w.x + b.x), 0.8)
-          hole((b.doorX + 0.5) * TILE_PX, (b.doorY + 1) * TILE_PX, 110, 0.7)
+        hole(H.x - camX, H.y - 8 - camY, sc.id === "cave" ? 56 : 60, 0.9)
+        for (const l of sc.lights) {
+          const fl = l.flicker ? 1 + Math.sin(now * 9 + l.x) * 0.04 * l.flicker + Math.sin(now * 23 + l.y) * 0.03 * l.flicker : 1
+          hole(l.x - camX, l.y - camY, l.r * fl * (sc.id === "village" ? 0.8 : 1), 0.9)
         }
-        ctx.drawImage(light, 0, 0, light.width * LS, light.height * LS)
+        fctx.drawImage(light, 0, 0)
+        fctx.globalCompositeOperation = "lighter"
+        for (const l of sc.lights) {
+          const x = l.x - camX, y = l.y - camY
+          if (x < -l.r || y < -l.r || x > vw + l.r || y > vh + l.r) continue
+          const fl = l.flicker ? 1 + Math.sin(now * 11 + l.x) * 0.06 * l.flicker : 1
+          const r = l.r * 0.5 * fl
+          const gr = fctx.createRadialGradient(x, y, 0, x, y, r)
+          gr.addColorStop(0, `rgba(${l.color},${0.16 * dark})`); gr.addColorStop(1, `rgba(${l.color},0)`)
+          fctx.fillStyle = gr; fctx.fillRect(x - r, y - r, r * 2, r * 2)
+        }
+        fctx.globalCompositeOperation = "source-over"
+      } else if (sc.id === "village") {
+        fctx.fillStyle = "rgba(255,214,150,0.045)"; fctx.fillRect(0, 0, vw, vh)
+      }
 
-        // warm additive glows
-        ctx.globalCompositeOperation = "lighter"
-        const glow = (x: number, y: number, r: number, col: string, s: number) => {
-          const px = x - camX, py = y - camY
-          if (px < -r || py < -r || px > cw + r || py > ch + r) return
-          const grd = ctx.createRadialGradient(px, py, 0, px, py, r)
-          grd.addColorStop(0, col.replace("A", String(s)))
-          grd.addColorStop(1, col.replace("A", "0"))
-          ctx.fillStyle = grd
-          ctx.fillRect(px - r, py - r, r * 2, r * 2)
-        }
-        for (const d of DECOR) if (d.kind === "lamp") glow((d.x + 0.5) * TILE_PX, d.y * TILE_PX + 2, 60, "rgba(255,190,90,A)", 0.45 * night)
+      // ── upscale to the screen
+      ctx.imageSmoothingEnabled = false
+      ctx.fillStyle = "#07060d"
+      ctx.fillRect(0, 0, cw, ch)
+      ctx.drawImage(frame, 0, 0, vw * scale, vh * scale)
+
+      // vignette
+      const vg = ctx.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.38, cw / 2, ch / 2, Math.max(cw, ch) * 0.78)
+      vg.addColorStop(0, "rgba(0,0,0,0)")
+      vg.addColorStop(1, `rgba(5,6,20,${0.32 + dark * 0.25})`)
+      ctx.fillStyle = vg; ctx.fillRect(0, 0, cw, ch)
+
+      // ── crisp screen-space UI: building signs, markers, bubbles, prompt
+      const toS = (x: number, y: number) => [(x - camX) * scale, (y - camY) * scale] as const
+      if (sc.id === "village") {
         for (const b of BUILDINGS) {
-          const spr = a.bsprites[b.id]
-          if (!spr || (b.id === "cave" && !g.caveSeen)) continue
-          const col = b.id === "wizard" ? "rgba(170,120,255,A)" : b.id === "forge" ? "rgba(255,120,50,A)" : "rgba(255,200,110,A)"
-          for (const w of spr.windows) glow(b.x * TILE_PX + w.x * SCALE, b.y * TILE_PX + w.y * SCALE, 34, col, 0.55 * night * flick(w.y + b.y))
-          if (b.id === "wizard") glow((b.x + b.w / 2) * TILE_PX, b.y * TILE_PX - 10, 90 + Math.sin(now * 2) * 10, "rgba(160,110,255,A)", 0.35 * night)
+          if (!b.label) continue
+          const d = doorOf(b)
+          const [sx, sy] = toS(b.c * TS + d.w / 2, b.r * TS - 2)
+          if (sx < -200 || sx > cw + 200 || sy < -100 || sy > ch + 200) continue
+          drawSign(ctx, b.label, b.section ?? "", b.accent ?? "#c8463b", sx, sy, S.near?.id === `door-${b.id}`)
         }
-        ctx.globalCompositeOperation = "source-over"
-      } else {
-        // daytime golden grade
-        ctx.fillStyle = "rgba(255, 210, 140, 0.05)"
+      }
+      for (const h of sc.hotspots) {
+        if (!h.marker || h.markerX === undefined || h.markerY === undefined) continue
+        if (h.action.type === "door") continue
+        const [sx, sy] = toS(h.markerX, h.markerY)
+        const near = S.near === h
+        drawMarker(ctx, sx, sy + Math.sin(now * 4 + h.markerX) * 4, near, scale)
+      }
+      for (const a of rt.actors) {
+        if (a.def.kind !== "npc") continue
+        const [sx, sy] = toS(a.x, a.y - 20)
+        if (a.talkT > 0 && a.def.bark && !a.def.lines) {
+          const k = Math.min(1, a.talkT * 2, (3.5 - a.talkT) * 6)
+          drawBubble(ctx, a.def.bark[a.barkI % a.def.bark.length], sx, sy, k)
+        } else if (a.def.lines) drawMarker(ctx, sx, sy - 6 + Math.sin(now * 4 + a.x) * 3, S.nearNpc === a, scale, "!")
+      }
+      if (runtime.nearLabel && !paused) {
+        const [sx, sy] = toS(H.x, H.y - 22)
+        drawPrompt(ctx, runtime.nearLabel, sx, sy - 10, now, matchMedia("(pointer: coarse)").matches)
+      }
+
+      // fade overlay (iris)
+      if (S.fade.a > 0.001) {
+        ctx.fillStyle = `rgba(7,6,13,${S.fade.a})`
         ctx.fillRect(0, 0, cw, ch)
       }
-
-      // ── vignette
-      const vg = ctx.createRadialGradient(cw / 2, ch / 2, Math.min(cw, ch) * 0.35, cw / 2, ch / 2, Math.max(cw, ch) * 0.75)
-      vg.addColorStop(0, "rgba(0,0,0,0)")
-      vg.addColorStop(1, `rgba(6, 10, 30, ${0.35 + night * 0.25})`)
-      ctx.fillStyle = vg
-      ctx.fillRect(0, 0, cw, ch)
-
-      // ── building signs stay readable at night
-      for (const b of BUILDINGS) {
-        const spr = a.bsprites[b.id]
-        if (!spr || (b.id === "cave" && !g.caveSeen)) continue
-        const bx = b.x * TILE_PX - camX, by = b.y * TILE_PX - camY
-        if (bx > cw + 200 || bx + b.w * TILE_PX < -200 || by > ch + 200 || by + b.h * TILE_PX < -260) continue
-        drawSign(ctx, b.label, SECTION[b.id], ACCENT[b.id], bx + (b.w * TILE_PX) / 2, by - spr.offY * SCALE - 8, g.near === b.id)
-      }
-
-      // ── speech bubbles + interaction prompt (drawn above lighting)
-      for (const n of g.npcs) {
-        if (n.talkT <= 0) continue
-        if (g.near && Math.abs(n.x - g.player.x) < 190 && Math.abs(n.y - g.player.y) < 120) continue
-        const k = Math.min(1, n.talkT * 2, (4 - n.talkT) * 6)
-        drawBubble(ctx, npcLines[n.line % npcLines.length], n.x - camX, n.y - camY - 52, k)
-      }
-      if (g.near && !paused) {
-        const b = BUILDINGS.find((x) => x.id === g.near)!
-        drawPrompt(ctx, `ENTER ${b.label}`, g.player.x - camX, g.player.y - camY - 74, now, isTouchDevice())
-      }
-
-      if (g.deadT > 0) {
-        ctx.fillStyle = "rgba(20,0,0,0.65)"; ctx.fillRect(0, 0, cw, ch)
-        ctx.textAlign = "center"
-        ctx.font = `28px ${fontFamily("--ff-pixel")}`
-        ctx.fillStyle = "#ff6a5a"; ctx.fillText("YOU FAINTED", cw / 2, ch / 2)
-        ctx.font = `10px ${fontFamily("--ff-pixel")}`
-        ctx.fillStyle = "#ffe7b0"; ctx.fillText("waking up at the town hall...", cw / 2, ch / 2 + 36)
-        ctx.textAlign = "left"
-      }
     }
-
-    g.last = performance.now()
+    S.last = performance.now()
     raf = requestAnimationFrame(loop)
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -753,50 +671,102 @@ export default function GameCanvas() {
 
   return (
     <>
-      <canvas ref={canvasRef} className="pixelated" style={{ display: "block", position: "absolute", inset: 0 }} />
+      <canvas ref={canvasRef} className="pixelated" style={{ display: "block", position: "absolute", inset: 0, cursor: "pointer" }} />
       {phase === "title" && <TitleScreen />}
       {phase !== "title" && <HUD />}
+      {phase !== "title" && <AreaTitle />}
       {phase !== "title" && <AchievementToast />}
       {phase !== "title" && <TouchControls />}
+      <DialogBox />
       <BuildingModal />
+      <Arcade />
     </>
   )
 }
 
-function isTouchDevice() {
-  return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches
+// ── drawing helpers ─────────────────────────────────────────────
+function drawShadow(ctx: CanvasRenderingContext2D, x: number, y: number, w = 6) {
+  ctx.fillStyle = "rgba(20,30,10,0.35)"
+  ctx.beginPath(); ctx.ellipse(Math.round(x), Math.round(y), w, 2.2, 0, 0, Math.PI * 2); ctx.fill()
 }
 
-// Wooden sign with the building name and what it holds
+function drawActor(ctx: CanvasRenderingContext2D, a: ActorRT, x: number, y: number, now: number) {
+  const im = img(a.def.sheet)
+  if (!ready(im)) return
+  const kind = a.def.kind
+  drawShadow(ctx, x, y, kind === "animal" ? 5 : 6)
+  if (kind === "animal") {
+    const f = a.moving ? Math.floor(a.animT * 6) % 2 : Math.floor(now * 1.5 + a.def.x) % 2
+    const flip = a.facing === "right"
+    ctx.save()
+    ctx.translate(Math.round(x), 0)
+    if (flip) ctx.scale(-1, 1)
+    ctx.drawImage(im, f * 16, 0, 16, 16, -8, Math.round(y - 14), 16, 16)
+    ctx.restore()
+    return
+  }
+  const col = DIR_COL[a.facing]
+  const row = a.moving ? Math.floor(a.animT * 8) % 4 : 0
+  const bob = kind === "monster" ? Math.round(Math.sin(now * 5 + a.def.x) * 1) : 0
+  if (a.hurt > 0) ctx.globalAlpha = 0.6
+  ctx.drawImage(im, col * 16, row * 16, 16, 16, Math.round(x - 8), Math.round(y - 15 + bob), 16, 16)
+  ctx.globalAlpha = 1
+}
+
+function drawSlash(ctx: CanvasRenderingContext2D, x: number, y: number, f: Facing, p: number) {
+  const ang = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 }[f]
+  ctx.save()
+  ctx.translate(Math.round(x), Math.round(y))
+  ctx.rotate(ang)
+  ctx.strokeStyle = `rgba(255,255,255,${1 - p})`
+  ctx.lineWidth = 2
+  ctx.beginPath()
+  ctx.arc(4, 0, 10, -1.2 + p * 0.6, 1.2 + p * 0.6)
+  ctx.stroke()
+  ctx.restore()
+}
+
 function drawSign(ctx: CanvasRenderingContext2D, title: string, sub: string, accent: string, cx: number, bottom: number, active: boolean) {
-  ctx.font = `10px ${fontFamily("--ff-pixel")}`
+  const fp = fontFamily("--ff-pixel")
+  ctx.font = `10px ${fp}`
   const tw = ctx.measureText(title).width
-  ctx.font = `7px ${fontFamily("--ff-pixel")}`
+  ctx.font = `7px ${fp}`
   const sw2 = ctx.measureText(sub).width
-  const w = Math.round(Math.max(tw, sw2) + 26)
-  const h = 34
-  const x = Math.round(cx - w / 2), y = Math.round(bottom - h - (active ? 4 : 0))
-  // posts
-  ctx.fillStyle = "#2a1606"
-  ctx.fillRect(x + 6, y + h - 2, 4, 8); ctx.fillRect(x + w - 10, y + h - 2, 4, 8)
-  // board
+  const w = Math.round(Math.max(tw, sw2) + 26), h = 34
+  const x = Math.round(cx - w / 2), y = Math.round(bottom - h - (active ? 6 : 0))
+  ctx.fillStyle = "rgba(10,6,2,0.35)"; ctx.fillRect(x + 3, y + 5, w, h)
   ctx.fillStyle = "#2a1606"; ctx.fillRect(x - 2, y - 2, w + 4, h + 4)
   ctx.fillStyle = "#8a5a2c"; ctx.fillRect(x, y, w, h)
   ctx.fillStyle = "#a8743c"; ctx.fillRect(x, y, w, 3)
-  ctx.fillStyle = "#6e4420"; ctx.fillRect(x, y + h - 3, w, 3)
   ctx.fillStyle = accent; ctx.fillRect(x, y + h - 13, w, 10)
   ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(x, y + h - 13, w, 1)
   ctx.textAlign = "center"
-  ctx.font = `10px ${fontFamily("--ff-pixel")}`
+  ctx.font = `10px ${fp}`
   ctx.fillStyle = "#2a1606"; ctx.fillText(title, cx + 1, y + 16)
   ctx.fillStyle = "#fff4dc"; ctx.fillText(title, cx, y + 15)
-  ctx.font = `7px ${fontFamily("--ff-pixel")}`
+  ctx.font = `7px ${fp}`
   ctx.fillStyle = "#fff"; ctx.fillText(sub, cx, y + h - 5)
   ctx.textAlign = "left"
-  if (active) {
-    ctx.strokeStyle = "#ffe39a"; ctx.lineWidth = 2
-    ctx.strokeRect(x - 4, y - 4, w + 8, h + 8)
+  if (active) { ctx.strokeStyle = "#ffe39a"; ctx.lineWidth = 2; ctx.strokeRect(x - 4, y - 4, w + 8, h + 8) }
+}
+
+function drawMarker(ctx: CanvasRenderingContext2D, x: number, y: number, active: boolean, scale: number, glyph?: string) {
+  const s = Math.max(8, scale * 2.5)
+  ctx.save()
+  ctx.translate(Math.round(x), Math.round(y))
+  if (glyph) {
+    ctx.fillStyle = "#1d1006"; ctx.fillRect(-s * 0.6 - 2, -s * 1.3 - 2, s * 1.2 + 4, s * 1.3 + 4)
+    ctx.fillStyle = active ? "#ffd76a" : "#fff4dc"; ctx.fillRect(-s * 0.6, -s * 1.3, s * 1.2, s * 1.3)
+    ctx.fillStyle = "#c8463b"; ctx.font = `${Math.round(s)}px ${fontFamily("--ff-pixel")}`; ctx.textAlign = "center"
+    ctx.fillText(glyph, 1, -s * 0.2)
+    ctx.restore()
+    return
   }
+  ctx.fillStyle = "#1d1006"
+  ctx.beginPath(); ctx.moveTo(-s * 0.7 - 2, -s - 2); ctx.lineTo(s * 0.7 + 2, -s - 2); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill()
+  ctx.fillStyle = active ? "#ffd76a" : "#fff4dc"
+  ctx.beginPath(); ctx.moveTo(-s * 0.7, -s); ctx.lineTo(s * 0.7, -s); ctx.lineTo(0, -1); ctx.closePath(); ctx.fill()
+  ctx.restore()
 }
 
 function drawPrompt(ctx: CanvasRenderingContext2D, text: string, cx: number, y: number, now: number, touch: boolean) {
@@ -811,7 +781,6 @@ function drawPrompt(ctx: CanvasRenderingContext2D, text: string, cx: number, y: 
   ctx.fillStyle = "#1d1006"; ctx.fillRect(x - 2, yy - 2, w + 4, h + 4)
   ctx.fillStyle = "#fbf1d6"; ctx.fillRect(x, yy, w, h)
   ctx.fillStyle = "#e3cf9c"; ctx.fillRect(x, yy + h - 3, w, 3)
-  // key cap
   ctx.fillStyle = "#1d1006"; ctx.fillRect(x + 6, yy + 5, kw, 20)
   ctx.fillStyle = "#c8463b"; ctx.fillRect(x + 7, yy + 6, kw - 2, 16)
   ctx.fillStyle = "#e86a5c"; ctx.fillRect(x + 7, yy + 6, kw - 2, 2)
@@ -819,7 +788,6 @@ function drawPrompt(ctx: CanvasRenderingContext2D, text: string, cx: number, y: 
   ctx.fillStyle = "#fff4dc"; ctx.fillText(key, x + 6 + kw / 2, yy + 19)
   ctx.textAlign = "left"
   ctx.fillStyle = "#3a2412"; ctx.fillText(text, x + kw + 14, yy + 19)
-  // tail
   ctx.fillStyle = "#1d1006"; ctx.fillRect(Math.round(cx) - 5, yy + h + 2, 10, 3)
   ctx.fillStyle = "#fbf1d6"; ctx.fillRect(Math.round(cx) - 3, yy + h, 6, 3)
 }
@@ -828,14 +796,10 @@ function drawBubble(ctx: CanvasRenderingContext2D, text: string, cx: number, by:
   if (alpha <= 0) return
   ctx.globalAlpha = alpha
   ctx.font = `15px ${fontFamily("--ff-pixelify")}`
-  const maxW = 200
   const words = text.split(" ")
   const lines: string[] = []
   let cur = ""
-  for (const w of words) {
-    const t = cur ? cur + " " + w : w
-    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w } else cur = t
-  }
+  for (const w of words) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > 190 && cur) { lines.push(cur); cur = w } else cur = t }
   if (cur) lines.push(cur)
   const lw = Math.max(...lines.map((l) => ctx.measureText(l).width))
   const w = Math.round(lw + 20), h = lines.length * 18 + 12
@@ -845,6 +809,6 @@ function drawBubble(ctx: CanvasRenderingContext2D, text: string, cx: number, by:
   ctx.fillStyle = "#1d1006"; ctx.fillRect(Math.round(cx) - 2, y + h + 2, 6, 4); ctx.fillRect(Math.round(cx), y + h + 6, 3, 3)
   ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(cx) - 1, y + h, 4, 4)
   ctx.fillStyle = "#2a1a10"
-  lines.forEach((l, i) => ctx.fillText(l, x + 10, y + 21 + i * 18 - 4))
+  lines.forEach((l, i) => ctx.fillText(l, x + 10, y + 17 + i * 18))
   ctx.globalAlpha = 1
 }

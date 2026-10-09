@@ -8,9 +8,9 @@ import { Github } from "@/components/icons"
 
 const PURPLE = "#7c5cba"
 
-export default function GalleryModal() {
+export default function GalleryModal({ focus }: { focus?: string | null }) {
   const { projects } = useContent()
-  const [sel, setSel] = useState<string | null>(null)
+  const [sel, setSel] = useState<string | null>(focus ?? null)
   const [filter, setFilter] = useState("All")
   const proj = projects.find((p) => p.id === sel)
 
