@@ -1,0 +1,379 @@
+{
+  "meta": {
+    "siteTitle": "Rayan Jain — Full-stack & Systems Engineer",
+    "description": "Explore Rayan Jain's portfolio as a living pixel-art world. Rust, TypeScript, browsers, infra and dev tools.",
+    "githubUsername": "rayanjainn",
+    "contentRepo": "rayanjainn/port",
+    "contentBranch": "main",
+    "contentPath": "content/portfolio.json"
+  },
+  "profile": {
+    "name": "Rayan Jain",
+    "handle": "@rayanjainn",
+    "title": "Full-stack & Systems Engineer",
+    "tagline": "Building a browser AI agents can't be tricked by.",
+    "bio": "I build things that sit close to the metal and things that sit close to people: a Rust browser that shrugs off prompt injection, an internal developer platform that goes from \"pick a stack\" to a monitored Kubernetes deploy, and dev tools that fold Postman, DevTools and Burp Suite into one workspace.",
+    "location": "Mumbai, India",
+    "avatar": "/images/avatar.jpg",
+    "available": true,
+    "availability": "Open to collabs & interesting problems",
+    "now": "Building Ferrite: a Rust browser for AI agents that can't be prompt-injected.",
+    "motto": "ship fast. break things. fix faster.",
+    "interests": ["rust", "browsers", "infra", "dev-tools"],
+    "resumeUrl": ""
+  },
+  "socials": {
+    "email": "rayansjain@gmail.com",
+    "github": "https://github.com/rayanjainn",
+    "linkedin": "https://linkedin.com/in/rayanjainn",
+    "twitter": "https://twitter.com/rayanjainn",
+    "website": "https://app.raycode.tech"
+  },
+  "projects": [
+    {
+      "id": "ferrite-browser",
+      "repo": "ferrite-browser",
+      "title": "Ferrite",
+      "tagline": "A browser for AI agents that can't be talked into things.",
+      "description": "A Rust browser built on the Servo engine. Instead of trying to spot malicious text, Ferrite predicts what a task legitimately needs, dry-runs the agent's plan in a sandbox on fake data, compares the two, and asks the user before anything off-plan runs. Every security-relevant event lands in a SHA-256 hash-chained audit log.",
+      "highlights": [
+        "Predict → dry-run → compare → consent pipeline",
+        "Sandboxed dry-runs with no real network access",
+        "Tamper-evident, hash-chained audit log"
+      ],
+      "tech": ["Rust", "Servo", "Sandboxing", "LLM agents"],
+      "language": "Rust",
+      "category": "Systems",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/ferrite-browser",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#f97316",
+      "featured": true
+    },
+    {
+      "id": "sentinel",
+      "repo": "sentinel",
+      "title": "Sentinel",
+      "tagline": "A system monitor & firewall that explains itself.",
+      "description": "Cross-platform system monitor and firewall that explains every process and network connection in plain English. Native Rust core with a Tauri + React interface, running on macOS, Linux and Windows.",
+      "highlights": [
+        "Per-process network visibility with plain-English explanations",
+        "Native Rust core, Tauri + React shell",
+        "macOS · Linux · Windows"
+      ],
+      "tech": ["Rust", "Tauri", "React", "Networking"],
+      "language": "Rust",
+      "category": "Systems",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/sentinel",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#22d3ee",
+      "featured": true
+    },
+    {
+      "id": "duckops",
+      "repo": "duckops",
+      "title": "DuckOps",
+      "tagline": "Pick a stack. Get a repo, a k8s deploy, CI/CD and monitoring.",
+      "description": "A self-hosted Internal Developer Platform. Choose a language, framework, database and ORM in a wizard and DuckOps scaffolds the code, creates the GitHub repo, builds and pushes the image, provisions a Kubernetes namespace with Terraform, deploys with Ansible, wires a Jenkins pipeline and health-checks the app, streaming every stage live over Socket.io.",
+      "highlights": [
+        "8-stage automated provisioning pipeline",
+        "Terraform + Ansible + Jenkins on k3d",
+        "Live stage streaming over Socket.io, BullMQ job queue"
+      ],
+      "tech": ["TypeScript", "Next.js", "Kubernetes", "Terraform", "Ansible", "Jenkins"],
+      "language": "TypeScript",
+      "category": "Platform",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/duckops",
+      "liveUrl": "https://app.raycode.tech",
+      "image": "",
+      "accent": "#facc15",
+      "featured": true
+    },
+    {
+      "id": "devhub",
+      "repo": "devhub",
+      "title": "DevHub",
+      "tagline": "Postman + DevTools + Burp Suite in one workspace.",
+      "description": "A unified developer workspace: HTTP/WebSocket/GraphQL client, live network inspector, MITM interceptor with repeater and intruder, decoder, sequencer, a route scanner that reads your repo's AST, and a workspace-aware AI assistant. Ships as a web app and an Electron desktop app.",
+      "highlights": [
+        "Intercept, edit and replay in-flight requests",
+        "4-mode fuzzer with response clustering",
+        "AST-based API route discovery from GitHub/GitLab"
+      ],
+      "tech": ["TypeScript", "Electron", "Next.js", "CDP", "Chrome MV3"],
+      "language": "TypeScript",
+      "category": "Dev Tools",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/devhub",
+      "liveUrl": "https://devhub-api-beta.vercel.app",
+      "image": "",
+      "accent": "#a78bfa",
+      "featured": true
+    },
+    {
+      "id": "neurocred",
+      "repo": "neurocred",
+      "title": "NeuroCred",
+      "tagline": "A live digital twin and credit engine for small businesses.",
+      "description": "Models a small business as a live digital twin and scores credit risk in real time: Monte Carlo risk simulation, LLM reasoning over the results and streaming anomaly detection on Redis Streams.",
+      "highlights": [
+        "Monte Carlo risk simulation",
+        "Real-time anomaly detection on Redis Streams",
+        "LLM-generated credit reasoning"
+      ],
+      "tech": ["Python", "Redis Streams", "LLMs", "Next.js"],
+      "language": "Python",
+      "category": "ML",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/neurocred",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#f472b6",
+      "featured": true
+    },
+    {
+      "id": "nebula",
+      "repo": "nebula",
+      "title": "Nebula",
+      "tagline": "Dynamic malware analysis with transformer networks.",
+      "description": "A full-stack platform that detects and explains malicious Windows software. Executables run under emulation, their API-call traces are tokenized and fed to a chunked transformer, explainable-AI attributions show what the model saw, and an LLM layer writes the threat-intel summary.",
+      "highlights": [
+        "95.4% accuracy, 0.989 AUC-ROC on held-out data",
+        "Chunked transformer over Windows API-call traces",
+        "Explainable attributions + LLM threat summaries"
+      ],
+      "tech": ["Python", "PyTorch", "Transformers", "XAI", "TypeScript"],
+      "language": "Python",
+      "category": "Security · ML",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/nebula",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#60a5fa",
+      "featured": false
+    },
+    {
+      "id": "vendex",
+      "repo": "vendex",
+      "title": "Vendex",
+      "tagline": "Reel to real: product video → ranked supplier list.",
+      "description": "Paste an Instagram or TikTok reel (or an Alibaba link). Vendex downloads the video, picks the sharpest frame, runs a visual search on Alibaba and returns a ranked supplier shortlist with prices, MOQs, trust badges and one-click chat. Includes a Chrome extension.",
+      "highlights": [
+        "Sharpest-frame extraction from short-form video",
+        "Visual supplier search with stealth Playwright",
+        "Chrome MV3 extension"
+      ],
+      "tech": ["Next.js", "FastAPI", "Playwright", "Python"],
+      "language": "TypeScript",
+      "category": "Product",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/vendex",
+      "liveUrl": "https://vendex-dun.vercel.app",
+      "image": "",
+      "accent": "#34d399",
+      "featured": false
+    },
+    {
+      "id": "dapdap",
+      "repo": "dapdap",
+      "title": "DAP",
+      "tagline": "Digital asset protection against sports piracy.",
+      "description": "A rights-management prototype for sports media: perceptual fingerprints and invisible CNN watermarks on ingest, scraping and Hamming-distance matching to find infringing copies, an enforcement priority score, and Gemini-drafted, jurisdiction-aware takedown notices.",
+      "highlights": [
+        "pHash + dHash fingerprints, HiDDeN CNN watermarking",
+        "Enforcement Priority Score (0–100)",
+        "Auto-drafted DMCA / EU DSM / IT Act notices"
+      ],
+      "tech": ["Next.js", "FastAPI", "MongoDB", "Gemini"],
+      "language": "Python",
+      "category": "Product",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/dapdap",
+      "liveUrl": "https://gdg-delta.vercel.app",
+      "image": "",
+      "accent": "#fb7185",
+      "featured": false
+    },
+    {
+      "id": "ctrlfixit",
+      "repo": "ctrlfixit",
+      "title": "CtrlFixIt",
+      "tagline": "Real-time competitive coding for live events.",
+      "description": "A competitive coding game platform built for live events, with live scoreboards over WebSockets, Docker-sandboxed code execution via Piston, single-session enforcement and server-authoritative timing. Tuned to run 150+ concurrent jobs on a single host.",
+      "highlights": [
+        "120+ simultaneous players at live events",
+        "Sandboxed execution via Piston",
+        "Vertically scaled to 150+ concurrent jobs"
+      ],
+      "tech": ["Next.js", "Node.js", "PostgreSQL", "Redis", "Docker"],
+      "language": "TypeScript",
+      "category": "Platform",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/ctrlfixit",
+      "liveUrl": "https://ctrlfixit-frontend.vercel.app",
+      "image": "",
+      "accent": "#4ade80",
+      "featured": false
+    },
+    {
+      "id": "boomsuite",
+      "repo": "boomsuite",
+      "title": "BoomSuite",
+      "tagline": "Break Apple's volume ceiling, up to 4× louder.",
+      "description": "Two native apps: BoomPlayer for iOS (local music player with a 4× gain stage, EQ presets and lock-screen controls) and BoomMac for macOS (system-wide audio booster for any app via CoreAudio).",
+      "highlights": [
+        "AVAudioEngine gain stage with EQ presets",
+        "System-wide boost via CoreAudio HAL",
+        "iOS + macOS"
+      ],
+      "tech": ["Swift", "SwiftUI", "AVAudioEngine", "CoreAudio"],
+      "language": "Swift",
+      "category": "Apps",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/boomsuite",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#fb923c",
+      "featured": false
+    },
+    {
+      "id": "skrgrep",
+      "repo": "skrgrep",
+      "title": "skrgrep",
+      "tagline": "A fast, multi-threaded grep, in Rust.",
+      "description": "A line-oriented search tool with a work-stealing thread pool, fast recursive traversal that skips .git, node_modules and target, and highlighted matches. Installable via Homebrew.",
+      "highlights": [
+        "Work-stealing parallel file search",
+        "brew install skrgrep"
+      ],
+      "tech": ["Rust", "CLI", "Homebrew"],
+      "language": "Rust",
+      "category": "CLI",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/skrgrep",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#e879f9",
+      "featured": false
+    },
+    {
+      "id": "poker",
+      "repo": "poker",
+      "title": "Poker",
+      "tagline": "Real-time multiplayer poker with a Rust backend.",
+      "description": "An online poker platform with a real-time Rust backend (Axum, Tokio, SQLx) and a Next.js 15 frontend, synchronising game state over WebSockets.",
+      "highlights": [
+        "Axum + Tokio real-time game server",
+        "WebSocket state sync"
+      ],
+      "tech": ["Rust", "Axum", "PostgreSQL", "Next.js"],
+      "language": "TypeScript",
+      "category": "Games",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/poker",
+      "liveUrl": "https://pokerray.vercel.app",
+      "image": "",
+      "accent": "#ef4444",
+      "featured": false
+    }
+  ],
+  "experience": [
+    {
+      "id": "raycode",
+      "role": "Independent Engineer",
+      "org": "raycode.tech",
+      "url": "https://app.raycode.tech",
+      "start": "2024",
+      "end": "Present",
+      "location": "Mumbai",
+      "description": "Designing and shipping my own products end to end: from a Rust agent browser and a cross-platform firewall to an internal developer platform running on Kubernetes.",
+      "highlights": ["Ferrite, Sentinel, DuckOps, DevHub", "Rust, TypeScript, Kubernetes, Terraform"],
+      "tech": ["Rust", "TypeScript", "Kubernetes", "Terraform"]
+    },
+    {
+      "id": "hackathons",
+      "role": "Hackathon Builder",
+      "org": "Hackathons & challenges",
+      "url": "",
+      "start": "2024",
+      "end": "Present",
+      "location": "India",
+      "description": "Regular at hackathons and engineering challenges, shipping working prototypes under time pressure.",
+      "highlights": ["Amazon ML Challenge 2026", "HackFusion (ExamShield)", "HackRx", "Google GDG Solution Challenge (DAP)", "CSI Hackathon 2025"],
+      "tech": ["Next.js", "FastAPI", "Python"]
+    },
+    {
+      "id": "csi",
+      "role": "Web & Tech Team",
+      "org": "CSI Student Chapter",
+      "url": "",
+      "start": "2025",
+      "end": "Present",
+      "location": "Mumbai",
+      "description": "Built the chapter's web presence and event tooling: the main site, TechWeek registrations, an admin dashboard and CtrlFixIt, a real-time coding arena for live events.",
+      "highlights": ["CtrlFixIt: 120+ concurrent players", "TechWeek 2026 registration platform"],
+      "tech": ["Next.js", "Node.js", "PostgreSQL"]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu-1",
+      "school": "Engineering College, Mumbai",
+      "degree": "B.E. / B.Tech",
+      "field": "Computer Engineering",
+      "start": "",
+      "end": "",
+      "note": ""
+    }
+  ],
+  "achievements": [
+    { "id": "ach-1", "title": "Pull Shark ×2", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
+    { "id": "ach-2", "title": "Quickdraw", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
+    { "id": "ach-3", "title": "YOLO", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
+    { "id": "ach-4", "title": "Amazon ML Challenge 2026", "issuer": "Amazon", "date": "2026", "url": "" },
+    { "id": "ach-5", "title": "Homebrew package author (skrgrep)", "issuer": "Homebrew", "date": "2026", "url": "https://github.com/rayanjainn/homebrew-skrgrep" }
+  ],
+  "skills": [
+    {
+      "group": "Languages",
+      "items": [
+        { "name": "TypeScript", "level": 92 },
+        { "name": "Rust", "level": 84 },
+        { "name": "Python", "level": 82 },
+        { "name": "Go", "level": 64 },
+        { "name": "Swift", "level": 62 },
+        { "name": "Java", "level": 66 },
+        { "name": "C++", "level": 60 },
+        { "name": "Lua", "level": 55 }
+      ]
+    },
+    {
+      "group": "Frameworks",
+      "items": [
+        { "name": "Next.js / React", "level": 93 },
+        { "name": "Node.js / Bun", "level": 88 },
+        { "name": "Tailwind CSS", "level": 90 },
+        { "name": "FastAPI", "level": 78 },
+        { "name": "Tauri", "level": 74 },
+        { "name": "Electron", "level": 76 }
+      ]
+    },
+    {
+      "group": "Data & Infra",
+      "items": [
+        { "name": "PostgreSQL", "level": 84 },
+        { "name": "Redis", "level": 80 },
+        { "name": "MongoDB / Prisma", "level": 78 },
+        { "name": "Docker", "level": 86 },
+        { "name": "Kubernetes", "level": 72 },
+        { "name": "Terraform / Ansible", "level": 70 },
+        { "name": "Jenkins / GH Actions", "level": 74 },
+        { "name": "Linux", "level": 84 }
+      ]
+    }
+  ]
+}

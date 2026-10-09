@@ -1,152 +1,104 @@
 "use client"
 import { useState } from "react"
-import { contact } from "@/lib/data"
-import { PARCH } from "@/lib/modalTheme"
-import { Wand2, Mail, Code2, Link, AtSign, Send, CheckCircle, Radio } from "lucide-react"
+import { useContent } from "@/lib/content"
+import { playSound } from "@/lib/audio"
+import { SectionHeader, Card, INK } from "./ui"
+import { Wand2, Mail, Globe, Send, Copy, Check, Sparkles } from "lucide-react"
+import { Github, Linkedin, XLogo } from "@/components/icons"
 
 const VIOLET = "#6b46c1"
 
 export default function WizardModal() {
-  const [sent, setSent] = useState(false)
+  const { socials, profile } = useContent()
   const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
   const [msg, setMsg] = useState("")
+  const [copied, setCopied] = useState(false)
+  const [sent, setSent] = useState(false)
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%", background: "#f8efd4",
-    border: `2px solid ${PARCH.lineDk}`, color: PARCH.ink,
-    fontFamily: "var(--font-mono)", fontSize: 15,
-    padding: "10px 12px", outline: "none", display: "block",
-    transition: "border-color 0.1s",
+  const channels = [
+    { icon: <Mail size={20} />, label: "Email", value: socials.email, href: socials.email && `mailto:${socials.email}`, col: "#c8463b" },
+    { icon: <Github size={20} />, label: "GitHub", value: socials.github.replace(/^https?:\/\/(www\.)?/, ""), href: socials.github, col: "#24292f" },
+    { icon: <Linkedin size={20} />, label: "LinkedIn", value: socials.linkedin.replace(/^https?:\/\/(www\.)?/, ""), href: socials.linkedin, col: "#0a66c2" },
+    { icon: <XLogo size={18} />, label: "X / Twitter", value: socials.twitter.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//, "@"), href: socials.twitter, col: "#111" },
+    { icon: <Globe size={20} />, label: "Website", value: socials.website.replace(/^https?:\/\//, ""), href: socials.website, col: "#2a8a80" },
+  ].filter((c) => c.href)
+
+  const copy = async () => {
+    try { await navigator.clipboard.writeText(socials.email); setCopied(true); playSound("click"); setTimeout(() => setCopied(false), 1600) } catch {}
   }
 
-  const socials = [
-    { icon: <Mail size={18} strokeWidth={1.5} />, label: "EMAIL", href: `mailto:${contact.email}`, value: contact.email },
-    { icon: <Code2 size={18} strokeWidth={1.5} />, label: "GITHUB", href: contact.github, value: "View Profile" },
-    { icon: <Link size={18} strokeWidth={1.5} />, label: "LINKEDIN", href: contact.linkedin, value: "Connect" },
-    { icon: <AtSign size={18} strokeWidth={1.5} />, label: "TWITTER", href: contact.twitter, value: "Follow" },
-  ].filter((s) => s.href)
+  const send = () => {
+    if (!msg.trim()) return
+    const subject = encodeURIComponent(`Hello from ${name || "a traveller"} (via your portfolio)`)
+    window.location.href = `mailto:${socials.email}?subject=${subject}&body=${encodeURIComponent(msg)}`
+    playSound("achievement")
+    setSent(true)
+  }
+
+  const input: React.CSSProperties = {
+    width: "100%", background: "#fffaf0", border: `2px solid ${INK.lineDk}`, color: INK.ink,
+    fontFamily: "var(--font-body)", fontSize: 16, padding: "11px 12px", outline: "none",
+    boxShadow: `inset 0 2px 0 ${INK.inset}`,
+  }
 
   return (
-    <div style={{ padding: "28px 24px", fontFamily: "var(--font-pixel)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, paddingBottom: 16, borderBottom: `3px solid ${VIOLET}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: `${VIOLET}1f`, border: `2px solid ${VIOLET}` }}>
-          <Wand2 size={22} color={VIOLET} strokeWidth={1.5} />
-        </div>
-        <div>
-          <div style={{ fontSize: "clamp(10px, 2vw, 15px)", color: VIOLET, letterSpacing: 2 }}>WIZARD TOWER</div>
-          <div style={{ fontSize: "clamp(6px, 1vw, 8px)", color: PARCH.muted, marginTop: 5, letterSpacing: 1 }}>TRANSMISSION HQ</div>
-        </div>
-      </div>
+    <div style={{ padding: "26px clamp(16px, 3vw, 30px) 30px" }}>
+      <SectionHeader icon={<Wand2 size={22} />} accent={VIOLET} title="WIZARD TOWER" subtitle={profile.availability} />
 
-      {/* Social links */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 32 }}>
-        {socials.map(({ icon, label, href, value }) => (
-          <a key={label} href={href} target="_blank" rel="noreferrer" style={{
-            background: PARCH.card, border: `2px solid ${PARCH.line}`,
-            padding: "16px 14px", textDecoration: "none",
-            display: "flex", flexDirection: "column", alignItems: "center", gap: 10,
-            transition: "border-color 0.1s, background 0.1s",
-            position: "relative", overflow: "hidden",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = VIOLET
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.borderColor = PARCH.line
-          }}
-          >
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: VIOLET }} />
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, background: `${VIOLET}1f`, border: `1px solid ${VIOLET}`, color: VIOLET }}>
-              {icon}
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: VIOLET, marginBottom: 4, letterSpacing: 2 }}>{label}</div>
-              <div style={{ fontSize: "clamp(6px, 0.9vw, 8px)", color: PARCH.body, wordBreak: "break-all" }}>{value}</div>
-            </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: 10, marginBottom: 26 }}>
+        {channels.map((c) => (
+          <a key={c.label} href={c.href} target={c.label === "Email" ? undefined : "_blank"} rel="noreferrer" style={{ textDecoration: "none" }}>
+            <Card hover style={{ padding: "14px", display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ width: 42, height: 42, flexShrink: 0, background: c.col, color: "#fff", border: `3px solid ${INK.ink}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {c.icon}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "var(--font-pixel)", fontSize: 7, color: INK.muted, letterSpacing: 1 }}>{c.label.toUpperCase()}</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: INK.ink, marginTop: 5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.value}</div>
+              </div>
+            </Card>
           </a>
         ))}
       </div>
 
-      {/* Divider */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
-        <div style={{ flex: 1, height: 2, background: PARCH.line }} />
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <Radio size={10} color={VIOLET} strokeWidth={1.5} />
-          <span style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: VIOLET, letterSpacing: 2 }}>SEND TRANSMISSION</span>
+      <div style={{ background: "linear-gradient(160deg, #2b1d4a, #1a1030)", border: `3px solid ${INK.ink}`, boxShadow: `0 4px 0 ${INK.lineDk}`, padding: "20px clamp(14px, 2.5vw, 22px)", position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.4, pointerEvents: "none", backgroundImage: "radial-gradient(#c4b5fd 1px, transparent 1px)", backgroundSize: "22px 22px" }} />
+        <div style={{ position: "relative" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 1, color: "#e9d5ff", marginBottom: 16 }}>
+            <Sparkles size={14} /> SEND A RAVEN
+          </div>
+          {sent ? (
+            <div style={{ textAlign: "center", padding: "20px 0" }}>
+              <div style={{ fontFamily: "var(--font-pixel)", fontSize: 12, color: "#ffd76a" }}>RAVEN DISPATCHED!</div>
+              <div style={{ fontFamily: "var(--font-body)", fontSize: 16, color: "#e9d5ff", marginTop: 12 }}>Your mail app should have opened. I usually reply within a day.</div>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gap: 12 }}>
+              <input style={input} placeholder="Your name" value={name} onChange={(e) => setName(e.target.value)} />
+              <textarea style={{ ...input, minHeight: 110, resize: "vertical" }} placeholder="What should we build together?" value={msg} onChange={(e) => setMsg(e.target.value)} />
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <button onClick={send} disabled={!msg.trim()} className="parch-btn" style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, cursor: msg.trim() ? "pointer" : "not-allowed",
+                  fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 1, padding: "13px 16px",
+                  background: msg.trim() ? "linear-gradient(180deg, #fff1b8, #ffd76a 45%, #f5a623)" : "#6b5a7e",
+                  color: msg.trim() ? "#3a1d08" : "#cbbfdc", border: "3px solid #0f0820", boxShadow: "0 4px 0 #0f0820",
+                }}>
+                  <Send size={13} /> DISPATCH
+                </button>
+                {socials.email && (
+                  <button onClick={copy} style={{
+                    display: "inline-flex", alignItems: "center", gap: 8, cursor: "pointer", background: "transparent",
+                    border: "2px dashed rgba(233,213,255,.5)", color: "#e9d5ff", padding: "10px 12px",
+                    fontFamily: "var(--font-body)", fontSize: 15,
+                  }}>
+                    {copied ? <Check size={14} /> : <Copy size={14} />} {copied ? "Copied!" : socials.email}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-        <div style={{ flex: 1, height: 2, background: PARCH.line }} />
       </div>
-
-      {/* Form / Success */}
-      {sent ? (
-        <div style={{ textAlign: "center", padding: "32px 16px" }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-            <CheckCircle size={48} color={VIOLET} strokeWidth={0.8} />
-          </div>
-          <div style={{ fontSize: "clamp(8px, 1.5vw, 12px)", color: VIOLET, marginBottom: 10 }}>TRANSMISSION SENT!</div>
-          <div style={{ fontSize: "clamp(7px, 1vw, 9px)", color: PARCH.body }}>Will respond within 24 hours.</div>
-        </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div>
-            <label style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.muted, display: "block", marginBottom: 7, letterSpacing: 1 }}>HERO'S NAME</label>
-            <input
-              style={inputStyle}
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Your name..."
-              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = VIOLET }}
-              onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = PARCH.lineDk }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.muted, display: "block", marginBottom: 7, letterSpacing: 1 }}>REPLY ADDRESS</label>
-            <input
-              style={inputStyle}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = VIOLET }}
-              onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = PARCH.lineDk }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.muted, display: "block", marginBottom: 7, letterSpacing: 1 }}>MESSAGE SCROLL</label>
-            <textarea
-              style={{ ...inputStyle, minHeight: 90, resize: "vertical" }}
-              value={msg}
-              onChange={(e) => setMsg(e.target.value)}
-              placeholder="Your message..."
-              onFocus={(e) => { (e.target as HTMLTextAreaElement).style.borderColor = VIOLET }}
-              onBlur={(e) => { (e.target as HTMLTextAreaElement).style.borderColor = PARCH.lineDk }}
-            />
-          </div>
-          <button
-            style={{
-              display: "flex", alignItems: "center", gap: 8,
-              alignSelf: "flex-start", padding: "11px 22px",
-              background: name && email && msg ? VIOLET : PARCH.inset,
-              border: `2px solid ${name && email && msg ? VIOLET : PARCH.lineDk}`,
-              color: name && email && msg ? PARCH.cream : PARCH.muted,
-              fontFamily: "var(--font-pixel)", fontSize: "clamp(6px, 1vw, 8px)",
-              cursor: name && email && msg ? "pointer" : "not-allowed",
-              transition: "all 0.1s",
-              boxShadow: name && email && msg ? `0 4px 0 ${PARCH.lineDk}` : "none",
-            }}
-            onClick={() => {
-              if (name && email && msg) {
-                window.open(`mailto:${contact.email}?subject=Hello from ${name}&body=${encodeURIComponent(msg)}`)
-                setSent(true)
-              }
-            }}
-          >
-            <Send size={12} strokeWidth={1.5} /> TRANSMIT
-          </button>
-        </div>
-      )}
     </div>
   )
 }

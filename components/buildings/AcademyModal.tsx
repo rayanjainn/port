@@ -1,109 +1,78 @@
 "use client"
-import { certifications, education } from "@/lib/data"
-import { PARCH } from "@/lib/modalTheme"
-import { GraduationCap, Award, ExternalLink, BookOpen, Shield } from "lucide-react"
+import { useContent } from "@/lib/content"
+import { SectionHeader, Card, INK, Pill } from "./ui"
+import { GraduationCap, Medal, ExternalLink, BookOpen } from "lucide-react"
 
 const TEAL = "#2a8a80"
 
 export default function AcademyModal() {
+  const { education, achievements } = useContent()
   return (
-    <div style={{ padding: "28px 24px", fontFamily: "var(--font-pixel)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, paddingBottom: 16, borderBottom: `3px solid ${TEAL}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: `${TEAL}1f`, border: `2px solid ${TEAL}` }}>
-          <GraduationCap size={22} color={TEAL} strokeWidth={1.5} />
-        </div>
-        <div>
-          <div style={{ fontSize: "clamp(10px, 2vw, 15px)", color: TEAL, letterSpacing: 2 }}>ACADEMY</div>
-          <div style={{ fontSize: "clamp(6px, 1vw, 8px)", color: PARCH.muted, marginTop: 5, letterSpacing: 1 }}>KNOWLEDGE CODEX</div>
-        </div>
-        <div style={{ marginLeft: "auto", background: PARCH.cardAlt, border: `2px solid ${TEAL}`, padding: "4px 10px" }}>
-          <span style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.body }}>{certifications.length} CERTS</span>
-        </div>
-      </div>
+    <div style={{ padding: "26px clamp(16px, 3vw, 30px) 30px" }}>
+      <SectionHeader
+        icon={<GraduationCap size={22} />} accent={TEAL}
+        title="THE ACADEMY" subtitle="Studies, honours and badges earned"
+      />
 
-      {/* Education */}
-      <div style={{ marginBottom: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <BookOpen size={12} color={TEAL} strokeWidth={1.5} />
-          <span style={{ fontSize: "clamp(6px, 1vw, 8px)", color: TEAL, letterSpacing: 2 }}>EDUCATION</span>
-        </div>
-
-        {education.map((edu) => (
-          <div key={edu.id} style={{
-            background: PARCH.card,
-            border: `2px solid ${TEAL}`,
-            padding: "20px 22px",
-            position: "relative", overflow: "hidden",
-          }}>
-            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 3, background: TEAL }} />
-
-            <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-              <div>
-                <div style={{ fontSize: "clamp(8px, 1.5vw, 12px)", color: PARCH.ink, marginBottom: 6 }}>{edu.institution}</div>
-                <div style={{ fontSize: "clamp(7px, 1.1vw, 10px)", color: TEAL, marginBottom: 4 }}>{edu.degree}</div>
-                <div style={{ fontSize: "clamp(6px, 1vw, 9px)", color: PARCH.body }}>{edu.field}</div>
-              </div>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.muted, marginBottom: 8 }}>{edu.startYear} — {edu.endYear}</div>
-                {edu.gpa && (
-                  <div style={{ background: `${TEAL}1f`, border: `1px solid ${TEAL}`, padding: "4px 10px" }}>
-                    <span style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: TEAL }}>GPA {edu.gpa}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Certifications */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-          <Shield size={12} color={TEAL} strokeWidth={1.5} />
-          <span style={{ fontSize: "clamp(6px, 1vw, 8px)", color: TEAL, letterSpacing: 2 }}>CERTIFICATIONS</span>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(210px, 1fr))", gap: 12 }}>
-          {certifications.map((cert) => (
-            <div key={cert.id} style={{
-              background: PARCH.card,
-              border: `2px solid ${PARCH.line}`,
-              padding: "18px 16px",
-              display: "flex", flexDirection: "column", gap: 10,
-              position: "relative", overflow: "hidden",
-              transition: "border-color 0.1s",
-            }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = TEAL }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = PARCH.line }}
-            >
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: TEAL }} />
-
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, background: `${TEAL}1f`, border: `1px solid ${TEAL}`, margin: "0 auto" }}>
-                <Award size={18} color={TEAL} strokeWidth={1.5} />
-              </div>
-
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "clamp(7px, 1vw, 9px)", color: PARCH.ink, marginBottom: 6, lineHeight: 1.5 }}>{cert.name}</div>
-                <div style={{ fontSize: "clamp(6px, 0.9vw, 8px)", color: TEAL, marginBottom: 4 }}>{cert.issuer}</div>
-                <div style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.muted }}>
-                  {cert.date}{cert.expiryDate ? ` — ${cert.expiryDate}` : ""}
+      {education.length > 0 && (
+        <>
+          <Label icon={<BookOpen size={13} />} text="STUDIES" />
+          <div style={{ display: "grid", gap: 12, marginBottom: 26 }}>
+            {education.map((e) => (
+              <Card key={e.id} accent={TEAL} style={{ padding: "16px 18px", display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ width: 52, height: 52, flexShrink: 0, background: TEAL, border: `3px solid ${INK.ink}`, display: "flex", alignItems: "center", justifyContent: "center", color: INK.cream }}>
+                  <GraduationCap size={26} />
                 </div>
-              </div>
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: 19, fontWeight: 700, color: INK.ink }}>{e.degree}{e.field ? ` · ${e.field}` : ""}</div>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: 16, color: TEAL, fontWeight: 600, marginTop: 3 }}>{e.school}</div>
+                  {e.note && <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: INK.body, marginTop: 6 }}>{e.note}</div>}
+                </div>
+                {(e.start || e.end) && <Pill>{[e.start, e.end].filter(Boolean).join(" — ")}</Pill>}
+              </Card>
+            ))}
+          </div>
+        </>
+      )}
 
-              {cert.credentialUrl && (
-                <a href={cert.credentialUrl} target="_blank" rel="noreferrer" style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 5,
-                  fontSize: "clamp(5px, 0.7vw, 7px)", color: TEAL,
-                  textDecoration: "none", border: `1px solid ${TEAL}`, padding: "4px 8px",
-                }}>
-                  <ExternalLink size={9} strokeWidth={1.5} /> VERIFY
-                </a>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+      {achievements.length > 0 && (
+        <>
+          <Label icon={<Medal size={13} />} text="HONOURS & BADGES" />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 12 }}>
+            {achievements.map((a, i) => {
+              const inner = (
+                <Card hover={!!a.url} style={{ padding: "14px 14px", display: "flex", gap: 12, alignItems: "center", height: "100%" }}>
+                  <div style={{
+                    width: 42, height: 42, flexShrink: 0, borderRadius: "50%",
+                    background: `conic-gradient(from ${i * 40}deg, #ffd76a, #f5a623, #ffe9a8, #ffd76a)`,
+                    border: `3px solid ${INK.ink}`, display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: "inset 0 0 0 3px rgba(255,255,255,.35)",
+                  }}>
+                    <Medal size={18} color={INK.ink} />
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontFamily: "var(--font-body)", fontSize: 16, fontWeight: 700, color: INK.ink, lineHeight: 1.25 }}>{a.title}</div>
+                    <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: INK.muted, marginTop: 3 }}>{[a.issuer, a.date].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  {a.url && <ExternalLink size={13} color={INK.muted} />}
+                </Card>
+              )
+              return a.url
+                ? <a key={a.id} href={a.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none" }}>{inner}</a>
+                : <div key={a.id}>{inner}</div>
+            })}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function Label({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 1, color: INK.muted, marginBottom: 12 }}>
+      {icon}{text}
+      <div style={{ flex: 1, height: 2, background: INK.line }} />
     </div>
   )
 }

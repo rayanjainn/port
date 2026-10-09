@@ -81,6 +81,14 @@ export const RIVER_THICK = 2     // tiles tall
 export const BRIDGE_COLS = [12, 28, 46]
 export const BRIDGE_W = 3
 
+/** Top row of the river at column x — meanders, but runs flat across bridges. */
+export function riverTop(x: number) {
+  let near = 99
+  for (const b of BRIDGE_COLS) near = Math.min(near, Math.abs(x - (b + 1)))
+  const damp = Math.min(1, Math.max(0, (near - 2) / 4))
+  return RIVER_ROW + Math.round((Math.sin(x * 0.21) * 1.4 + Math.sin(x * 0.083 + 1) * 0.9) * damp)
+}
+
 function generateMap(): number[][] {
   const W = WORLD_W, H = WORLD_H
   const map: number[][] = Array.from({ length: H }, () => Array(W).fill(T.GRASS))
@@ -114,24 +122,34 @@ function generateMap(): number[][] {
     }
   }
 
-  // ── RIVER — horizontal water channel splitting the world in two
-  for (let dy = 0; dy < RIVER_THICK; dy++) {
-    for (let x = 2; x < W - 2; x++) {
-      map[RIVER_ROW + dy][x] = T.POND
-    }
+  // Cellular smoothing: turn noisy scatter into cohesive woods
+  for (let pass = 0; pass < 3; pass++) {
+    const next = map.map((row) => row.slice())
+    for (let y = 2; y < H - 2; y++)
+      for (let x = 2; x < W - 2; x++) {
+        let n = 0
+        for (let dy = -1; dy <= 1; dy++)
+          for (let dx = -1; dx <= 1; dx++)
+            if ((dx || dy) && (map[y + dy][x + dx] === T.TREE || map[y + dy][x + dx] === T.WATER)) n++
+        if (map[y][x] === T.TREE && n <= 3) next[y][x] = T.GRASS
+        else if (map[y][x] !== T.TREE && map[y][x] !== T.WATER && n >= 5) next[y][x] = T.TREE
+      }
+    for (let y = 0; y < H; y++) map[y] = next[y]
   }
-  // BRIDGES — gaps in the river, walkable plank tiles
+
+  // ── RIVER — meandering channel splitting the world in two, flattened at bridges
+  for (let x = 2; x < W - 2; x++) {
+    const top = riverTop(x)
+    for (let dy = 0; dy < RIVER_THICK; dy++) map[top + dy][x] = T.POND
+  }
   for (const bx of BRIDGE_COLS) {
     for (let dx = 0; dx < BRIDGE_W; dx++) {
+      const x = bx + dx, top = riverTop(x)
       for (let dy = -1; dy <= RIVER_THICK; dy++) {
-        const x = bx + dx, y = RIVER_ROW + dy
+        const y = top + dy
         if (!inb(x, y)) continue
-        if (dy < 0 || dy >= RIVER_THICK) {
-          // approach pads on both banks
-          if (map[y][x] === T.GRASS || map[y][x] === T.GRASS2 || map[y][x] === T.TREE) map[y][x] = T.PATH
-        } else {
-          map[y][x] = T.BRIDGE
-        }
+        if (dy < 0 || dy >= RIVER_THICK) map[y][x] = T.PATH
+        else map[y][x] = T.BRIDGE
       }
     }
   }
@@ -148,7 +166,7 @@ function generateMap(): number[][] {
       for (let dx = -p.rx - 1; dx <= p.rx + 1; dx++) {
         const x = p.cx + dx, y = p.cy + dy
         if (x < 2 || x >= W - 2 || y < 2 || y >= H - 2) continue
-        if (y >= RIVER_ROW && y < RIVER_ROW + RIVER_THICK) continue
+        if (y >= RIVER_ROW - 3 && y <= RIVER_ROW + RIVER_THICK + 2) continue
         // distance from centre with directional noise — yields organic outline
         const angle = Math.atan2(dy, dx)
         const wobble = 0.7 + rng(p.seed + Math.round(angle * 3.5)) * 0.5
@@ -158,38 +176,66 @@ function generateMap(): number[][] {
     }
   }
 
-  // Curvy dirt road tour — routes around ponds, uses bridges to cross river
-  const nearestBridge = (x: number) =>
-    BRIDGE_COLS.reduce((best, bx) =>
-      Math.abs(bx - x) < Math.abs(best - x) ? bx : best, BRIDGE_COLS[0]) + 1
+  // Roads: cheapest path between doors over noisy costs → organic, always connected
   const carve = (ax: number, ay: number, bx: number, by: number, seed: number) => {
-    let x = ax, y = ay, i = 0
-    while ((x !== bx || y !== by) && i < 600) {
-      if (inb(x, y) && map[y][x] !== T.WATER && map[y][x] !== T.POND && map[y][x] !== T.BRIDGE) {
-        map[y][x] = T.PATH
-      }
-      const r = rng(seed * 7.3 + i * 13.1)
-      const needX = x !== bx, needY = y !== by
-      // route through bridge when crossing the river
-      const crossing = (y < RIVER_ROW && by >= RIVER_ROW + RIVER_THICK) ||
-                       (y >= RIVER_ROW + RIVER_THICK && by < RIVER_ROW)
-      let stepX = Math.sign(bx - x), stepY = Math.sign(by - y)
-      if (crossing && Math.abs(y - RIVER_ROW) <= 2) {
-        const bridgeX = nearestBridge(x)
-        if (Math.abs(x - bridgeX) > 0) stepX = Math.sign(bridgeX - x)
-        else stepX = 0
-        stepY = Math.sign(by - y)
-      }
-      const sx = x + stepX, sy = y + stepY
-      const okX = needX && inb(sx, y) && map[y][sx] !== T.POND
-      const okY = needY && inb(x, sy) && map[sy][x] !== T.POND
-      if (okX && (!okY || r < 0.6)) x = sx
-      else if (okY) y = sy
-      else if (needX && inb(sx, y)) x = sx
-      else if (needY && inb(x, sy)) y = sy
-      i++
+    const N = W * H
+    const dist = new Float64Array(N).fill(Infinity)
+    const prev = new Int32Array(N).fill(-1)
+    const done = new Uint8Array(N)
+    const cost = (x: number, y: number) => {
+      const t = map[y][x]
+      if (t === T.WATER || t === T.POND) return Infinity
+      if (BUILDINGS.some((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h && !(x === b.doorX && y === b.doorY))) return Infinity
+      let c = 1 + rng(x * 31.7 + y * 17.3 + seed * 5.1) * 1.4
+      if (t === T.PATH || t === T.BRIDGE) c = 0.35       // reuse existing roads
+      if (t === T.TREE) c += 7
+      return c
     }
-    if (inb(bx, by) && map[by][bx] !== T.BRIDGE) map[by][bx] = T.PATH
+    const start = ay * W + ax
+    dist[start] = 0
+    // tiny binary heap
+    const heap: number[] = [start]
+    const push = (i: number) => {
+      heap.push(i); let k = heap.length - 1
+      while (k > 0) { const p = (k - 1) >> 1; if (dist[heap[p]] <= dist[heap[k]]) break; [heap[p], heap[k]] = [heap[k], heap[p]]; k = p }
+    }
+    const pop = () => {
+      const top = heap[0], last = heap.pop()!
+      if (heap.length) {
+        heap[0] = last; let k = 0
+        for (;;) {
+          const l = k * 2 + 1, r = l + 1; let m = k
+          if (l < heap.length && dist[heap[l]] < dist[heap[m]]) m = l
+          if (r < heap.length && dist[heap[r]] < dist[heap[m]]) m = r
+          if (m === k) break
+          ;[heap[m], heap[k]] = [heap[k], heap[m]]; k = m
+        }
+      }
+      return top
+    }
+    const goal = by * W + bx
+    while (heap.length) {
+      const i = pop()
+      if (done[i]) continue
+      done[i] = 1
+      if (i === goal) break
+      const x = i % W, y = (i / W) | 0
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy
+        if (nx < 2 || ny < 2 || nx >= W - 2 || ny >= H - 2) continue
+        // bridges are only entered/exited vertically
+        if (dx !== 0 && (map[y][x] === T.BRIDGE || map[ny][nx] === T.BRIDGE)) continue
+        const c = cost(nx, ny)
+        if (!isFinite(c)) continue
+        const j = ny * W + nx
+        if (dist[i] + c < dist[j]) { dist[j] = dist[i] + c; prev[j] = i; push(j) }
+      }
+    }
+    for (let i = goal; i !== -1; i = prev[i]) {
+      const x = i % W, y = (i / W) | 0
+      if (map[y][x] !== T.BRIDGE && !(BUILDINGS.some((b) => b.doorX === x && b.doorY === y))) map[y][x] = T.PATH
+      if (i === start) break
+    }
   }
   for (let i = 0; i < BUILDINGS.length; i++) {
     const a = BUILDINGS[i], b = BUILDINGS[(i + 1) % BUILDINGS.length]
@@ -252,6 +298,20 @@ function generateMap(): number[][] {
       }
   }
 
+  // A few lone trees dotted around the meadows
+  for (let k = 0; k < 70; k++) {
+    const x = 3 + Math.floor(rng(k * 77.7 + 5) * (W - 6))
+    const y = 3 + Math.floor(rng(k * 41.3 + 9) * (H - 6))
+    if (map[y][x] !== T.GRASS && map[y][x] !== T.GRASS2) continue
+    let ok = true
+    for (let dy = -1; dy <= 1 && ok; dy++)
+      for (let dx = -1; dx <= 1 && ok; dx++) {
+        const t = map[y + dy]?.[x + dx]
+        if (t === T.PATH || t === T.STONE || t === T.BRIDGE || t === T.POND) ok = false
+      }
+    if (ok && !BUILDINGS.some((b) => x >= b.x - 1 && x <= b.x + b.w && y >= b.y - 1 && y <= b.y + b.h + 1)) map[y][x] = T.TREE
+  }
+
   // Mushroom clusters — more clusters, denser
   for (let k = 0; k < 35; k++) {
     const cx = 3 + Math.floor(rng(k * 211.1) * (W - 6))
@@ -299,3 +359,72 @@ export const WORLD_MAP = generateMap()
 
 // Spawn player on north side near townhall plaza
 export const PLAYER_START = { x: 26 * TILE_PX, y: 11 * TILE_PX }
+
+// ── Decorative props ────────────────────────────────────────────
+// kind → tiny-town tile index (null = drawn procedurally)
+export type DecorKind = "lamp" | "barrel" | "waterBarrel" | "well" | "sign" | "haystack" | "target" | "beehive" | "cart" | "bucket"
+export interface Decor { x: number; y: number; kind: DecorKind; solid: boolean }
+
+export const DECOR_TILE: Record<DecorKind, number | null> = {
+  lamp: null, barrel: 130, waterBarrel: 131, well: 104, sign: 83,
+  haystack: 92, target: 95, beehive: 94, cart: 57, bucket: 107,
+}
+
+function placeDecor(map: number[][]): Decor[] {
+  const out: Decor[] = []
+  const taken = new Set<string>()
+  const free = (x: number, y: number) => {
+    if (x < 2 || y < 2 || x >= WORLD_W - 2 || y >= WORLD_H - 2) return false
+    const t = map[y][x]
+    if (t !== T.GRASS && t !== T.GRASS2 && t !== T.FLOWER && t !== T.BUSH && t !== T.MUSHROOM) return false
+    if (taken.has(`${x},${y}`)) return false
+    for (const b of BUILDINGS) if (x >= b.x - 1 && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return false
+    return true
+  }
+  const put = (x: number, y: number, kind: DecorKind, solid = true) => {
+    if (!free(x, y)) return false
+    map[y][x] = T.GRASS
+    taken.add(`${x},${y}`)
+    out.push({ x, y, kind, solid })
+    return true
+  }
+  const near = (cx: number, cy: number, kind: DecorKind, solid = true) => {
+    for (let r = 0; r <= 2; r++)
+      for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++)
+          if (put(cx + dx, cy + dy, kind, solid)) return
+  }
+
+  // lanterns flank every door
+  for (const b of BUILDINGS) {
+    if (b.id === "cave") continue
+    near(b.doorX - 2, b.doorY + 1, "lamp")
+    near(b.doorX + 2, b.doorY + 1, "lamp")
+  }
+  const by = (id: string) => BUILDINGS.find((b) => b.id === id)!
+  const th = by("townhall"), tv = by("tavern"), fg = by("forge"), ga = by("gallery"), ac = by("academy"), wz = by("wizard")
+  near(th.x + th.w + 1, th.y + th.h + 1, "well")
+  near(th.x - 2, th.y + th.h, "cart")
+  near(tv.x + tv.w, tv.y + tv.h - 1, "barrel"); near(tv.x + tv.w, tv.y + tv.h - 2, "barrel"); near(tv.x - 1, tv.y + tv.h - 1, "haystack")
+  near(fg.x + fg.w, fg.y + fg.h - 1, "waterBarrel"); near(fg.x - 2, fg.y + fg.h, "target"); near(fg.x - 1, fg.y + fg.h - 2, "bucket", false)
+  near(ga.x - 2, ga.y + ga.h, "sign")
+  near(ac.x + ac.w, ac.y + ac.h - 1, "beehive")
+  near(wz.x + wz.w + 1, wz.y + wz.h - 1, "sign")
+
+  // lamps along roads every so often
+  const rng = (s: number) => { const x = Math.sin(s * 91.7) * 43758.5453; return x - Math.floor(x) }
+  let last = -99
+  for (let y = 3; y < WORLD_H - 3; y++)
+    for (let x = 3; x < WORLD_W - 3; x++) {
+      if (map[y][x] !== T.PATH) continue
+      const k = y * WORLD_W + x
+      if (k - last < 140 || rng(k) > 0.08) continue
+      for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+        if (put(x + dx, y + dy, "lamp")) { last = k; break }
+      }
+    }
+  return out
+}
+
+export const DECOR = placeDecor(WORLD_MAP)
+export const SOLID_DECOR = new Set(DECOR.filter((d) => d.solid).map((d) => `${d.x},${d.y}`))

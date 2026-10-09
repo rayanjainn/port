@@ -133,7 +133,8 @@ function SnakeGame() {
   const [alive, setAlive] = useState(true)
   const [score, setScore] = useState(0)
   const [started, setStarted] = useState(false)
-  const dirRef = useRef(dir); dirRef.current = dir
+  const dirRef = useRef(dir)
+  useEffect(() => { dirRef.current = dir }, [dir])
 
   const spawnFood = (s: Cell[]): Cell => {
     let f: Cell
@@ -228,15 +229,18 @@ const RUNES = [
   { id: 2, col: "#2f7a28", lit: "#7ee04a" },
   { id: 3, col: "#c79a3a", lit: "#ffd76a" },
 ]
+const rollRune = () => Math.floor(Math.random() * 4)
+
 function MemoryGame() {
   const [seq, setSeq] = useState<number[]>([])
   const [userIdx, setUserIdx] = useState(0)
   const [playing, setPlaying] = useState<"idle" | "show" | "input" | "fail">("idle")
   const [activeRune, setActiveRune] = useState<number | null>(null)
-  const seqRef = useRef(seq); seqRef.current = seq
+  const seqRef = useRef(seq)
+  useEffect(() => { seqRef.current = seq }, [seq])
 
   const nextRound = (prev: number[]) => {
-    const next = [...prev, Math.floor(Math.random() * 4)]
+    const next = [...prev, rollRune()]
     setSeq(next); setUserIdx(0); setPlaying("show")
     let i = 0
     const interval = setInterval(() => {
@@ -321,7 +325,7 @@ function MemoryGame() {
 // ── REACTION ──────────────────────────────────────────────────
 function ReactionGame() {
   const [phase, setPhase] = useState<"idle" | "wait" | "go" | "result" | "early">("idle")
-  const [waitMs, setWaitMs] = useState(0)
+  const [, setWaitMs] = useState(0)
   const [reactMs, setReactMs] = useState<number | null>(null)
   const [best, setBest] = useState<number | null>(null)
   const startTime = useRef(0)

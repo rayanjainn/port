@@ -7,58 +7,58 @@ interface GameStore {
   phase: "title" | "playing" | "building"
   activeBuilding: BuildingId
   unlockedAchievements: Set<string>
-  toastQueue: Array<{ id: string; title: string; icon: string }>
-  musicEnabled: boolean
+  visited: Set<string>
+  toastQueue: Array<{ id: string; title: string; icon: string; description: string }>
   sfxEnabled: boolean
+  mapOpen: boolean
   startGame: () => void
   openBuilding: (id: BuildingId) => void
   closeBuilding: () => void
   unlockAchievement: (unlockedBy: string) => void
   popToast: () => void
-  toggleMusic: () => void
   toggleSfx: () => void
+  setMapOpen: (v: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   phase: "title",
   activeBuilding: null,
   unlockedAchievements: new Set(),
+  visited: new Set(),
   toastQueue: [],
-  musicEnabled: true,
   sfxEnabled: true,
+  mapOpen: false,
 
   startGame: () => {
     set({ phase: "playing" })
-    setTimeout(() => get().unlockAchievement("game_start"), 800)
+    setTimeout(() => get().unlockAchievement("game_start"), 900)
   },
 
   openBuilding: (id) => {
     if (!id) return
-    set({ activeBuilding: id, phase: "building" })
-    const map: Record<string, string> = {
-      townhall: "visit_townhall", tavern: "visit_tavern", academy: "visit_academy",
-      gallery: "visit_gallery", forge: "visit_forge", wizard: "visit_wizard", cave: "visit_cave",
-    }
-    if (map[id]) get().unlockAchievement(map[id])
+    const visited = new Set(get().visited)
+    visited.add(id)
+    set({ activeBuilding: id, phase: "building", visited, mapOpen: false })
+    get().unlockAchievement(`visit_${id}`)
   },
 
-  closeBuilding: () => set({ activeBuilding: null, phase: "playing" }),
+  closeBuilding: () => {
+    if (!get().activeBuilding) return
+    set({ activeBuilding: null, phase: "playing" })
+  },
 
   unlockAchievement: (unlockedBy) => {
     const { unlockedAchievements, toastQueue } = get()
     const ach = gameAchievements.find((a) => a.unlockedBy === unlockedBy)
     if (!ach || unlockedAchievements.has(ach.id)) return
-    const newUnlocked = new Set(unlockedAchievements)
-    newUnlocked.add(ach.id)
-    const newQueue = [...toastQueue, { id: ach.id, title: ach.title, icon: ach.icon }]
-    set({ unlockedAchievements: newUnlocked, toastQueue: newQueue })
-    const allIds = gameAchievements.filter((a) => a.unlockedBy !== "all_complete").map((a) => a.id)
-    if (allIds.every((id) => newUnlocked.has(id))) {
-      setTimeout(() => get().unlockAchievement("all_complete"), 1200)
-    }
+    const next = new Set(unlockedAchievements)
+    next.add(ach.id)
+    set({ unlockedAchievements: next, toastQueue: [...toastQueue, { id: ach.id, title: ach.title, icon: ach.icon, description: ach.description }] })
+    const all = gameAchievements.filter((a) => a.unlockedBy !== "all_complete").map((a) => a.id)
+    if (all.every((id) => next.has(id))) setTimeout(() => get().unlockAchievement("all_complete"), 1200)
   },
 
   popToast: () => set((s) => ({ toastQueue: s.toastQueue.slice(1) })),
-  toggleMusic: () => set((s) => ({ musicEnabled: !s.musicEnabled })),
   toggleSfx: () => set((s) => ({ sfxEnabled: !s.sfxEnabled })),
+  setMapOpen: (v) => set({ mapOpen: v }),
 }))

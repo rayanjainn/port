@@ -1,94 +1,66 @@
 "use client"
-import { skills } from "@/lib/data"
-import { PARCH } from "@/lib/modalTheme"
-import { Hammer, Monitor, Server, Cloud, Palette, Flame } from "lucide-react"
+import { useEffect, useState } from "react"
+import { useContent } from "@/lib/content"
+import { SectionHeader, INK, Pill } from "./ui"
+import { Hammer, Code2, Layers, Server, Flame } from "lucide-react"
 
 const ORANGE = "#c2531d"
+const ICONS = [<Code2 key="a" size={14} />, <Layers key="b" size={14} />, <Server key="c" size={14} />]
 
-const CATEGORIES: Record<string, { color: string; icon: React.ReactNode; label: string }> = {
-  frontend: { color: "#3a6ea5", icon: <Monitor size={12} strokeWidth={1.5} />, label: "FRONTEND" },
-  backend:  { color: "#2a8a5a", icon: <Server size={12} strokeWidth={1.5} />, label: "BACKEND" },
-  devops:   { color: ORANGE,    icon: <Cloud size={12} strokeWidth={1.5} />, label: "DEVOPS" },
-  design:   { color: "#b0468a", icon: <Palette size={12} strokeWidth={1.5} />, label: "DESIGN" },
-}
-
-function SkillBar({ name, level, color }: { name: string; level: number; color: string }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-        <span style={{ fontSize: "clamp(6px, 1vw, 8px)", color: PARCH.ink }}>{name}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-          {level >= 85 && <Flame size={9} color={ORANGE} strokeWidth={1.5} />}
-          <span style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color, fontFamily: "var(--font-pixel)" }}>{level}%</span>
-        </div>
-      </div>
-      <div style={{ height: 10, background: PARCH.inset, border: `1px solid ${PARCH.lineDk}`, position: "relative", overflow: "hidden" }}>
-        <div style={{
-          height: "100%", width: `${level}%`,
-          background: `repeating-linear-gradient(90deg, ${color} 0px, ${color} 8px, ${color}bb 8px, ${color}bb 10px)`,
-          transition: "width 0.8s ease",
-        }} />
-      </div>
-    </div>
-  )
+function tier(level: number) {
+  if (level >= 88) return { name: "LEGENDARY", col: "#e2a400" }
+  if (level >= 78) return { name: "EPIC", col: "#8b5cf6" }
+  if (level >= 65) return { name: "RARE", col: "#2f80c2" }
+  return { name: "UNCOMMON", col: "#4f9a3f" }
 }
 
 export default function ForgeModal() {
-  const categories = [...new Set(skills.map((s) => s.category))]
-  const total = skills.length
-  const avgLevel = Math.round(skills.reduce((a, s) => a + s.level, 0) / total)
+  const { skills } = useContent()
+  const [lit, setLit] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setLit(true), 80); return () => clearTimeout(t) }, [])
 
   return (
-    <div style={{ padding: "28px 24px", fontFamily: "var(--font-pixel)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 28, paddingBottom: 16, borderBottom: `3px solid ${ORANGE}` }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, background: `${ORANGE}1f`, border: `2px solid ${ORANGE}` }}>
-          <Hammer size={22} color={ORANGE} strokeWidth={1.5} />
-        </div>
-        <div>
-          <div style={{ fontSize: "clamp(10px, 2vw, 15px)", color: ORANGE, letterSpacing: 2 }}>THE FORGE</div>
-          <div style={{ fontSize: "clamp(6px, 1vw, 8px)", color: PARCH.muted, marginTop: 5, letterSpacing: 1 }}>SKILL REGISTRY</div>
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
-          <div style={{ background: PARCH.cardAlt, border: `2px solid ${ORANGE}`, padding: "4px 10px" }}>
-            <span style={{ fontSize: "clamp(5px, 0.8vw, 7px)", color: PARCH.body }}>{total} SKILLS</span>
-          </div>
-          <div style={{ background: `${ORANGE}1f`, border: `1px solid ${ORANGE}`, padding: "3px 8px" }}>
-            <span style={{ fontSize: "clamp(5px, 0.7vw, 6px)", color: ORANGE }}>AVG {avgLevel}%</span>
-          </div>
-        </div>
-      </div>
+    <div style={{ padding: "26px clamp(16px, 3vw, 30px) 30px" }}>
+      <SectionHeader
+        icon={<Hammer size={22} />} accent={ORANGE}
+        title="THE FORGE" subtitle="Weapons of choice, tempered by shipping"
+        right={<Pill bg={ORANGE}><Flame size={10} /> HOT</Pill>}
+      />
 
-      {/* Skill categories */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-        {categories.map((cat) => {
-          const catData = CATEGORIES[cat] ?? { color: ORANGE, icon: <Hammer size={12} />, label: cat.toUpperCase() }
-          const catSkills = skills.filter((s) => s.category === cat)
-
-          return (
-            <div key={cat}>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 8, marginBottom: 16,
-                padding: "8px 12px",
-                background: PARCH.card,
-                border: `1px solid ${PARCH.line}`,
-                borderLeft: `3px solid ${catData.color}`,
-              }}>
-                <div style={{ color: catData.color }}>{catData.icon}</div>
-                <span style={{ fontSize: "clamp(6px, 1vw, 8px)", color: catData.color, letterSpacing: 2 }}>{catData.label}</span>
-                <div style={{ marginLeft: "auto", fontSize: "clamp(5px, 0.7vw, 6px)", color: PARCH.muted }}>
-                  {catSkills.length} TOOLS
-                </div>
-              </div>
-
-              <div style={{ paddingLeft: 12 }}>
-                {catSkills.map((skill) => (
-                  <SkillBar key={skill.id} name={skill.name} level={skill.level} color={catData.color} />
-                ))}
-              </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16 }}>
+        {skills.map((g, gi) => (
+          <div key={g.group} style={{ background: INK.ink, border: `3px solid ${INK.ink}`, boxShadow: `0 4px 0 ${INK.lineDk}` }}>
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8, padding: "12px 14px",
+              fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 1, color: "#ffd76a",
+              borderBottom: "2px solid #5c3a1c", background: "linear-gradient(180deg, #4a2c14, #3a2412)",
+            }}>
+              {ICONS[gi % ICONS.length]} {g.group.toUpperCase()}
             </div>
-          )
-        })}
+            <div style={{ padding: "12px 14px 14px", display: "grid", gap: 11 }}>
+              {g.items.map((s, i) => {
+                const t = tier(s.level)
+                return (
+                  <div key={s.name}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 5, gap: 8 }}>
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "#fff1d6" }}>{s.name}</span>
+                      <span style={{ fontFamily: "var(--font-pixel)", fontSize: 6, color: t.col, letterSpacing: 1 }}>{t.name}</span>
+                    </div>
+                    <div style={{ height: 10, background: "#1f130a", border: "2px solid #0f0904", position: "relative", overflow: "hidden" }}>
+                      <div style={{
+                        position: "absolute", inset: 0, width: lit ? `${s.level}%` : "0%",
+                        background: `repeating-linear-gradient(90deg, ${t.col} 0 8px, ${t.col}cc 8px 10px)`,
+                        boxShadow: `0 0 10px ${t.col}`,
+                        transition: `width 0.9s cubic-bezier(.2,.9,.3,1) ${gi * 120 + i * 50}ms`,
+                      }} />
+                      <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 2, background: "rgba(255,255,255,.18)" }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

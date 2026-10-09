@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Third-party asset packs (Tiled .tsx files are XML tilesets, not TypeScript)
+    "public/**",
   ]),
 ]);
 

@@ -3,11 +3,12 @@ import { useEffect, useState } from "react"
 import { useGameStore } from "@/lib/store"
 
 export default function AchievementToast() {
-  const { toastQueue, popToast } = useGameStore()
+  const { toastQueue, popToast, activeBuilding, mapOpen } = useGameStore()
+  const hold = !!activeBuilding || mapOpen
   const [exiting, setExiting] = useState(false)
 
   useEffect(() => {
-    if (toastQueue.length === 0) return
+    if (toastQueue.length === 0 || hold) return
     const timer = setTimeout(() => {
       setExiting(true)
       setTimeout(() => {
@@ -16,22 +17,22 @@ export default function AchievementToast() {
       }, 350)
     }, 2800)
     return () => clearTimeout(timer)
-  }, [toastQueue, popToast])
+  }, [toastQueue, popToast, hold])
 
-  if (toastQueue.length === 0) return null
+  if (toastQueue.length === 0 || hold) return null
   const toast = toastQueue[0]
 
   return (
     <div
-      className={exiting ? "toast-out" : "toast-in"}
+      className={`toast-pos ${exiting ? "toast-out" : "toast-in"}`}
       style={{
-        position: "fixed", top: 66, right: 14,
+        position: "fixed", bottom: 70, left: "50%", marginLeft: -150, width: 300,
         background: "linear-gradient(180deg, #ede0bd 0%, #d8c79a 100%)",
         border: "4px solid #5e3a18",
         boxShadow: "inset 0 0 0 2px #c79a5e, 0 5px 0 #4a2e12, 0 12px 24px rgba(0,0,0,0.35)",
         padding: "14px 18px 14px 16px",
         display: "flex", alignItems: "center", gap: 14,
-        zIndex: 200, minWidth: 280,
+        zIndex: 200,
       }}
     >
       {/* red banner */}
@@ -64,6 +65,9 @@ export default function AchievementToast() {
         </div>
         <div style={{ fontFamily: "var(--font-pixel)", fontSize: 9, color: "#3a2418" }}>
           {toast.title}
+        </div>
+        <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#7a5a32", marginTop: 5 }}>
+          {toast.description}
         </div>
       </div>
     </div>
