@@ -17,13 +17,17 @@ export function img(src: string): HTMLImageElement {
   return im
 }
 export const sheet = (id: SheetId) => img(SHEETS[id])
-export function loadAll(srcs: string[]): Promise<void> {
-  return Promise.all([...new Set(srcs)].map((s) => {
+export function loadAll(srcs: string[], onProgress?: (done: number, total: number) => void): Promise<void> {
+  const list = [...new Set(srcs)]
+  let n = 0
+  const tick = () => { n++; onProgress?.(n, list.length) }
+  return Promise.all(list.map((s) => {
     const im = img(s)
-    if (im.complete && im.naturalWidth) return Promise.resolve()
+    if (im.complete && im.naturalWidth) { tick(); return Promise.resolve() }
     return new Promise<void>((res) => {
-      im.addEventListener("load", () => res(), { once: true })
-      im.addEventListener("error", () => res(), { once: true })
+      const fin = () => { tick(); res() }
+      im.addEventListener("load", fin, { once: true })
+      im.addEventListener("error", fin, { once: true })
     })
   })).then(() => undefined)
 }

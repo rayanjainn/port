@@ -11,6 +11,7 @@ import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene
 import { buildVillage, BUILDINGS, doorOf, VILLAGE_PRELOAD } from "@/lib/world/village"
 import { buildInteriors, INTERIOR_PRELOAD } from "@/lib/world/interiors"
 import TitleScreen from "@/components/ui/TitleScreen"
+import { useLoading, bootStart } from "@/lib/loading"
 import HUD from "@/components/ui/HUD"
 import AchievementToast from "@/components/ui/AchievementToast"
 import BuildingModal from "@/components/ui/BuildingModal"
@@ -69,7 +70,12 @@ export default function GameCanvas() {
   // ── build world once the art is loaded
   useEffect(() => {
     let cancelled = false
-    loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD]).then(() => {
+    // art (85%) + fonts; the title screen's map and hero are part of the boot set
+    const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready.catch(() => undefined) : Promise.resolve()
+    Promise.all([
+      loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD, "/village-map.png", charSheet(CHARS.hero)], (n, total) => useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })),
+      fonts,
+    ]).then(() => {
       if (cancelled) return
       const content = useContentStore.getState().data
       const all: Record<string, Scene> = { village: buildVillage(), ...buildInteriors(content) }
@@ -88,6 +94,8 @@ export default function GameCanvas() {
       const S = st.current
       S.hero.x = v.spawn.x; S.hero.y = v.spawn.y; S.hero.facing = v.spawn.facing
       S.ready = true
+      useLoading.setState({ progress: 1 })
+      setTimeout(() => useLoading.setState({ done: true }), Math.max(350, 1400 - (performance.now() - bootStart)))
       if (process.env.NODE_ENV !== "production") {
         // dev-only hooks for automated screenshots
         (window as unknown as { __rw: unknown }).__rw = { goTo, doAction, hero: S.hero, mapURL: () => runtime.mapCanvas?.toDataURL(), trees: () => scenes.current.village.scene.meta?.trees }
