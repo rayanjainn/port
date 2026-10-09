@@ -397,16 +397,19 @@ export default function GameCanvas() {
         if (Math.abs(dx) > Math.abs(dy) * 1.1) H.facing = dx < 0 ? "left" : "right"
         else if (Math.abs(dy) > 0.01) H.facing = dy < 0 ? "up" : "down"
         const vx = (dx / len) * SPEED * mag * dt, vy = (dy / len) * SPEED * mag * dt
-        if (!rt.solids.hits(footBox(H.x + vx, H.y))) H.x += vx
+        const solids = { hits: (b: Box) => b.x < 0 || b.y < 0 || b.x + b.w > sc.w * TS || b.y + b.h > sc.h * TS || rt.solids.hits(b) }
+        if (!solids.hits(footBox(H.x + vx, H.y))) H.x += vx
         else if (!H.path.length) {
           // slide around corners
-          if (!rt.solids.hits(footBox(H.x + vx, H.y - 3))) { H.x += vx; H.y -= 1.5 } else if (!rt.solids.hits(footBox(H.x + vx, H.y + 3))) { H.x += vx; H.y += 1.5 }
+          if (!solids.hits(footBox(H.x + vx, H.y - 3))) { H.x += vx; H.y -= 1.5 } else if (!solids.hits(footBox(H.x + vx, H.y + 3))) { H.x += vx; H.y += 1.5 }
         }
-        if (!rt.solids.hits(footBox(H.x, H.y + vy))) H.y += vy
+        if (!solids.hits(footBox(H.x, H.y + vy))) H.y += vy
         else if (!H.path.length) {
-          if (!rt.solids.hits(footBox(H.x - 3, H.y + vy))) { H.y += vy; H.x -= 1.5 } else if (!rt.solids.hits(footBox(H.x + 3, H.y + vy))) { H.y += vy; H.x += 1.5 }
+          if (!solids.hits(footBox(H.x - 3, H.y + vy))) { H.y += vy; H.x -= 1.5 } else if (!solids.hits(footBox(H.x + 3, H.y + vy))) { H.y += vy; H.x += 1.5 }
         }
         H.animT += dt
+        const exit = S.scene !== "village" && sc.hotspots.find((h) => h.action.type === "exit")
+        if (exit && H.y > exit.box.y + 9 && H.x > exit.box.x && H.x < exit.box.x + exit.box.w) doAction(exit.action)
         if (Math.random() < dt * 6) S.particles.push({ x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: S.scene === "village" ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
       } else H.animT = 0
       H.attackT = Math.max(0, H.attackT - dt)
