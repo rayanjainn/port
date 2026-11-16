@@ -5,6 +5,7 @@ import { G, TS, hash, type Scene } from "@/lib/world/core"
 import { flatMaterial, groundMaterial, waterMaterial, type Shared } from "./shaders"
 import { makeTexture } from "./cards"
 import { isOutdoor } from "./bus"
+import { fx } from "./fx"
 
 export const WATER_DEPTH = 5 / 16
 const WALL_H = 1, WALL_LOW = 0.25, BRIDGE_H = 0.08
@@ -13,6 +14,7 @@ export interface Terrain {
   objects: THREE.Object3D[]; dispose: () => void; bg: THREE.Color
   heightAt: (x: number, z: number) => number
   outdoor: boolean
+  pad: number
 }
 
 function avgColor(ctx: CanvasRenderingContext2D, x: number, y: number): [number, number, number] {
@@ -27,7 +29,9 @@ function avgColor(ctx: CanvasRenderingContext2D, x: number, y: number): [number,
 export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   const W = sc.w, H = sc.h
   const outdoor = isOutdoor(sc)
-  const PAD = 0
+  const hills = fx.relief.on && outdoor
+  const PAD = hills ? 18 : 0
+  const CAP = Math.max(0.5, fx.relief.strength)
   const PW = W + 2 * PAD, PH = H + 2 * PAD
   const src = sc.ground3d ?? sc.ground
   const gw = src.width, gh = src.height
@@ -44,7 +48,36 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   const pi = (c: number, r: number) => (r + PAD) * PW + (c + PAD)
   const pin = (c: number, r: number) => c >= -PAD && r >= -PAD && c < W + PAD && r < H + PAD
 
-  const relief = new Float32Array(PW * PH)   // flat ground (the look is a diorama with sunken water and raised room walls)
+  // ── relief (optional): the far rim only. Distance from anything walkable / watery / built-on; only land more than
+  // 4 tiles deep rises, in 0.5-tile terraces, and keeps rising beyond the map edge so the edge is never a flat cut.
+  const relief = new Float32Array(PW * PH)
+  if (hills) {
+    const dist = new Int16Array(PW * PH).fill(-1)
+    const queue: number[] = []
+    const raisable = (c: number, r: number) => !inb(c, r) || (sc.blocked[r * W + c] === 1 && type(c, r) !== G.Water && type(c, r) !== G.Bridge && type(c, r) !== G.Void)
+    const seed = (c: number, r: number) => { if (inb(c, r) && dist[pi(c, r)] < 0) { dist[pi(c, r)] = 0; queue.push(c, r) } }
+    for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (!raisable(c, r)) seed(c, r)
+    for (const sp of sc.sprites) {   // never under or next to anything solid / a building
+      const box = sp.solid ?? (sp.tag?.startsWith("b:") ? { x: sp.x, y: sp.y, w: sp.rect[2], h: sp.rect[3] } : null)
+      if (!box) continue
+      for (let r = Math.floor(box.y / TS) - 1; r <= Math.floor((box.y + box.h) / TS) + 1; r++)
+        for (let c = Math.floor(box.x / TS) - 1; c <= Math.floor((box.x + box.w) / TS) + 1; c++) seed(c, r)
+    }
+    for (let q = 0; q < queue.length; q += 2) {
+      const c = queue[q], r = queue[q + 1], d = dist[pi(c, r)]
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        const nc = c + dc, nr = r + dr
+        if (!pin(nc, nr) || dist[pi(nc, nr)] >= 0) continue
+        dist[pi(nc, nr)] = d + 1
+        queue.push(nc, nr)
+      }
+    }
+    for (let r = -PAD; r < H + PAD; r++)
+      for (let c = -PAD; c < W + PAD; c++) {
+        const d = dist[pi(c, r)]
+        if (d >= 5 && raisable(c, r)) relief[pi(c, r)] = Math.min(CAP, 0.5 * (d - 4))
+      }
+  }
 
   const hOf = (c: number, r: number) => {
     if (!pin(c, r)) return 0
@@ -79,13 +112,16 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   }
   const px = (x: number, y: number, col: [number, number, number], k: number) => { ctx.fillStyle = `rgb(${Math.round(Math.min(255, col[0] * k))},${Math.round(Math.min(255, col[1] * k))},${Math.round(Math.min(255, col[2] * k))})`; ctx.fillRect(x, y, 1, 1) }
   const earth: [number, number, number] = [104, 78, 50]
-  const rockBase: [number, number, number] = [grass[0] * 0.5 + 40, grass[1] * 0.42 + 30, grass[2] * 0.35 + 22]
+  const rockBase: [number, number, number] = [grass[0] * 0.3 + 78, grass[1] * 0.3 + 62, grass[2] * 0.2 + 46]
   for (let y = 0; y < TS; y++) for (let x = 0; x < TS; x++) {
     const n = 0.85 + hash(x, y, 4) * 0.25
     px(x, gh + y, y < 1 ? grass : earth, (y < 1 ? 0.8 : 1 - y * 0.035) * n)                        // bank
     const brick = y % 4 === 0 || (x + (Math.floor(y / 4) % 2) * 4) % 8 === 0
     px(TS + x, gh + y, wall, (brick ? 0.5 : 0.7) * (0.92 + hash(x, y, 9) * 0.16))                   // wall
-    px(2 * TS + x, gh + y, y < 2 ? grass : rockBase, (y < 2 ? 0.7 : 0.8 - Math.min(0.3, y * 0.02)) * (0.8 + hash(x, y, 12) * 0.35) * (y > 3 && hash(x, y, 13) > 0.85 ? 0.7 : 1))   // rock
+    // rock / earth for terrace sides: grassy lip, then strata bands with a few cracks (reads as deliberate pixel art)
+    const band = Math.floor((y - 2) / 3) % 2 === 0 ? 0.92 : 0.78
+    const crack = y > 3 && hash(Math.floor(x / 2), Math.floor(y / 3), 13) > 0.9 ? 0.72 : 1
+    px(2 * TS + x, gh + y, y < 2 ? grass : rockBase, (y < 2 ? (y === 0 ? 0.85 : 0.65) : band * crack) * (0.94 + hash(x, y, 12) * 0.1))   // rock
     px(3 * TS + x, gh + y, wood, (y % 5 === 0 ? 0.6 : 0.82) * (0.9 + hash(x, y, 15) * 0.2))        // wood
   }
   const tex = makeTexture(cv)
@@ -203,11 +239,22 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
 
   // everything beyond the padded map
   const bg = new THREE.Color(sc.bg ?? "#4d7a2e")
-  const far = new THREE.Mesh(new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2), flatMaterial(sh, bg))
-  far.position.set(W / 2, -WATER_DEPTH - 0.02, H / 2)
+  let farGeo: THREE.BufferGeometry
+  if (hills) {
+    // plateau at hill height beyond the padded map, with a hole where the map is
+    const o = new THREE.Shape()
+    o.moveTo(-600, -600); o.lineTo(600, -600); o.lineTo(600, 600); o.lineTo(-600, 600); o.closePath()
+    const hole = new THREE.Path()
+    const x0 = -PAD + 1, x1 = W + PAD - 1, z0 = -PAD + 1, z1 = H + PAD - 1
+    hole.moveTo(x0, -z0); hole.lineTo(x0, -z1); hole.lineTo(x1, -z1); hole.lineTo(x1, -z0); hole.closePath()
+    o.holes.push(hole)
+    farGeo = new THREE.ShapeGeometry(o).rotateX(-Math.PI / 2)
+  } else farGeo = new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2)
+  const far = new THREE.Mesh(farGeo, flatMaterial(sh, hills ? new THREE.Color().setRGB(grass[0] / 255 * 0.8, grass[1] / 255 * 0.8, grass[2] / 255 * 0.8, THREE.SRGBColorSpace) : bg))
+  far.position.set(hills ? 0 : W / 2, hills ? CAP - 0.04 : -WATER_DEPTH - 0.02, hills ? 0 : H / 2)
   far.frustumCulled = false
   objects.push(far)
   disposables.push(far.geometry, far.material as THREE.Material)
 
-  return { objects, bg, heightAt, outdoor, dispose: () => disposables.forEach((d) => d.dispose()) }
+  return { objects, bg, heightAt, outdoor, pad: PAD, dispose: () => disposables.forEach((d) => d.dispose()) }
 }

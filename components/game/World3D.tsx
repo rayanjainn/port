@@ -9,10 +9,14 @@ import { engine, type SceneRT } from "@/lib/engine"
 import { TS } from "@/lib/world/core"
 import { World } from "./three/world"
 import Overlay3D from "./three/Overlay3D"
-import { overlay, rig, ui } from "./three/bus"
+import { overlay, rig, ui, isOutdoor } from "./three/bus"
+import { fx, needsPost } from "./three/fx"
+import { Post } from "./three/post"
+import { runtime } from "@/lib/runtime"
 
 const FOV = 34
 const PITCH = 45 * Math.PI / 180
+const reduced = () => typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches
 const P = 1 / TS
 
 
@@ -30,8 +34,10 @@ function clampAxis(t: number, half: number, size: number, margin: number) {
 
 function Stage({ rt, px }: { rt: SceneRT; px: number }) {
   const { scene, camera, size, gl } = useThree()
+  if (process.env.NODE_ENV !== "production" && typeof window !== "undefined") Object.assign(window, { __fx: fx, __runtime: runtime })
   const world = useRef<World | null>(null)
-  const cam = useRef({ x: 0, z: 0, init: false, zoom: 1 })
+  const cam = useRef({ x: 0, z: 0, init: false, zoom: 1, intro: 1, speed: 1 })
+  const post = useMemo(() => (needsPost() ? new Post() : null), [])
   const tmp = useMemo(() => new THREE.Vector3(), [])
 
   useEffect(() => {
@@ -40,8 +46,18 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     scene.add(w.group)
     scene.background = w.terrain.bg.clone()
     cam.current.init = false
-    return () => { scene.remove(w.group); w.dispose(); world.current = null }
+    // short glide from slightly higher into the normal follow camera on scene entry; any input skips it
+    cam.current.intro = fx.intro.on && !reduced() ? 0 : 1
+    cam.current.speed = 1
+    const skip = () => { cam.current.speed = 8 }
+    window.addEventListener("keydown", skip); window.addEventListener("pointerdown", skip); window.addEventListener("wheel", skip)
+    return () => {
+      scene.remove(w.group); w.dispose(); world.current = null
+      window.removeEventListener("keydown", skip); window.removeEventListener("pointerdown", skip); window.removeEventListener("wheel", skip)
+    }
   }, [rt, scene])
+
+  useEffect(() => () => post?.dispose(), [post])
 
   useEffect(() => {
     const el = gl.domElement
@@ -67,7 +83,11 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     let fit = 1
     if (sc.scale) fit = Math.max(0.7, Math.min(1.5, Math.min(baseTiles * aspect / (sc.w + 2.5), baseTiles / Math.sin(PITCH) / (sc.h + 3.5))))
     C.zoom += (rig.zoom * fit - C.zoom) * Math.min(1, dt * 8)
-    const dist = baseTiles / (2 * tanH) / C.zoom
+    // intro glide: eased, monotone, ends exactly on the normal framing (x = 0)
+    C.intro = Math.min(1, C.intro + (dtRaw * C.speed) / Math.max(0.2, fx.intro.strength))
+    const x = 1 - C.intro * C.intro * (3 - 2 * C.intro)
+    const pitch = PITCH - (fx.horizon.on ? fx.horizon.strength * Math.PI / 180 : 0) + 0.12 * x
+    const dist = (baseTiles / (2 * tanH) / C.zoom) * (1 + 0.28 * x)
     const halfW = dist * tanH * aspect, halfD = dist * tanH / Math.sin(PITCH)
 
     let tx = H.x * P, tz = (H.y - 8) * P
@@ -79,7 +99,7 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     const mx = rig.mx * 0.45, mz = rig.my * 0.3
     tmp.set(C.x + mx, 0, C.z + mz)
     cam3.fov = FOV; cam3.near = 1; cam3.far = 260
-    cam3.position.set(tmp.x, Math.sin(PITCH) * dist, tmp.z + Math.cos(PITCH) * dist)
+    cam3.position.set(tmp.x, Math.sin(pitch) * dist, tmp.z + Math.cos(pitch) * dist)
     cam3.lookAt(tmp)
     cam3.updateProjectionMatrix()
     cam3.updateMatrixWorld()
@@ -87,6 +107,7 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     w.sh.uFog.value.set(dist * 1.1, dist * 3.2, 0.75)
     w.res.set(size.width, size.height)
     w.update(engine.now || state.clock.elapsedTime, tmp)
+    if (post) post.render(gl, scene, camera, fx.tiltShift.on ? fx.tiltShift.strength : 0, fx.bloom.on ? fx.bloom.strength * Math.max(0, Math.min(1, (w.dark - 0.2) / 0.5)) : 0)
 
     const v = new THREE.Vector3()
     overlay.update?.((x, y, h) => {
@@ -96,10 +117,10 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
 
     if (ui.fade) ui.fade.style.opacity = String(Math.min(1, S.fade.a))
     if (ui.vig) {
-      const dark = sc.id === "village" ? (w.sh.uAmb.value.b < 0.8 ? 0.4 : 0.1) : sc.dark * 0.3
+      const dark = isOutdoor(sc) ? (w.sh.uAmb.value.b < 0.8 ? 0.4 : 0.1) : sc.dark * 0.3
       ui.vig.style.opacity = String(0.8 + dark)
     }
-  })
+  }, post ? 1 : 0)
   return null
 }
 

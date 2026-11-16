@@ -8,6 +8,7 @@ import { makeShared, TILT, NL, skyMaterial, type Shared } from "./shaders"
 import { CardBatch, makeTexture, srcSize } from "./cards"
 import { buildTerrain, type Terrain } from "./terrain"
 import { isOutdoor } from "./bus"
+import { fx } from "./fx"
 
 const COS = Math.cos(TILT), SIN = Math.sin(TILT)
 const P = 1 / TS
@@ -38,6 +39,7 @@ export class World {
   private glow!: CardBatch
   private slash!: CardBatch
   res = new THREE.Vector2(1, 1)
+  dark = 0
   private sky: THREE.Mesh
   private skyMat = skyMaterial()
   private ambient = new THREE.Color()
@@ -70,6 +72,23 @@ export class World {
   private buildSprites() {
     const sc = this.rt.scene
     const all = [...sc.sprites, ...(sc.baked ?? [])]
+    // relief on: mirror the far forest past the map edge so the hills beyond it are wooded too
+    if (this.terrain.pad > 0 && sc.baked?.length) {
+      const Wp = sc.w * TS, Hp = sc.h * TS, lim = (this.terrain.pad - 2) * TS
+      for (const s of sc.baked) {
+        const rw = s.rect[2]
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+          if (!dx && !dy) continue
+          const nx = dx === 0 ? s.x : dx < 0 ? -(s.x + rw) : 2 * Wp - (s.x + rw)
+          const nb = dy === 0 ? s.baseY : dy < 0 ? -s.baseY : 2 * Hp - s.baseY
+          const ncx = nx + rw / 2
+          if (ncx < -lim || ncx > Wp + lim || nb < -lim || nb > Hp + lim) continue
+          if (dx && (dx < 0 ? s.x + rw / 2 : Wp - s.x - rw / 2) > lim) continue
+          if (dy && (dy < 0 ? s.baseY : Hp - s.baseY) > lim) continue
+          all.push({ ...s, x: nx, y: nb - (s.baseY - s.y), baseY: nb })
+        }
+      }
+    }
     const staticMap = new Map<CanvasImageSource, Sprite[]>()
     const dynMap = new Map<CanvasImageSource, Sprite[]>()
     for (const s of all) {
@@ -96,7 +115,7 @@ export class World {
     this.attach = attach
     for (const [src, list] of staticMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
-      const n = list.length
+      const n = list.reduce((a, s) => a + this.layersOf(s), 0)
       const b = new CardBatch(this.sh, tex, n, "opaque", true)
       let at = 0
       for (const s of list) at += this.place(b, at, s, tw, th)
@@ -106,7 +125,7 @@ export class World {
     }
     for (const [src, list] of dynMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
-      const n = list.length
+      const n = list.reduce((a, s) => a + this.layersOf(s), 0)
       const b = new CardBatch(this.sh, tex, n, "opaque", true, true)
       this.dyn.push({ b, list, src: () => src })
       let at = 0
@@ -118,7 +137,22 @@ export class World {
   }
   private attach = new Map<Sprite, Attached>()
 
-  /** writes one sprite card at index i0; returns how many instances it used */
+  /** thickness (optional): buildings ~10px deep, mid props 6, small props 3; never trees, characters, thin/tall posts, wall hangings or riders */
+  private layersOf(s: Sprite) {
+    if (!fx.thickness.on) return 1
+    let n = this.thick.get(s)
+    if (n === undefined) {
+      const [, , w, h] = s.rect
+      const area = w * h
+      const bad = s.dynamic || s.anim || s.sway || s.tag === "tree" || this.attach.has(s) || s.y + h - s.baseY > 6 || (w <= 16 && h >= 32) || area < 200
+      n = bad ? 0 : Math.round((area >= 2800 ? 10 : area >= 1200 ? 6 : 3) * fx.thickness.strength)
+      this.thick.set(s, n)
+    }
+    return 1 + n
+  }
+  private thick = new Map<Sprite, number>()
+
+  /** writes one sprite card (plus its thickness layers) at index i0; returns how many instances it used */
   private place(b: CardBatch, i0: number, s: Sprite, tw: number, th: number) {
     const [rx, ry, rw, rh] = s.rect
     const at = this.attach.get(s)
@@ -130,9 +164,14 @@ export class World {
       dz = pz - z + (s.baseY >= at.parent.baseY ? 0.02 : -0.02)
       x = at.dx * P
     }
-    b.set(i0, x, y, z, rw * P, rh * P, rx, ry, rw, rh, tw, th, s.flip, s.anim, s.sway ?? 0, dz)
-    b.setTint(i0, 1, 1, 1, at ? 0 : 1)   // riders (flags, weapons on racks) cast no ground shadow
-    return 1
+    const L = this.layersOf(s)
+    for (let k = 0; k < L; k++) {
+      const i = i0 + k
+      b.set(i, x, y, z, rw * P, rh * P, rx, ry, rw, rh, tw, th, s.flip, s.anim, s.sway ?? 0, dz - k * 0.004)
+      if (k) b.setLayer(i, k * P, 1 - 0.26 * (k / (L - 1)))
+      b.setTint(i, 1, 1, 1, at || k ? 0 : 1)   // only a ground sprite's front face casts a shadow
+    }
+    return L
   }
 
   // ── actors ─────────────────────────────────────────────────────
@@ -171,7 +210,7 @@ export class World {
     const gc = document.createElement("canvas"); gc.width = gc.height = 64
     const g = gc.getContext("2d")!
     const gr = g.createRadialGradient(32, 32, 0, 32, 32, 32)
-    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.35, "rgba(255,255,255,.45)"); gr.addColorStop(1, "rgba(255,255,255,0)")
+    gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.25, "rgba(255,255,255,.5)"); gr.addColorStop(0.6, "rgba(255,255,255,.14)"); gr.addColorStop(1, "rgba(255,255,255,0)")
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64)
     this.glow = new CardBatch(this.sh, makeTexture(gc), Math.max(1, this.rt.scene.lights.length), "add", false, true)
     // slash arcs: one cell per facing (right, down, left, up)
@@ -239,6 +278,7 @@ export class World {
     }
     for (; n < NL; n++) { sh.uLP.value[n].set(1e4, 1e4, 1e4, 1); sh.uLC.value[n].set(0, 0, 0) }
     // sky + fog: day blue, a warm dusk band while the night value is in transition, night navy
+    this.dark = dark
     const dusk = village ? Math.max(0, 1 - Math.abs(2 * night - 1)) : 0
     this.top.copy(this.c.dayTop).lerp(this.c.nightTop, night).lerp(this.c.duskTop, dusk * 0.55)
     this.hor.copy(this.c.dayHor).lerp(this.c.nightHor, night).lerp(this.c.duskHor, dusk * 0.7)
@@ -246,7 +286,7 @@ export class World {
     sm.uTop.value.copy(this.top); sm.uHor.value.copy(this.hor); sm.uBand.value.copy(this.c.duskBand)
     sm.uBandAmt.value = dusk; sm.uNight.value = night; sm.uTime.value = now
     sm.uScroll.value = target.x * 6; sm.uRes.value.copy(this.res); sm.uAspect.value = this.res.x / this.res.y
-    sh.uFogColor.value.copy(this.terrain.outdoor ? this.fogDay.clone().lerp(this.fogNight, night) : this.terrain.bg)
+    sh.uFogColor.value.copy(this.terrain.outdoor ? this.fogDay.clone().lerp(this.fogNight, night).lerp(this.c.duskHor, dusk * 0.3) : this.terrain.bg)
     sh.uFog.value.z = 0.75
     sh.uSky.value.copy(this.hor).lerp(this.top, 0.5)
 
@@ -258,7 +298,7 @@ export class World {
         const fl = l.flicker ? 1 + Math.sin(now * 11 + l.x) * 0.06 * l.flicker : 1
         const d = (l.r / TS) * fl * 0.7
         this.glow.set(gn, l.x * P, 0.9 - d / 2, (l.y + 16) * P, d, d, 0, 0, 64, 64, 64, 64)
-        this.glow.setTint(gn, r, g, b, 0.5 * dark)
+        this.glow.setTint(gn, r, g, b, 0.34 * dark)
         gn++
       }
     }

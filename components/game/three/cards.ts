@@ -26,7 +26,7 @@ export class CardBatch {
   shadow: THREE.Mesh | null = null
   geo = new THREE.InstancedBufferGeometry()
   private foot: Float32Array; private size: Float32Array; private rect: Float32Array
-  private anim: Float32Array; private tint: Float32Array; private dz: Float32Array
+  private anim: Float32Array; private tint: Float32Array; private dz: Float32Array; private layer: Float32Array
   private attrs: THREE.InstancedBufferAttribute[] = []
   mats: THREE.ShaderMaterial[] = []
 
@@ -44,8 +44,8 @@ export class CardBatch {
       return arr
     }
     this.foot = mk("aFoot", 3); this.size = mk("aSize", 2); this.rect = mk("aRect", 4)
-    this.anim = mk("aAnim", 4); this.tint = mk("aTint", 4); this.dz = mk("aDz", 1)
-    for (let i = 0; i < cap; i++) this.tint.set([1, 1, 1, 1], i * 4)
+    this.anim = mk("aAnim", 4); this.tint = mk("aTint", 4); this.dz = mk("aDz", 1); this.layer = mk("aLayer", 2)
+    for (let i = 0; i < cap; i++) { this.tint.set([1, 1, 1, 1], i * 4); this.layer[i * 2 + 1] = 1 }
     g.instanceCount = 0
     const m = cardMaterial(sh, tex, mode)
     this.mats.push(m)
@@ -73,6 +73,8 @@ export class CardBatch {
     this.dz[i] = dz
   }
   setTint(i: number, r: number, g: number, b: number, a: number) { this.tint.set([r, g, b, a], i * 4) }
+  /** thickness layer: offset in tiles behind the front face and its colour shade (front = 0, 1) */
+  setLayer(i: number, off: number, shade: number) { this.layer[i * 2] = off; this.layer[i * 2 + 1] = shade }
   hide(i: number) { this.size[i * 2] = 0 }
 
   flush(n: number) {

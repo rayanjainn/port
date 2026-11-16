@@ -150,9 +150,9 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
     defines,
     uniforms: { ...sh, uMap: { value: map } } as unknown as Record<string, THREE.IUniform>,
     vertexShader: /* glsl */ `
-      attribute vec2 aCorner; attribute vec3 aFoot; attribute vec2 aSize; attribute vec4 aRect; attribute vec4 aAnim; attribute vec4 aTint; attribute float aDz;
+      attribute vec2 aCorner; attribute vec3 aFoot; attribute vec2 aSize; attribute vec4 aRect; attribute vec4 aAnim; attribute vec4 aTint; attribute float aDz; attribute vec2 aLayer;
       uniform float uTime; uniform vec2 uTilt; uniform vec3 uShadow; uniform float uBias;
-      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot;
+      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot; varying float vBack;
       void main() {
         float h = aSize.y;
         float row = aCorner.y;
@@ -163,12 +163,12 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
         #ifdef SHADOW
           wp = vec3(aFoot.x + lx + uShadow.x * ly, aFoot.y + 0.004, aFoot.z + uShadow.y * ly);
         #else
-          wp = aFoot + vec3(lx, ly * uTilt.x, -ly * uTilt.y);
+          wp = aFoot + vec3(lx, ly * uTilt.x, -ly * uTilt.y) - vec3(0.0, aLayer.x * uTilt.y, aLayer.x * uTilt.x);   // back layers sit behind the front face
         #endif
         float fy = h > 0.0 ? ly / h : 0.0;
         float fr = aAnim.x > 1.0 ? floor(mod(uTime * aAnim.y, aAnim.x)) * aAnim.z : 0.0;
         vUv = vec2(mix(aRect.x, aRect.z, aCorner.x) + fr, mix(aRect.w, aRect.y, fy));
-        vW = wp; vTint = aTint; vFoot = aFoot;
+        vW = wp; vTint = aTint; vTint.rgb *= aLayer.y; vBack = aLayer.x > 0.0 ? 1.0 : 0.0; vFoot = aFoot;
         vec4 mv = viewMatrix * vec4(wp, 1.0); vD = -mv.z;
         gl_Position = projectionMatrix * mv;
         #ifdef FOOTDEPTH
@@ -180,7 +180,7 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
       }`,
     fragmentShader: /* glsl */ `
       uniform sampler2D uMap; uniform vec3 uShadow; uniform sampler2D uMask; uniform vec4 uMaskInfo;
-      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot;
+      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot; varying float vBack;
       ${LIGHT}
       void main() {
         vec4 t = texture2D(uMap, vUv);
@@ -197,6 +197,8 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
           gl_FragColor = vec4(t.rgb * vTint.rgb, a);
         #else
           if (t.a < 0.5) discard;
+          // thickness layers skip the black outline pixels, so the slab's sides take the sprite's own (darkened) colours
+          if (vBack > 0.5 && dot(t.rgb, vec3(0.3, 0.59, 0.11)) < 0.035) discard;
           gl_FragColor = vec4(fogged(t.rgb * vTint.rgb * lightAt(vW), vD), 1.0);
         #endif
         #include <colorspace_fragment>
