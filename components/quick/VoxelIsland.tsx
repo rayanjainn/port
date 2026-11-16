@@ -167,16 +167,18 @@ function Rig() {
   return null
 }
 
-export default function VoxelIsland({ onPick }: { onPick: (anchor: string) => void }) {
+export default function VoxelIsland({ onPick, onReady, active = true }: { onPick: (anchor: string) => void; onReady?: () => void; active?: boolean }) {
   const [data, setData] = useState<Vox | null>(null)
   useEffect(() => {
     fetch("/village-voxels.json").then((r) => r.json()).then(setData).catch(() => {})
   }, [])
+  useEffect(() => { if (data) { const t = window.setTimeout(() => onReady?.(), 250); return () => window.clearTimeout(t) } }, [data, onReady])
   return (
     <Canvas
       shadows={{ type: THREE.PCFShadowMap }}
-      dpr={[1, 1.75]}
-      camera={{ position: [9.5, 8.5, 9.5], fov: 34, near: 0.1, far: 200 }}
+      dpr={[1, 1.5]}
+      frameloop={active ? "always" : "never"}
+      camera={{ position: [9.5, 8.5, 9.5], fov: 42, near: 0.1, far: 200 }}
       gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
       style={{ width: "100%", height: "100%" }}
     >

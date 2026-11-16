@@ -1,7 +1,7 @@
 "use client"
 // Small motion primitives for the quick view.
 import { useEffect, useRef, useState, type ReactNode, type CSSProperties } from "react"
-import { motion, useInView, useMotionValue, useSpring, useScroll, animate } from "framer-motion"
+import { motion, useReducedMotion, useInView, useMotionValue, useSpring, useScroll, animate } from "framer-motion"
 import Lenis from "lenis"
 
 /** Buttery smooth scrolling (Lenis) + anchor links that glide. */
@@ -20,9 +20,15 @@ export function SmoothScroll() {
     }
     document.addEventListener("click", onClick)
     ;(window as unknown as { __lenis?: Lenis }).__lenis = lenis
-    return () => { cancelAnimationFrame(raf); lenis.destroy(); document.removeEventListener("click", onClick) }
+    return () => { cancelAnimationFrame(raf); lenis.destroy(); document.removeEventListener("click", onClick); delete (window as unknown as { __lenis?: Lenis }).__lenis }
   }, [])
   return null
+}
+
+export function setScrollLocked(locked: boolean) {
+  const l = (window as unknown as { __lenis?: Lenis }).__lenis
+  if (l) { if (locked) l.stop(); else l.start() }
+  document.documentElement.style.overflow = locked ? "hidden" : ""
 }
 
 export function scrollToAnchor(sel: string) {
@@ -105,6 +111,7 @@ export function Scramble({ words, className = "" }: { words: string[]; className
       setTxt(out)
       if (done >= len) { i = (i + 1) % words.length; from = words[i]; to = words[(i + 1) % words.length]; frame = 0; hold = 130 }
     }
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const t = setTimeout(() => { raf = requestAnimationFrame(step) }, 1600)
     return () => { clearTimeout(t); cancelAnimationFrame(raf) }
   }, [words])
@@ -129,9 +136,9 @@ export function Magnetic({ children, strength = 0.35, className = "" }: { childr
 export function CountUp({ to, className = "", suffix = "" }: { to: number; className?: string; suffix?: string }) {
   const ref = useRef<HTMLSpanElement>(null)
   const inView = useInView(ref, { once: true })
-  const [v, setV] = useState(0)
+  const [v, setV] = useState(to)
   useEffect(() => {
-    if (!inView) return
+    if (!inView || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
     const c = animate(0, to, { duration: 1.6, ease: [0.16, 1, 0.3, 1], onUpdate: (n) => setV(Math.round(n)) })
     return () => c.stop()
   }, [inView, to])
@@ -144,7 +151,7 @@ export function Marquee({ items, reverse = false, speed = 40 }: { items: ReactNo
     <div className="group relative flex overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_10%,black_90%,transparent)]">
       {[0, 1].map((k) => (
         <div key={k} aria-hidden={k === 1} className="flex shrink-0 items-center gap-10 pr-10 group-hover:[animation-play-state:paused]"
-          style={{ animation: `marquee ${speed}s linear infinite`, animationDirection: reverse ? "reverse" : "normal" }}>
+          style={{ animation: `qv-marquee ${speed}s linear infinite`, animationDirection: reverse ? "reverse" : "normal" }}>
           {items.map((it, i) => <div key={i} className="shrink-0">{it}</div>)}
         </div>
       ))}
@@ -190,42 +197,72 @@ export function LocalClock({ tz = "Asia/Kolkata" }: { tz?: string }) {
   return <span suppressHydrationWarning>{now || "--:--:--"}</span>
 }
 
-/** Terminal that types commands and their output. */
-export function Terminal({ lines }: { lines: { cmd: string; out: string }[] }) {
+function PromptLine({ user, cmd, cursor }: { user: string; cmd: string; cursor?: boolean }) {
+  return <div><span className="text-[#ffb547]">{user}</span><span className="text-white/45">:~$ </span><span className="text-white/90">{cmd}</span>{cursor && <span className="ml-0.5 inline-block h-[1em] w-[7px] translate-y-[2px] animate-pulse bg-white/80" />}</div>
+}
+
+/** Terminal that types commands and their output. Its final height is reserved up front. */
+export function Terminal({ lines, user = "rayan@world" }: { lines: { cmd: string; out: string }[]; user?: string }) {
   const ref = useRef<HTMLDivElement>(null)
-  const inView = useInView(ref, { once: true, margin: "-60px" })
+  const inView = useInView(ref, { once: true, margin: "-40px" })
   const [shown, setShown] = useState<{ cmd: string; out: string; done: boolean }[]>([])
+  const reduced = !!useReducedMotion()
   useEffect(() => {
-    if (!inView) return
+    if (!inView || reduced) return
     let cancelled = false
+    const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
     const run = async () => {
       for (let idx = 0; idx < lines.length; idx++) {
         const l = lines[idx]
         for (let i = 0; i <= l.cmd.length; i++) {
           if (cancelled) return
           setShown((s) => [...s.slice(0, idx), { cmd: l.cmd.slice(0, i), out: "", done: false }])
-          await new Promise((r) => setTimeout(r, 32 + Math.random() * 40))
+          await wait(18 + Math.random() * 26)
         }
-        await new Promise((r) => setTimeout(r, 250))
+        await wait(140)
         if (cancelled) return
         setShown((s) => [...s.slice(0, idx), { cmd: l.cmd, out: l.out, done: true }])
-        await new Promise((r) => setTimeout(r, 450))
+        await wait(260)
       }
     }
     run()
     return () => { cancelled = true }
-  }, [inView, lines])
+  }, [inView, lines, reduced])
+  const rows = reduced ? lines.map((l) => ({ ...l, done: true })) : shown
   return (
-    <div ref={ref} className="font-[family-name:var(--font-gmono)] text-[13px] leading-relaxed">
-      {shown.map((l, i) => (
-        <div key={i} className="mb-2">
-          <div><span className="text-[#ffb547]">rayan@world</span><span className="text-white/40">:~$ </span><span className="text-white/90">{l.cmd}</span>{!l.done && <span className="ml-0.5 inline-block h-[1em] w-[7px] translate-y-[2px] animate-pulse bg-white/80" />}</div>
-          {l.done && <div className="text-white/55">{l.out}</div>}
-        </div>
-      ))}
-      {shown.length === lines.length && shown[shown.length - 1]?.done && (
-        <div><span className="text-[#ffb547]">rayan@world</span><span className="text-white/40">:~$ </span><span className="inline-block h-[1em] w-[7px] translate-y-[2px] animate-pulse bg-white/80" /></div>
-      )}
+    <div ref={ref} className="qv-mono relative text-[13px] leading-relaxed">
+      {/* invisible full transcript holds the final height so nothing jumps */}
+      <div aria-hidden className="invisible">
+        {lines.map((l, i) => <div key={i} className="mb-2"><div>{user}:~$ {l.cmd}</div><div>{l.out}</div></div>)}
+        <div>{user}:~$ </div>
+      </div>
+      <div className="absolute inset-0" role="img" aria-label={lines.map((l) => `${l.cmd}: ${l.out}`).join(". ")}>
+        {rows.map((l, i) => (
+          <div key={i} className="mb-2">
+            <PromptLine user={user} cmd={l.cmd} cursor={!l.done} />
+            {l.done && <div className="text-white/60">{l.out}</div>}
+          </div>
+        ))}
+        {rows.length === lines.length && rows[rows.length - 1]?.done && <PromptLine user={user} cmd="" cursor />}
+      </div>
     </div>
   )
+}
+
+/** Fades a block in as it nears the viewport. Visible by default; only content below the fold is held back. */
+export function Reveal({ children, className = "", delay = 0, as: Tag = "div" }: { children: ReactNode; className?: string; delay?: number; as?: "div" | "li" | "article" | "section" }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !("IntersectionObserver" in window) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+    if (el.getBoundingClientRect().top < window.innerHeight) return
+    el.dataset.rv = "pre"
+    const show = () => { el.dataset.rv = "in" }
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { show(); io.disconnect() } }, { rootMargin: "0px 0px 14% 0px" })
+    io.observe(el)
+    const t = window.setTimeout(show, 3000)
+    return () => { io.disconnect(); window.clearTimeout(t) }
+  }, [])
+  const T = Tag as "div"
+  return <T ref={ref} className={`qv-rv ${className}`} style={delay ? ({ "--d": `${delay}s` } as CSSProperties) : undefined}>{children}</T>
 }

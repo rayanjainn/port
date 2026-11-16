@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import content from "@/content/portfolio.json"
+import "./quick.css"
 
 export const metadata: Metadata = {
   title: `${content.profile.name} — Quick View`,
