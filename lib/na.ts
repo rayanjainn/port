@@ -189,3 +189,99 @@ export const animalSheet = (name: string) => `${NA}/animals/${name}.png`
 
 // sprite-sheet column per facing
 export const DIR_COL = { down: 0, up: 1, left: 2, right: 3 } as const
+
+// ── Desert (Sunscar Oasis) ──────────────────────────────────────
+export const DESERT_SHEETS = {
+  floor: `${NA}/tiles/TilesetFloor.png`,
+  water: `${NA}/tiles/TilesetWater.png`,
+  desert: `${NA}/tiles/TilesetDesert.png`,
+  relief: `${NA}/tiles/TilesetRelief.png`,
+  reliefDetail: `${NA}/tiles/TilesetReliefDetail.png`,
+  hole: `${NA}/tiles/TilesetHole.png`,
+  nature: `${NA}/tiles/TilesetNature.png`,
+  house: `${NA}/tiles/TilesetHouse.png`,
+  element: `${NA}/tiles/TilesetElement.png`,
+  floorDetail: `${NA}/tiles/TilesetFloorDetail.png`,
+  dungeon: `${NA}/tiles/TilesetDungeon.png`,
+  quicksand: `${NA}/anim/quicksand.png`,
+  fallTop: `${NA}/anim/TopSheet16x16.png`,
+  fallMid: `${NA}/anim/MiddleSheet16x16.png`,
+  fallBot: `${NA}/anim/BottomSheet16x16.png`,
+  ripples: `${NA}/anim/ripples.png`,
+  flagRed: `${NA}/anim/flag_red.png`,
+  flagBlue: `${NA}/anim/flag_blue.png`,
+  flagYellow: `${NA}/anim/flag_yellow.png`,
+  smoke: `${NA}/fx/smoke.png`,
+} as const
+
+/** build an autotile from a 4x4 block origin (c0, r0) laid out like DIRT/WATER; inner corners at +5/+6 */
+const blockAt = (c0: number, r0: number, centres: Rect[]): Autotile => ({
+  tl: t(c0, r0), t: t(c0 + 1, r0), tr: t(c0 + 2, r0), l: t(c0, r0 + 1), c: centres, r: t(c0 + 2, r0 + 1),
+  bl: t(c0, r0 + 2), b: t(c0 + 1, r0 + 2), br: t(c0 + 2, r0 + 2),
+  vTop: t(c0 + 3, r0), vMid: t(c0 + 3, r0 + 1), vBot: t(c0 + 3, r0 + 2), hLeft: t(c0, r0 + 3), hMid: t(c0 + 1, r0 + 3), hRight: t(c0 + 2, r0 + 3), single: t(c0 + 3, r0 + 3),
+  iBR: t(c0 + 5, r0 + 1), iBL: t(c0 + 6, r0 + 1), iTR: t(c0 + 5, r0 + 2), iTL: t(c0 + 6, r0 + 2),
+})
+/** pale dune patch on the orange base */
+export const DUNE: Autotile = blockAt(0, 0, [t(1, 1), t(1, 1), t(1, 1), t(1, 1), t(1, 1), t(1, 1), t(1, 1), t(9, 2), t(10, 2), t(8, 3)])
+/** pink-rimmed packed sand: trodden paths */
+export const PATH_SAND: Autotile = blockAt(11, 0, [t(12, 1), t(12, 1), t(20, 2), t(21, 2), t(19, 3), t(20, 3), t(21, 3)])
+/** cracked clay of the dry riverbed */
+export const MUD_BED: Autotile = blockAt(11, 14, [t(12, 15), t(12, 15), t(20, 16), t(21, 16), t(19, 17), t(20, 17), t(21, 17)])
+/** limestone paving */
+export const LIME: Autotile = blockAt(0, 14, [t(1, 15), t(1, 15), t(9, 16), t(10, 16), t(8, 17), t(9, 17), t(10, 17)])
+/** oasis water with a sandy rim (TilesetWater rows 0-4) */
+export const OASIS: Autotile = blockAt(0, 0, [t(1, 1)])
+export const SAND_BASE: Rect[] = [t(0, 5), t(0, 5), t(0, 5), t(0, 5), t(0, 5), t(1, 5), t(2, 5), t(3, 5), t(4, 5)]
+export const MUD_BASE: Rect[] = [t(11, 19), t(11, 19), t(12, 19), t(13, 19), t(14, 19)]
+
+/** orange relief (mesa) pieces */
+export const MESA = {
+  tl: t(1, 5), t: t(2, 5), tr: t(3, 5), l: t(1, 6), c: t(2, 6), r: t(3, 6), bl: t(1, 7), b: t(2, 7), br: t(3, 7),
+  vTop: t(0, 5), vMid: t(0, 6), vBot: t(0, 7),
+  wallTL: t(4, 5), wallT: t(5, 5), wallTR: t(6, 5), wallL: t(4, 6), wallM: t(5, 6), wallR: t(6, 6), wallBL: t(4, 7), wallB: t(5, 7), wallBR: t(6, 7),
+  rampT: t(7, 5), rampM: t(7, 6), rampB: t(7, 7),
+}
+
+export interface DesertArt { rect: Rect; door: [number, number]; solidTop: number }
+export const DESERT_ART: Record<string, DesertArt> = {
+  dome: { rect: [0, 0, 48, 48], door: [17, 31], solidTop: 20 },
+  tower: { rect: [48, 0, 48, 80], door: [16, 32], solidTop: 34 },
+  flat: { rect: [96, 0, 64, 48], door: [16, 32], solidTop: 20 },
+  longHouse: { rect: [160, 0, 96, 66], door: [16, 32], solidTop: 20 },
+  awningHouse: { rect: [256, 0, 64, 64], door: [16, 32], solidTop: 22 },
+  court: { rect: [96, 48, 64, 64], door: [16, 32], solidTop: 44 },
+}
+export const DESERT_PROPS = {
+  palmTriple: [160, 64, 64, 48] as Rect,
+  palmQuad: [160, 112, 64, 48] as Rect,
+  palmA: [160, 160, 32, 32] as Rect,
+  palmB: [192, 160, 32, 32] as Rect,
+  sproutA: [224, 160, 16, 16] as Rect,
+  sproutB: [224, 176, 16, 16] as Rect,
+  tower: [224, 69, 48, 91] as Rect,
+  wall: [272, 69, 48, 45] as Rect,
+  plank: [240, 160, 16, 32] as Rect,
+  map: [256, 160, 16, 16] as Rect,
+  skull: [256, 176, 16, 16] as Rect,
+  bones: [272, 176, 16, 16] as Rect,
+  fossil: [288, 176, 16, 16] as Rect,
+  femur: [304, 176, 16, 16] as Rect,
+  basin: [128, 112, 32, 32] as Rect,
+  lionFountain: [0, 96, 32, 48] as Rect,
+  lion: [0, 144, 32, 48] as Rect,
+  stallBlue: [32, 160, 32, 32] as Rect,
+  stallYellow: [64, 160, 32, 32] as Rect,
+  clothBlue: [96, 112, 32, 32] as Rect,
+  clothGreen: [96, 144, 32, 32] as Rect,
+  basketRed: [96, 176, 16, 16] as Rect,
+  basketYellow: [112, 176, 16, 16] as Rect,
+  pool: [272, 114, 48, 46] as Rect,
+}
+export const TAN_ROCKS = {
+  triple: [192, 80, 64, 48] as Rect,
+  big: [192, 128, 32, 32] as Rect,
+  med: [240, 160, 32, 40] as Rect,
+  wide: [272, 160, 64, 40] as Rect,
+  tall: [336, 160, 32, 48] as Rect,
+  small: [[272, 208, 16, 16], [288, 208, 16, 16], [304, 208, 16, 16]] as Rect[],
+}
