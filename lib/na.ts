@@ -285,3 +285,57 @@ export const TAN_ROCKS = {
   tall: [336, 160, 32, 48] as Rect,
   small: [[272, 208, 16, 16], [288, 208, 16, 16], [304, 208, 16, 16]] as Rect[],
 }
+// ── Ruins world: abandoned-village, pit and relief tilesets, spooky actors ──
+export const RUINS_SHEETS = {
+  abandoned: `${NA}/tiles/TilesetVillageAbandoned.png`,
+  hole: `${NA}/tiles/TilesetHole.png`,
+  relief: `${NA}/tiles/TilesetRelief.png`,
+  reliefDetail: `${NA}/tiles/TilesetReliefDetail.png`,
+  boat: `${NA}/vehicles/Boat.png`,
+} as const
+
+const shift = (a: Autotile, dc: number, dr: number): Autotile => {
+  const m = (r: Rect): Rect => [r[0] + dc * 16, r[1] + dr * 16, r[2], r[3]]
+  return {
+    tl: m(a.tl), t: m(a.t), tr: m(a.tr), l: m(a.l), c: a.c.map(m), r: m(a.r), bl: m(a.bl), b: m(a.b), br: m(a.br),
+    vTop: m(a.vTop), vMid: m(a.vMid), vBot: m(a.vBot), hLeft: m(a.hLeft), hMid: m(a.hMid), hRight: m(a.hRight), single: m(a.single),
+    iBR: m(a.iBR), iBL: m(a.iBL), iTR: m(a.iTR), iTL: m(a.iTL),
+  }
+}
+/** dead-grass biome of TilesetFloor: mud patches on a mauve base, and the matching purple swamp water */
+export const MUD: Autotile = shift(DIRT, 11, 7)
+export const SWAMP_WATER: Autotile = shift(WATER, 13, 0)
+export const DEAD_GRASS: Rect[] = [t(11, 19)]
+
+/** pit tiles of TilesetHole (rim on top, no rim below) */
+export const HOLE: Autotile = {
+  tl: t(0, 0), t: t(1, 0), tr: t(2, 0), l: t(0, 1), c: [t(1, 1), t(2, 1)], r: t(2, 1), bl: t(0, 2), b: t(1, 2), br: t(2, 2),
+  vTop: t(3, 0), vMid: t(3, 1), vBot: t(3, 2), hLeft: t(0, 3), hMid: t(1, 3), hRight: t(2, 3), single: t(3, 3),
+  iBR: t(1, 1), iBL: t(1, 1), iTR: t(4, 2), iTL: t(6, 2),
+}
+
+/** grey plateau of TilesetRelief: rim on top, one tile of cliff face at the bottom */
+export const PLATEAU: Autotile = {
+  tl: t(1, 0), t: t(2, 0), tr: t(3, 0), l: t(1, 1), c: [t(2, 1)], r: t(3, 1), bl: t(1, 2), b: t(2, 2), br: t(3, 2),
+  vTop: t(0, 0), vMid: t(0, 1), vBot: t(0, 2), hLeft: t(1, 1), hMid: t(2, 1), hRight: t(3, 1), single: t(2, 1),
+  iBR: t(2, 1), iBL: t(2, 1), iTR: t(2, 1), iTL: t(2, 1),
+}
+/** tall grey cliff wall panels (3 columns x 3 rows) */
+export const CLIFF = { l: [t(4, 0), t(4, 1), t(4, 2)], m: [t(5, 0), t(5, 1), t(5, 2)], r: [t(6, 0), t(6, 1), t(6, 2)] }
+
+export const RUINS_ART: Record<string, Rect> = {
+  // TilesetVillageAbandoned
+  ruinHall: [0, 0, 64, 48], kiln: [64, 0, 32, 48], signWall: [96, 0, 80, 48], cottageA: [176, 0, 48, 48], cottageB: [176, 48, 48, 48],
+  tower: [192, 96, 64, 80], dome: [256, 80, 64, 96], frog: [144, 80, 32, 32], pillar: [32, 54, 32, 42], bust: [0, 49, 32, 31],
+  vase: [64, 58, 32, 22], moundBig: [112, 82, 30, 29], logsV: [96, 96, 16, 48], mossStump: [112, 129, 32, 47], logWall: [144, 144, 32, 32],
+  shelfA: [288, 163, 32, 29], cupboard: [256, 168, 32, 24], bushA: [64, 82, 16, 14], bushB: [80, 80, 16, 15], rubble1: [2, 80, 28, 16],
+  // TilesetReliefDetail
+  crypt: [0, 112, 48, 40], caveBrown: [48, 112, 48, 40], skullDoor: [32, 0, 16, 16], woodGate: [16, 16, 16, 16], ladder: [48, 16, 16, 16],
+  // TilesetHouse (grey statues, iron fence)
+  cyclops: [16, 305, 32, 47], orbShrine: [49, 306, 30, 30], shrine2: [81, 306, 30, 30], frogGrey: [48, 342, 32, 26], hooded: [81, 336, 31, 32],
+  pillarGrey: [0, 310, 16, 42], maiden: [112, 305, 16, 47], arch: [464, 322, 48, 42], ironFence: [150, 162, 68, 14], ironGate: [150, 176, 68, 32],
+}
+
+export const RUINS_CHARS = {
+  elder: "Master", gravekeeper: "OldMan3", bones: "Skeleton", ghost: "Spirit", count: "Vampire", bard: "Noble", innkeeper: "OldWoman", courier: "Tengu", apprentice: "NinjaMageBlack",
+} as const
