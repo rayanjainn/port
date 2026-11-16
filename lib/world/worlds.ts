@@ -1,6 +1,6 @@
 // The world registry: every place the hero can travel to, how to load it and how to present it.
 // A world is "open" only when its loader is registered below; everything else shows as an uncharted
-// "soon" card and is never loaded. To switch a world on, uncomment its single line in LOADERS.
+// "soon" card and is never loaded. To switch a world on, register its loader in LOADERS.
 import type { Portfolio } from "@/lib/content"
 import type { Scene } from "./core"
 import type { Track } from "@/lib/audio"
@@ -11,7 +11,7 @@ export interface WorldModule {
   preload: string[]
 }
 
-export type TravelKind = "dock" | "metro" | "caravan" | "gate"
+export type TravelKind = "dock" | "metro" | "caravan" | "ferry"
 
 export type Material = "parchment" | "neon" | "sandstone" | "spectral"
 /** the world's UI palette: two accents, a dark and a light surface, and the material its panels are made of */
@@ -59,17 +59,21 @@ const DEFS: WorldDef[] = [
   },
   {
     theme: { accent: "#f2a23a", accent2: "#ff6b4a", dark: "#4a2a14", light: "#f6e2b8", material: "sandstone" },
-    id: "desert", name: "Ember Dunes", tagline: "Gold sand, a caravan road, and an oasis that is on no map.",
+    id: "desert", name: "Sunscar Oasis", tagline: "A caravan town round a palm-ringed lake, where the sand keeps its secrets till dusk.",
     scene: "desert", accent: "#f2a23a", accent2: "#ff6b4a", music: "desert", roman: "III", motif: "dunes",
-    travel: { kind: "caravan", place: "THE CARAVAN", verb: "JOIN THE CARAVAN" },
-    facts: ["???"], landmarks: [],
+    travel: { kind: "caravan", place: "THE CARAVAN GATE", verb: "JOIN THE CARAVAN" },
+    facts: ["7 LANDMARKS", "4 ARENA GAMES", "QUICKSAND", "DAY / NIGHT"],
+    landmarks: ["townhall", "gallery", "tavern", "forge", "academy", "wizard", "arcade"],
+    preview: { day: "/worlds/desert.png", night: "/worlds/desert-night.png", w: 1344, h: 1024, pan: [[49, 44], [28, 60]], start: "day" },
   },
   {
     theme: { accent: "#5fd0a0", accent2: "#9a7be0", dark: "#0c2a2a", light: "#cfe8de", material: "spectral" },
-    id: "ruins", name: "Hollow Ruins", tagline: "Moss, broken columns, and something old still humming below.",
+    id: "ruins", name: "Hollow Reach", tagline: "A twilight village that never saw dawn: lanterns, graves, and a ferry for ghosts.",
     scene: "ruins", accent: "#5fd0a0", accent2: "#9a7be0", music: "ruins", roman: "IV", motif: "ruins",
-    travel: { kind: "gate", place: "THE OLD GATE", verb: "STEP THROUGH" },
-    facts: ["???"], landmarks: [],
+    travel: { kind: "ferry", place: "THE GHOST PIER", verb: "BOARD THE GHOST FERRY" },
+    facts: ["7 LANDMARKS", "4 SEANCE GAMES", "ETERNAL TWILIGHT", "GHOST FERRY"],
+    landmarks: ["townhall", "gallery", "tavern", "forge", "academy", "wizard", "arcade"],
+    preview: { day: "/worlds/ruins.png", w: 1280, h: 960, pan: [[28, 46], [56, 22]], start: "day" },
   },
 ]
 
@@ -83,10 +87,8 @@ const LOADERS: Record<string, () => Promise<WorldModule>> = {
     const c = await import("./city")
     return { build: (content) => ({ city: c.buildCity(content) }), preload: [...c.CITY_PRELOAD, "/worlds/city.png", "/worlds/city-night.png"] }
   },
-  // TODO(worlds): switch on the desert once lib/world/desert.ts exists (adjust the call if buildDesert takes the content):
-  desert: async () => { const d = await import("./desert"); return { build: () => ({ desert: d.buildDesert() }), preload: d.DESERT_PRELOAD } },
-  // TODO(worlds): switch on the ruins once lib/world/ruins.ts exists:
-  ruins: async () => { const r = await import("./ruins"); return { build: () => ({ ruins: r.buildRuins() }), preload: r.RUINS_PRELOAD } },
+  desert: async () => { const d = await import("./desert"); return { build: () => ({ desert: d.buildDesert() }), preload: [...d.DESERT_PRELOAD, "/worlds/desert.png", "/worlds/desert-night.png"] } },
+  ruins: async () => { const r = await import("./ruins"); return { build: () => ({ ruins: r.buildRuins() }), preload: [...r.RUINS_PRELOAD, "/worlds/ruins.png"] } },
 }
 
 export type WorldStatus = "open" | "soon"

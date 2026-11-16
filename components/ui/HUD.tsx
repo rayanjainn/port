@@ -5,6 +5,7 @@ import { useGameStore, webgl2Supported } from "@/lib/store"
 import { gameAchievements } from "@/lib/data"
 import { playSound, setMusicEnabled } from "@/lib/audio"
 import { useContent } from "@/lib/content"
+import { engine } from "@/lib/engine"
 import { runtime, toggleNight, requestTeleport } from "@/lib/runtime"
 import { worldById, visitKey } from "@/lib/world/worlds"
 import { Trophy, Volume2, VolumeX, Moon, Sun, Map as MapIcon, LayoutList, Navigation, X, Music, Music2, DoorOpen, Globe } from "lucide-react"
@@ -43,6 +44,7 @@ export default function HUD() {
   const done = QUEST_ORDER.filter(isV)
   const nextQuest = QUEST_ORDER.find((q) => !isV(q))
   const inside = sceneId !== world.scene
+  const outdoor = !!engine.scenes[sceneId]?.scene.outdoor
   const here = lms.find((b) => b.id === sceneId)
 
   useEffect(() => {
@@ -147,7 +149,7 @@ export default function HUD() {
         </div>
         <IconBtn title="Worlds (G)" onClick={() => { useGameStore.getState().openWorldSelect(world.travel.kind); playSound("open") }}><Globe size={18} /></IconBtn>
         <IconBtn title="Map (M)" onClick={() => { setMapOpen(!mapOpen); playSound("open") }}><MapIcon size={18} /></IconBtn>
-        {!inside && (
+        {outdoor && (
           <IconBtn title={night ? "Day (N)" : "Night (N)"} onClick={() => { toggleNight(); playSound("click"); setNight(!night) }}>
             {night ? <Sun size={18} /> : <Moon size={18} />}
           </IconBtn>
@@ -177,7 +179,7 @@ export default function HUD() {
         <span style={hint}><span className="kbd">E</span> TALK / ENTER</span>
         <span style={hint}><span className="kbd">M</span> MAP</span>
         <span style={hint}><span className="kbd">G</span> WORLDS</span>
-        {!inside && <span style={hint}><span className="kbd">N</span> NIGHT</span>}
+        {outdoor && <span style={hint}><span className="kbd">N</span> NIGHT</span>}
         {webgl2Supported() && <span style={hint}><span className="kbd">V</span> 2D/3D</span>}
         {sceneId === "cave" && <span style={hint}><span className="kbd" style={{ minWidth: 48 }}>SPACE</span> SWING</span>}
       </div>

@@ -26,6 +26,13 @@ import Arcade from "@/components/arcade/Arcade"
 
 const World3D = dynamic(() => import("@/components/game/World3D"), { ssr: false, loading: () => null })
 
+const CHESTS: Record<string, { ach: string; find: string }> = {
+  village: { ach: "chest_mine", find: 'You found a scroll: "{motto}"' },
+  city: { ach: "chest_city", find: 'You fished a sealed tube off the pier. Inside: "{motto}"' },
+  desert: { ach: "chest_desert", find: 'A clay jar among the cacti, a sun-baked note inside: "{motto}"' },
+  ruins: { ach: "chest_ruins", find: 'A page glows between the cold stones: "{motto}"' },
+}
+
 const SPEED = 62           // native px / sec
 const FOOT = { w: 10, h: 6 }
 
@@ -248,9 +255,10 @@ export default function GameCanvas() {
       S.chests.add(a.id)
       playSound("secret")
       for (let i = 0; i < 24; i++) S.particles.push({ gy: S.hero.y, x: S.hero.x, y: S.hero.y - 20, vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 60, life: 0.9, max: 0.9, col: i % 2 ? "#ffd76a" : "#fff4c2", size: 2 })
-      store.unlockAchievement("chest_mine")
+      const ch = CHESTS[store.world] ?? CHESTS.village
+      store.unlockAchievement(ch.ach)
       const c = useContentStore.getState().data
-      store.say({ name: "Treasure!", lines: [`You found a scroll: "${c.profile.motto}"`, `It's signed ${c.profile.name}. Thanks for exploring this far ✦`] })
+      store.say({ name: "Treasure!", lines: [ch.find.replace("{motto}", c.profile.motto), `It's signed ${c.profile.name}. Thanks for exploring this far ✦`] })
     }
   }
 
@@ -691,7 +699,7 @@ export default function GameCanvas() {
       if (dark > 0.02) {
         lctx.globalCompositeOperation = "source-over"
         lctx.clearRect(0, 0, vw, vh)
-        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.outdoor ? `rgba(${LT?.tint ?? "14,18,58"},${dark})` : `rgba(24,14,8,${dark})`
+        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : `rgba(${LT?.tint ?? (sc.outdoor ? "14,18,58" : "24,14,8")},${dark})`
         lctx.fillRect(0, 0, vw, vh)
         lctx.globalCompositeOperation = "destination-out"
         const hole = (x: number, y: number, r: number, s: number) => {

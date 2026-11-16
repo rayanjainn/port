@@ -3,7 +3,7 @@ import {
   RUINS_SHEETS, RUINS_ART, RUINS_CHARS, MUD, SWAMP_WATER, DEAD_GRASS, HOLE, PLATEAU, CLIFF, PLANK, PROPS, SHEETS,
   charSheet, charFace, monsterSheet, animalSheet, type Rect, type Autotile,
 } from "@/lib/na"
-import { TS, G, img, sheet, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type Box, type SceneSign } from "./core"
+import { TS, G, img, sheet, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type Box, type SceneSign, type Landmark } from "./core"
 
 export const RW = 80
 export const RH = 60
@@ -570,8 +570,7 @@ export function buildRuins(): Scene {
 
   // ── ghost ferry & pier
   const pier = { x: 9 * TS, y: 45 * TS + 8 }
-  hotspots.push({ id: "travel", box: { x: 10 * TS, y: 44 * TS + 8, w: 40, h: 24 }, label: "TRAVEL", action: { type: "sign", lines: ["The ghost ferry creaks out of the fog.", "Ferryman: \"Other worlds lie across the water. The fare is a little curiosity.\"", "(Travel is not open yet.)"] }, marker: true, markerX: pier.x + 24, markerY: 43 * TS })
-  // TODO(world-select): rewire the "travel" hotspot to open the world selector
+  hotspots.push({ id: "travel", box: { x: 10 * TS, y: 44 * TS + 8, w: 40, h: 24 }, label: "BOARD THE GHOST FERRY", action: { type: "travel" }, marker: true, markerX: pier.x + 24, markerY: 43 * TS })
   signs.push({ x: pier.x + 24, y: 43 * TS - 4, label: "GHOST FERRY", sub: "TRAVEL", accent: "#6fd6e0", hotspot: "travel" })
   const boatSrc = mk(80, 32, (x) => x.drawImage(grade(img(RUINS_SHEETS.boat), 0.7, 0.7, 1.05), 0, 0))
   const boat = add({ kind: "sprite", src: boatSrc, rect: [0, 0, 80, 32], x: 4 * TS - 8, y: 45 * TS + 4, baseY: 46 * TS + 20, dynamic: true })
@@ -781,10 +780,21 @@ export function buildRuins(): Scene {
   const tiles = new Uint8Array(W * H)
   for (let i = 0; i < W * H; i++) { const v = kind[i]; tiles[i] = v === K.Water ? G.Water : v === K.Plank ? G.Bridge : v === K.Mud ? G.Dirt : v === K.Plaza ? G.Plaza : G.Grass }
 
+  const QUEST: Record<string, string> = {
+    townhall: "Meet the Elder in the Elder's Hall", gallery: "Open the Memory Vault", tavern: "Read the board at The Last Lantern", forge: "Warm up at the Cold Forge",
+    academy: "Read in the Forgotten Library", wizard: "Leave a note at the Whisper Post", arcade: "Step into the Seance Circle",
+  }
+  const lmB = (id: string): Landmark => { const b = BUILDS.find((q) => q.id === id)!; return { id, label: b.label!, sub: b.sub!, accent: b.accent!, x: doors[id].x, y: doors[id].y + 2, quest: QUEST[id] } }
+  const landmarks: Landmark[] = [
+    lmB("townhall"), { id: "gallery", label: "MEMORY VAULT", sub: "PROJECTS", accent: "#9a7be0", x: vd.x, y: vd.y + 2, quest: QUEST.gallery },
+    lmB("tavern"), lmB("forge"), lmB("academy"), lmB("wizard"),
+    { id: "arcade", label: "SEANCE CIRCLE", sub: "ARCADE", accent: "#b48cff", x: SEANCE.c * TS + 8, y: SEANCE.r * TS + 8, quest: QUEST.arcade },
+  ]
   return {
     id: "ruins", title: "Hollow Reach", w: W, h: H, ground: gcv, sprites: live, blocked, hotspots, actors, lights, signs,
     spawn: { x: 40 * TS + 8, y: 54 * TS + 8, facing: "up" }, dark: 0.6, music: "ruins", bg: "#0a0d1c", tick, water, world: "ruins",
-    tiles, ground3d: clean.c, baked,
+    tiles, ground3d: clean.c, baked, landmarks,
+    lighting: { tint: "8,12,38" }, arrive: { x: 12 * TS + 8, y: 46 * TS + 6, facing: "right" },
   }
 }
 

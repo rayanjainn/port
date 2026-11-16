@@ -6,7 +6,7 @@ import { engine } from "@/lib/engine"
 import { runtime } from "@/lib/runtime"
 import { charSheet, CHARS } from "@/lib/na"
 import { WORLDS, worldById, worldVisitedCount, type World } from "@/lib/world/worlds"
-import { X, ChevronLeft, ChevronRight, Lock, Ship, TramFront, Tent, DoorOpen } from "lucide-react"
+import { X, ChevronLeft, ChevronRight, Lock, Ship, TramFront, Tent, Ghost } from "lucide-react"
 
 const GAP = 22
 const CARD_H = 590
@@ -183,7 +183,7 @@ function Screen({ origin }: { origin: NonNullable<ReturnType<typeof useGameStore
   )
 }
 
-const TRAVEL_ICON = { dock: Ship, metro: TramFront, caravan: Tent, gate: DoorOpen } as const
+const TRAVEL_ICON = { dock: Ship, metro: TramFront, caravan: Tent, ferry: Ghost } as const
 
 function Card({ w, i, cw, focused, isHere, here, visited, load, pending, origin, shake, onFocus, onConfirm, onCta }: {
   w: World; i: number; cw: number; focused: boolean; isHere: boolean; here: { x: number; y: number } | null

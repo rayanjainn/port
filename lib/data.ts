@@ -13,5 +13,8 @@ export const gameAchievements = [
   { id: "a12", title: "MONSTER TAMER", description: "Bonked 10 mine monsters", icon: "⚔️", unlockedBy: "kills_10" },
   { id: "a13", title: "FIRST VOYAGE", description: "Left home for another world", icon: "⛵", unlockedBy: "world_travel" },
   { id: "a14", title: "WORLD WALKER", description: "Set foot in every open world", icon: "🧭", unlockedBy: "worlds_all" },
+  { id: "a15", title: "HARBOR HAUL", description: "Opened the chest at the end of the pier", icon: "⚓", unlockedBy: "chest_city" },
+  { id: "a16", title: "DUNE TREASURE", description: "Dug the chest out of the cacti", icon: "🏺", unlockedBy: "chest_desert" },
+  { id: "a17", title: "GRAVE GOODS", description: "Opened the chest in the cold nook", icon: "🕯️", unlockedBy: "chest_ruins" },
   { id: "a9", title: "COMPLETIONIST", description: "Discovered everything!", icon: "⭐", unlockedBy: "all_complete" },
 ]

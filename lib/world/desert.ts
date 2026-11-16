@@ -3,7 +3,7 @@ import {
   PROPS, HOUSE_PROPS, PLANK, CHARS, charSheet, charFace, animalSheet, monsterSheet, DESERT_SHEETS as DS, DUNE, PATH_SAND, MUD_BED, LIME, OASIS,
   SAND_BASE, MUD_BASE, MESA, DESERT_ART, DESERT_PROPS as DP, TAN_ROCKS, type Rect, type Autotile,
 } from "@/lib/na"
-import { TS, G, img, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type SceneSign } from "./core"
+import { TS, G, img, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type SceneSign, type Landmark } from "./core"
 
 export const DW = 84
 export const DH = 64
@@ -21,6 +21,7 @@ interface World {
   dune: Uint8Array; path: Uint8Array; lime: Uint8Array; bed: Uint8Array; water: Uint8Array; bridge: Uint8Array; mesa: Uint8Array
   sprites: Sprite[]; lights: Light[]; hotspots: Hotspot[]; signs: SceneSign[]; actors: ActorDef[]
   ops: Op[]
+  doors: { id: string; label: string; sub: string; accent: string; x: number; y: number; top: number; section: string }[]
   tickers: ((t: number, dt: number) => void)[]
   rnd: () => number
   spr: (src: Img, rect: Rect, x: number, y: number, extra?: Partial<Sprite>) => Sprite
@@ -193,7 +194,7 @@ export function buildDesert(): Scene {
     blocked: new Uint8Array(W * H), reserved: new Uint8Array(W * H), tiles: new Uint8Array(W * H).fill(G.Grass),
     dune: new Uint8Array(W * H), path: new Uint8Array(W * H), lime: new Uint8Array(W * H), bed: new Uint8Array(W * H),
     water: new Uint8Array(W * H), bridge: new Uint8Array(W * H), mesa: new Uint8Array(W * H),
-    sprites: [], lights: [], hotspots: [], signs: [], actors: [], ops: [], tickers: [], rnd,
+    sprites: [], lights: [], hotspots: [], signs: [], actors: [], ops: [], doors: [], tickers: [], rnd,
     spr: (src, rect, x, y, extra = {}) => {
       const s: Sprite = { kind: "sprite", src, rect, x: Math.round(x), y: Math.round(y), baseY: Math.round(y + rect[3] - 1), ...extra }
       w.sprites.push(s)
@@ -447,12 +448,21 @@ function finish(w: World): Scene {
   }
   for (const op of w.ops.sort((a, b) => a.z - b.z)) op.fn(g)
 
+  const QUEST: Record<string, string> = {
+    townhall: "Meet the elder in the Caravanserai", gallery: "Browse the Hall of Relics", tavern: "Read the board at the Oasis Teahouse", forge: "Inspect the Sand Forge",
+    academy: "Study the stars at the Observatory", wizard: "Send word by falcon from the Falcon Post", arcade: "Try your luck in the Sand Arena",
+  }
+  const landmarks: Landmark[] = ["townhall", "gallery", "tavern", "forge", "academy", "wizard"].map((id) => {
+    const d = w.doors.find((q) => q.id === id)!
+    return { id, label: d.label, sub: d.sub, accent: d.accent, x: d.x, y: d.y + 2, quest: QUEST[id] }
+  })
+  landmarks.push({ id: "arcade", label: "SAND ARENA", sub: "ARCADE", accent: "#d9a83a", x: ARENA.c * TS + 8, y: ARENA.r * TS + 20, quest: QUEST.arcade })
   const water: { c: number; r: number }[] = []
   for (let r = 1; r < H - 1; r++) for (let c = 1; c < W - 1; c++) if (w.water[idx(c, r)] && w.water[idx(c - 1, r)] && w.water[idx(c + 1, r)] && w.water[idx(c, r - 1)] && w.water[idx(c, r + 1)] && hash(c, r, 50) < 0.5) water.push({ c, r })
   return {
     id: "desert", title: "Sunscar Oasis", w: W, h: H, ground: gcv, sprites: w.sprites, blocked: w.blocked, hotspots: w.hotspots, actors: w.actors, lights: w.lights,
     spawn: { x: SPAWN.c * TS + 8, y: SPAWN.r * TS + 8, facing: "down" }, dark: 0, music: "desert", water, bg: "#c98a4a",
-    tiles: w.tiles, ground3d: gcv, baked: [], outdoor: true, world: "desert", signs: w.signs,
+    tiles: w.tiles, ground3d: gcv, baked: [], outdoor: true, world: "desert", signs: w.signs, landmarks, arrive: { x: TRAVEL.c * TS + 64, y: (TRAVEL.r + 2) * TS + 12, facing: "right" },
     tick: (t, dt) => { for (const f of w.tickers) f(t, dt) },
   }
 }
@@ -663,7 +673,7 @@ function build(w: World) {
   }
 
   // ── landmarks ──
-  const doors: { id: string; label: string; sub: string; accent: string; x: number; y: number; top: number; section: string }[] = []
+  const doors = w.doors
   const landmark = (id: string, src: Img, srcRect: Rect, x: number, y: number, door: [number, number], solidTop: number, label: string, sub: string, accent: string, glow = "255,200,120") => {
     const [, , bw, bh] = srcRect
     const dxc = x + (door[0] + door[1]) / 2, dyb = y + bh
@@ -761,12 +771,11 @@ function build(w: World) {
   } })
 
   // ── travel gate: the old caravan road out west ──
-  // TODO(world-select): rewire this hotspot to open the world selector.
   const gate = remap(houseImg, [464, 320, 64, 48], (h, s, v) => [32, Math.min(0.5, 0.22 + s * 0.5 + (1 - v) * 0.2), Math.min(1, v * 1.1 + 0.08)])
   const GX = TRAVEL.c * TS - 16, GY = (TRAVEL.r - 2) * TS
   w.spr(gate, [0, 0, 64, 48], GX, GY, { baseY: GY + 46 })
   solidAt(GX + 2, GY + 30, 10, 16); solidAt(GX + 52, GY + 30, 10, 16)
-  w.hotspots.push({ id: "travel", label: "TRAVEL", box: { x: GX + 16, y: GY + 40, w: 32, h: 26 }, action: { type: "sign", lines: ["The old caravan road leads out of Sunscar.", "More worlds lie beyond the dunes... a caravan will be ready soon."] }, marker: true, markerX: GX + 32, markerY: GY - 6 })
+  w.hotspots.push({ id: "travel", label: "JOIN THE CARAVAN", box: { x: GX + 16, y: GY + 40, w: 32, h: 26 }, action: { type: "travel" }, marker: true, markerX: GX + 32, markerY: GY - 6 })
   w.signs.push({ x: GX + 32, y: GY - 2, label: "CARAVAN GATE", sub: "TRAVEL", accent: "#d9a83a", hotspot: "travel" })
   w.lamp(GX + 8, GY + 34, 58, "255,190,100", 1); w.lamp(GX + 56, GY + 34, 58, "255,190,100", 1)
   prop("cart", 9, 41); prop("hay", 12, 40); prop("hay", 12, 41); prop("crates", 7, 41); prop("barrel", 13, 36)

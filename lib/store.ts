@@ -21,6 +21,12 @@ function initialView(): ViewMode {
 }
 
 const WORLD_KEY = "rayan-world:world"
+const VISITED_KEY = "rayan-world:visited"
+function loadVisited(): Set<string> {
+  if (typeof window === "undefined") return new Set()
+  try { const v = JSON.parse(localStorage.getItem(VISITED_KEY) ?? "[]"); if (Array.isArray(v)) return new Set(v.filter((x) => typeof x === "string")) } catch { /* private mode */ }
+  return new Set()
+}
 function initialWorld(): string {
   if (typeof window === "undefined") return DEFAULT_WORLD
   try { const w = localStorage.getItem(WORLD_KEY); if (w && OPEN_WORLDS.some((o) => o.id === w)) return w } catch { /* private mode */ }
@@ -28,7 +34,7 @@ function initialWorld(): string {
 }
 
 /** where the world-select screen was opened from; the dock / metro origins pick the travel interstitial */
-export type WorldSelectOrigin = "title" | "hud" | "dock" | "metro" | "caravan" | "gate"
+export type WorldSelectOrigin = "title" | "hud" | "dock" | "metro" | "caravan" | "ferry"
 export interface TravelState { from: string; to: string; origin: WorldSelectOrigin }
 export interface WorldLoad { state: "idle" | "loading" | "ready" | "error"; progress: number }
 
@@ -89,7 +95,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   activeBuilding: null,
   focus: null,
   unlockedAchievements: new Set(),
-  visited: new Set(),
+  visited: loadVisited(),
   toastQueue: [],
   sfxEnabled: true,
   musicEnabled: true,
@@ -149,6 +155,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const visited = new Set(get().visited)
     visited.add(id)
     set({ visited })
+    try { localStorage.setItem(VISITED_KEY, JSON.stringify([...visited])) } catch { /* ignore */ }
     get().unlockAchievement(`visit_${id}`)
     // every open world seen at least once
     if (id.startsWith("world:") && OPEN_WORLDS.every((w) => visited.has(`world:${w.id}`))) setTimeout(() => get().unlockAchievement("worlds_all"), 900)
