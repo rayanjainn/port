@@ -153,7 +153,13 @@ export interface Scene {
   tiles?: Uint8Array             // per-tile terrain (G.*) so the 3D view can sink water and raise walls
   ground3d?: HTMLCanvasElement   // ground without baked sprites (3D draws `baked` as cards instead)
   baked?: Sprite[]               // sprites painted into `ground` for the 2D view
+  outdoor?: boolean              // open-air world: day/night cycle and sky apply (village, city, ...)
+  signs?: SceneSign[]            // floating name boards over landmarks, drawn by both views
+  world?: string                 // id of the world this scene belongs to (interiors inherit their world's)
 }
+
+/** A floating name board. x = centre, y = bottom edge, in scene pixels. */
+export interface SceneSign { x: number; y: number; label: string; sub?: string; accent?: string; hotspot?: string }
 
 export function canvas(w: number, h: number) {
   const c = document.createElement("canvas")
