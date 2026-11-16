@@ -84,7 +84,8 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     cam3.updateProjectionMatrix()
     cam3.updateMatrixWorld()
 
-    w.sh.uFog.value.set(dist * 1.1, dist * 3.2)
+    w.sh.uFog.value.set(dist * 1.1, dist * 3.2, 0.75)
+    w.res.set(size.width, size.height)
     w.update(engine.now || state.clock.elapsedTime, tmp)
 
     const v = new THREE.Vector3()

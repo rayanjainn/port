@@ -3,20 +3,21 @@
 import { useEffect, useMemo, useRef } from "react"
 import { engine, type SceneRT } from "@/lib/engine"
 import { runtime } from "@/lib/runtime"
-import { BUILDINGS } from "@/lib/world/village"
+import { BUILDINGS, doorOf } from "@/lib/world/village"
+import { TS, type SceneSign } from "@/lib/world/core"
 import { overlay } from "./bus"
 
 const PX = "var(--font-pixel)"
 const base: React.CSSProperties = { position: "absolute", left: 0, top: 0, willChange: "transform", display: "none", pointerEvents: "none" }
 
-function Sign({ b, el }: { b: (typeof BUILDINGS)[number]; el: (e: HTMLDivElement | null) => void }) {
+function Sign({ b, el }: { b: SceneSign; el: (e: HTMLDivElement | null) => void }) {
   return (
     <div ref={el} style={base}>
       <div data-box style={{ position: "relative", height: 34, padding: "0 13px", display: "inline-grid", background: "#8a5a2c", boxShadow: "0 0 0 2px #2a1606, 3px 5px 0 rgba(10,6,2,.35)", whiteSpace: "nowrap", textAlign: "center" }}>
         <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: "#a8743c" }} />
         <div style={{ position: "absolute", left: 0, right: 0, bottom: 3, height: 10, background: b.accent ?? "#c8463b", boxShadow: "inset 0 1px 0 rgba(255,255,255,.25)" }} />
         <div style={{ gridArea: "1/1", fontFamily: PX, fontSize: 10, lineHeight: "12px", paddingTop: 5, color: "#fff4dc", textShadow: "1px 1px 0 #2a1606", position: "relative" }}>{b.label}</div>
-        <div style={{ gridArea: "1/1", fontFamily: PX, fontSize: 7, lineHeight: "8px", paddingTop: 23, color: "#fff", position: "relative" }}>{b.section}</div>
+        <div style={{ gridArea: "1/1", fontFamily: PX, fontSize: 7, lineHeight: "8px", paddingTop: 23, color: "#fff", position: "relative" }}>{b.sub}</div>
       </div>
     </div>
   )
@@ -58,7 +59,10 @@ function Bubble({ el }: { el: (e: HTMLDivElement | null) => void }) {
 
 export default function Overlay3D({ rt }: { rt: SceneRT }) {
   const sc = rt.scene
-  const signs = useMemo(() => (sc.id === "village" ? BUILDINGS.filter((b) => b.label) : []), [sc.id])
+  // generic name boards: the scene's own, or (village only) the building list the 2D view uses
+  const signs = useMemo<SceneSign[]>(() => sc.signs ?? (sc.id === "village"
+    ? BUILDINGS.filter((b) => b.label).map((b) => ({ x: b.c * TS + doorOf(b).w / 2, y: b.r * TS - 2, label: b.label!, sub: b.section, accent: b.accent, hotspot: `door-${b.id}` }))
+    : []), [sc])
   const marks = useMemo(() => sc.hotspots.filter((h) => h.marker && h.markerX !== undefined && h.markerY !== undefined && h.action.type !== "door"), [sc])
   const npcs = useMemo(() => rt.actors.filter((a) => a.def.kind === "npc"), [rt])
   const signEls = useRef<(HTMLDivElement | null)[]>([])
@@ -72,7 +76,15 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
 
   useEffect(() => {
     touch.current = matchMedia("(pointer: coarse)").matches
-    const sprites = signs.map((b) => sc.sprites.find((s) => s.tag === `b:${b.id}`))
+    // anchor each board to the top of the tallest sprite it sits on, else to a marker-style point
+    const sprites = signs.map((b) => {
+      let best: (typeof sc.sprites)[number] | undefined
+      for (const s of sc.sprites) {
+        if (s.dynamic || s.rect[3] < 32 || b.x < s.x || b.x > s.x + s.rect[2] || Math.abs(s.y - (b.y + 2)) > 8) continue
+        if (!best || s.rect[3] > best.rect[3]) best = s
+      }
+      return best
+    })
     const shown = new WeakMap<HTMLElement, boolean>()
     const vis = (el: HTMLElement, on: boolean) => { if (shown.get(el) !== on) { shown.set(el, on); el.style.display = on ? "" : "none" } }
     const ok = (sx: number, sy: number, w: number, h: number) => sx > -260 && sx < w + 260 && sy > -120 && sy < h + 260
@@ -81,12 +93,12 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
       if (!S) return
       signs.forEach((b, i) => {
         const el = signEls.current[i], s = sprites[i]
-        if (!el || !s) return
-        const [sx, sy] = proj(s.x + s.rect[2] / 2, s.baseY, s.rect[3])
+        if (!el) return
+        const [sx, sy] = s ? proj(b.x, s.baseY, s.rect[3]) : proj(b.x, b.y + 16, 22)
         const on = ok(sx, sy, w, h)
         vis(el, on)
         if (!on) return
-        const active = S.near?.id === `door-${b.id}`
+        const active = !!b.hotspot && S.near?.id === b.hotspot
         el.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy) - (active ? 6 : 0)}px) translate(-50%,-100%)`
         const box = el.firstElementChild as HTMLElement
         box.style.outline = active ? "2px solid #ffe39a" : "none"
@@ -145,7 +157,7 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
 
   return (
     <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 5 }}>
-      {signs.map((b, i) => <Sign key={b.id} b={b} el={(e) => { signEls.current[i] = e }} />)}
+      {signs.map((b, i) => <Sign key={`${b.label}${i}`} b={b} el={(e) => { signEls.current[i] = e }} />)}
       {marks.map((m, i) => <Tri key={m.id} el={(e) => { markEls.current[i] = e }} />)}
       {npcs.map((a, i) => (
         <span key={a.def.id}>

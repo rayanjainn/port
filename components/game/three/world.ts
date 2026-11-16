@@ -4,12 +4,14 @@ import { TS, hash, ready, img, type Sprite } from "@/lib/world/core"
 import { engine, type SceneRT } from "@/lib/engine"
 import { runtime } from "@/lib/runtime"
 import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
-import { makeShared, TILT, NL, type Shared } from "./shaders"
+import { makeShared, TILT, NL, skyMaterial, type Shared } from "./shaders"
 import { CardBatch, makeTexture, srcSize } from "./cards"
 import { buildTerrain, type Terrain } from "./terrain"
+import { isOutdoor } from "./bus"
 
 const COS = Math.cos(TILT), SIN = Math.sin(TILT)
 const P = 1 / TS
+
 
 const col = new THREE.Color()
 function parseCss(s: string): [number, number, number, number] {
@@ -35,16 +37,28 @@ export class World {
   private life!: CardBatch
   private glow!: CardBatch
   private slash!: CardBatch
-  private extraDispose: { dispose: () => void }[] = []
+  res = new THREE.Vector2(1, 1)
+  private sky: THREE.Mesh
+  private skyMat = skyMaterial()
   private ambient = new THREE.Color()
-  readonly fogDay = new THREE.Color("#a9c6a0")
-  readonly fogNight = new THREE.Color("#0a0e2c")
+  private readonly fogDay = new THREE.Color("#a9c6a0")
+  private readonly fogNight = new THREE.Color("#0a0e2c")
+  private top = new THREE.Color()
+  private hor = new THREE.Color()
+  private c = {
+    dayTop: new THREE.Color("#4f9ae6"), dayHor: new THREE.Color("#cfe9f2"),
+    nightTop: new THREE.Color("#050818"), nightHor: new THREE.Color("#18214e"),
+    duskTop: new THREE.Color("#7a4f9a"), duskHor: new THREE.Color("#ffa96c"), duskBand: new THREE.Color("#ff8f5a"),
+  }
   private lightIdx: { i: number; d: number }[] = []
 
   constructor(public rt: SceneRT) {
     const sc = rt.scene
     this.terrain = buildTerrain(sc, this.sh)
     for (const o of this.terrain.objects) this.group.add(o)
+    this.sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.skyMat)
+    this.sky.frustumCulled = false; this.sky.renderOrder = 100; this.sky.visible = this.terrain.outdoor   // thin strip along the top, outdoor scenes only
+    this.group.add(this.sky)
     this.buildSprites()
     this.buildActors()
     this.buildFx()
@@ -82,36 +96,43 @@ export class World {
     this.attach = attach
     for (const [src, list] of staticMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
-      const b = new CardBatch(this.sh, tex, list.length, "opaque", true)
-      list.forEach((s, i) => this.place(b, i, s, tw, th))
-      b.flush(list.length)
+      const n = list.length
+      const b = new CardBatch(this.sh, tex, n, "opaque", true)
+      let at = 0
+      for (const s of list) at += this.place(b, at, s, tw, th)
+      b.flush(n)
       this.batches.push(b)
       for (const o of b.objects) this.group.add(o)
     }
     for (const [src, list] of dynMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
-      const b = new CardBatch(this.sh, tex, list.length, "opaque", true, true)
+      const n = list.length
+      const b = new CardBatch(this.sh, tex, n, "opaque", true, true)
       this.dyn.push({ b, list, src: () => src })
-      list.forEach((s, i) => this.place(b, i, s, tw, th))
-      b.flush(list.length)
+      let at = 0
+      for (const s of list) at += this.place(b, at, s, tw, th)
+      b.flush(n)
       this.batches.push(b)
       for (const o of b.objects) this.group.add(o)
     }
   }
   private attach = new Map<Sprite, Attached>()
 
-  private place(b: CardBatch, i: number, s: Sprite, tw: number, th: number) {
+  /** writes one sprite card at index i0; returns how many instances it used */
+  private place(b: CardBatch, i0: number, s: Sprite, tw: number, th: number) {
     const [rx, ry, rw, rh] = s.rect
     const at = this.attach.get(s)
-    let x = (s.x + rw / 2) * P, y = 0, z = s.baseY * P, dz = 0
+    const gy = (x: number, z: number) => this.terrain.heightAt(x, z)
+    let x = (s.x + rw / 2) * P, y = gy((s.x + rw / 2) * P, s.baseY * P), z = s.baseY * P, dz = 0
     if (at) {
       const hPx = at.dyPx, pz = at.parent.baseY * P
-      y = hPx * P * COS; z = pz - hPx * P * SIN
+      y = gy(at.dx * P, pz) + hPx * P * COS; z = pz - hPx * P * SIN
       dz = pz - z + (s.baseY >= at.parent.baseY ? 0.02 : -0.02)
-      b.setTint(i, 1, 1, 1, 0)   // no ground shadow for riders
       x = at.dx * P
     }
-    b.set(i, x, y, z, rw * P, rh * P, rx, ry, rw, rh, tw, th, s.flip, s.anim, s.sway ?? 0, dz)
+    b.set(i0, x, y, z, rw * P, rh * P, rx, ry, rw, rh, tw, th, s.flip, s.anim, s.sway ?? 0, dz)
+    b.setTint(i0, 1, 1, 1, at ? 0 : 1)   // riders (flags, weapons on racks) cast no ground shadow
+    return 1
   }
 
   // ── actors ─────────────────────────────────────────────────────
@@ -169,7 +190,7 @@ export class World {
 
   /** world position of a point `hPx` above a ground spot (scene px), following the card lean */
   anchor(xPx: number, yPx: number, hPx: number, out = new THREE.Vector3()) {
-    return out.set(xPx * P, hPx * P * COS, yPx * P - hPx * P * SIN)
+    return out.set(xPx * P, this.terrain.heightAt(xPx * P, yPx * P) + hPx * P * COS, yPx * P - hPx * P * SIN)
   }
 
   // ── per frame ──────────────────────────────────────────────────
@@ -183,14 +204,15 @@ export class World {
     this.initActorTextures()
 
     // lighting ------------------------------------------------------
-    const village = sc.id === "village"
+    const village = isOutdoor(sc)
     const night = village ? runtime.night : 0
     const dark = village ? night * 0.78 : sc.dark
+    const deep = !village && sc.dark >= 0.6
     const amb = this.ambient
     if (village) amb.setRGB(1 - night * 0.82, 0.98 - night * 0.76, 0.93 - night * 0.48, THREE.SRGBColorSpace)
     else {
       const v = 1 - dark * 0.92
-      if (sc.id === "cave") amb.setRGB(v * 0.85, v * 0.95, v * 1.2, THREE.SRGBColorSpace)
+      if (deep) amb.setRGB(v * 0.85, v * 0.95, v * 1.2, THREE.SRGBColorSpace)
       else amb.setRGB(v, v * 0.94, v * 0.88, THREE.SRGBColorSpace)
     }
     sh.uAmb.value.copy(amb)
@@ -204,7 +226,7 @@ export class World {
     idx.sort((a, b) => a.d - b.d)
     let n = 0
     if (dark > 0.02) {
-      sh.uLP.value[0].set(H.x * P, 0.7, (H.y - 4) * P, (sc.id === "cave" ? 3.6 : 3.9) * 1.1)
+      sh.uLP.value[0].set(H.x * P, 0.7, (H.y - 4) * P, (deep ? 3.6 : 3.9) * 1.1)
       sh.uLC.value[0].set(0.95 * k, 0.9 * k, 0.8 * k)
       n = 1
     }
@@ -216,8 +238,17 @@ export class World {
       sh.uLC.value[n].set(r * k, g * k, b * k)
     }
     for (; n < NL; n++) { sh.uLP.value[n].set(1e4, 1e4, 1e4, 1); sh.uLC.value[n].set(0, 0, 0) }
-    sh.uFogColor.value.copy(village ? this.fogDay.clone().lerp(this.fogNight, night) : this.terrain.bg)
-    sh.uShadow.value.z = village ? 0.34 * (1 - night) : 0.22 * (1 - dark)
+    // sky + fog: day blue, a warm dusk band while the night value is in transition, night navy
+    const dusk = village ? Math.max(0, 1 - Math.abs(2 * night - 1)) : 0
+    this.top.copy(this.c.dayTop).lerp(this.c.nightTop, night).lerp(this.c.duskTop, dusk * 0.55)
+    this.hor.copy(this.c.dayHor).lerp(this.c.nightHor, night).lerp(this.c.duskHor, dusk * 0.7)
+    const sm = this.skyMat.uniforms
+    sm.uTop.value.copy(this.top); sm.uHor.value.copy(this.hor); sm.uBand.value.copy(this.c.duskBand)
+    sm.uBandAmt.value = dusk; sm.uNight.value = night; sm.uTime.value = now
+    sm.uScroll.value = target.x * 6; sm.uRes.value.copy(this.res); sm.uAspect.value = this.res.x / this.res.y
+    sh.uFogColor.value.copy(this.terrain.outdoor ? this.fogDay.clone().lerp(this.fogNight, night) : this.terrain.bg)
+    sh.uFog.value.z = 0.75
+    sh.uSky.value.copy(this.hor).lerp(this.top, 0.5)
 
     // glow halos ----------------------------------------------------
     let gn = 0
@@ -236,34 +267,40 @@ export class World {
     // dynamic sprites ----------------------------------------------
     for (const d of this.dyn) {
       const { w: tw, h: th } = srcSize(d.src()!)
-      d.list.forEach((s, i) => this.place(d.b, i, s, tw, th))
-      d.b.flush(d.list.length)
+      let at = 0
+      for (const s of d.list) at += this.place(d.b, at, s, tw, th)
+      d.b.flush(at)
     }
 
     // actors ----------------------------------------------------------
     for (const g of this.actorGroups) {
+      const { w: tw, h: th } = g.size
+      const put = (i: number, x: number, y: number, z: number, rx: number, ry: number, flip: boolean, tr: number, tg: number, tb: number) => {
+        g.b.set(i, x, y, z, 1, 1, rx, ry, 16, 16, tw, th, flip)
+        g.b.setTint(i, tr, tg, tb, 1)
+      }
       g.list.forEach((e, i) => {
         const b = g.b
+        const hide = () => b.hide(i)
         if (e.a === "hero") {
-          if (H.hurtT > 0 && Math.floor(now * 16) % 2) { b.hide(i); return }
+          if (H.hurtT > 0 && Math.floor(now * 16) % 2) { hide(); return }
           const row = H.attackT > 0 ? 4 : H.moving ? Math.floor(H.animT * 9) % 4 : 0
-          b.set(i, H.x * P, 0, (H.y + 1) * P, 1, 1, DIR_COL[H.facing] * 16, row * 16, 16, 16, g.size.w, g.size.h)
-          b.setTint(i, 1, 1, 1, 1)
+          put(i, H.x * P, this.terrain.heightAt(H.x * P, H.y * P), (H.y + 1) * P, DIR_COL[H.facing] * 16, row * 16, false, 1, 1, 1)
           return
         }
         const a = e.a
-        if (a.dead > 0) { b.hide(i); return }
+        if (a.dead > 0) { hide(); return }
         const kind = a.def.kind
+        const gy = this.terrain.heightAt(a.x * P, a.y * P)
         if (kind === "animal") {
           const f = a.moving ? Math.floor(a.animT * 6) % 2 : Math.floor(now * 1.5 + a.def.x) % 2
-          b.set(i, a.x * P, 0, (a.y + 2) * P, 1, 1, f * 16, 0, 16, 16, g.size.w, g.size.h, a.facing === "right")
-          b.setTint(i, 1, 1, 1, 1)
+          put(i, a.x * P, gy, (a.y + 2) * P, f * 16, 0, a.facing === "right", 1, 1, 1)
           return
         }
         const row = a.moving ? Math.floor(a.animT * 8) % 4 : 0
         const bob = kind === "monster" ? Math.round(Math.sin(now * 5 + a.def.x)) : 0
-        b.set(i, a.x * P, -bob * P, (a.y + 1) * P, 1, 1, DIR_COL[a.facing] * 16, row * 16, 16, 16, g.size.w, g.size.h)
-        if (a.hurt > 0) b.setTint(i, 1.5, 0.7, 0.7, 1); else b.setTint(i, 1, 1, 1, 1)
+        const hurt = a.hurt > 0
+        put(i, a.x * P, gy - bob * P, (a.y + 1) * P, DIR_COL[a.facing] * 16, row * 16, false, hurt ? 1.5 : 1, hurt ? 0.7 : 1, hurt ? 0.7 : 1)
       })
       g.b.flush(g.list.length)
     }
@@ -302,15 +339,15 @@ export class World {
 
     // butterflies by day, fireflies at night / in the mine
     let ln = 0
-    if (sc.id === "village" || sc.id === "cave") {
+    if ((village && sc.meta?.trees?.length) || deep) {
       const sw = sc.w * TS, shh = sc.h * TS
       for (let i = 0; i < 46; i++) {
         const wx = hash(i, 1, sc.w) * sw + Math.sin(now * (0.4 + hash(i, 3) * 0.5) + i) * 30
         const wy = hash(i, 2, sc.h) * shh + Math.cos(now * (0.3 + hash(i, 4) * 0.4) + i * 2) * 20
-        if (night > 0.3 || sc.id === "cave") {
+        if (night > 0.3 || deep) {
           const gl = 0.5 + 0.5 * Math.sin(now * 3 + i * 1.7)
           this.life.set(ln, wx * P, 0.5 + 0.2 * Math.sin(now + i), wy * P, P * 1.5, P * 1.5, 0, 0, 2, 2, 2, 2)
-          this.life.setTint(ln, sc.id === "cave" ? 0.5 : 1, sc.id === "cave" ? 0.9 : 0.95, sc.id === "cave" ? 1 : 0.5, gl * 0.95)
+          this.life.setTint(ln, deep ? 0.5 : 1, deep ? 0.9 : 0.95, deep ? 1 : 0.5, gl * 0.95)
           ln++
         } else if (i % 3 === 0) {
           const flap = Math.sin(now * 14 + i) > 0 ? 3 : 1.5
@@ -326,7 +363,7 @@ export class World {
 
   dispose() {
     for (const b of [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, ...(this.smoke ? [this.smoke] : [])]) b.dispose()
-    this.terrain.dispose()
+    this.terrain.dispose(); this.sky.geometry.dispose(); this.skyMat.dispose()
     this.group.clear()
   }
 }
