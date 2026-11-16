@@ -93,6 +93,7 @@ export interface Sprite {
   sway?: number              // gentle canopy sway amplitude
   glow?: { x: number; y: number; r: number; color: string }   // light source when dark
   tag?: string
+  dynamic?: boolean          // x / y / baseY / rect may change every frame (3D draws it live)
 }
 
 export type Action =
@@ -148,6 +149,10 @@ export interface Scene {
   water?: { c: number; r: number }[]   // water tiles for ripples
   bg?: string
   meta?: { trees: { x: number; y: number; k: string }[] }
+  tick?: (t: number, dt: number) => void   // called once per simulation frame while this scene is active
+  tiles?: Uint8Array             // per-tile terrain (G.*) so the 3D view can sink water and raise walls
+  ground3d?: HTMLCanvasElement   // ground without baked sprites (3D draws `baked` as cards instead)
+  baked?: Sprite[]               // sprites painted into `ground` for the 2D view
 }
 
 export function canvas(w: number, h: number) {

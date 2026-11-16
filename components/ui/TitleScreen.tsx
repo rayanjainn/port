@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useGameStore } from "@/lib/store"
+import { useGameStore, webgl2Supported } from "@/lib/store"
 import { playSound } from "@/lib/audio"
 import { useContent } from "@/lib/content"
 import { charSheet, CHARS } from "@/lib/na"
@@ -42,6 +42,9 @@ const panel: React.CSSProperties = {
 export default function TitleScreen() {
   const startGame = useGameStore((s) => s.startGame)
   const c = useContent()
+  const view = useGameStore((s) => s.view)
+  const setView = useGameStore((s) => s.setView)
+  const gl = webgl2Supported()
   const [leaving, setLeaving] = useState(false)
   const lines = useMemo(() => [c.profile.title.toLowerCase(), c.profile.tagline.toLowerCase(), c.profile.motto].filter(Boolean), [c.profile.title, c.profile.tagline, c.profile.motto])
   const typed = useTypewriter(lines)
@@ -116,6 +119,22 @@ export default function TitleScreen() {
             }}>
               QUICK VIEW <ArrowRight size={13} />
             </Link>
+          </div>
+          <div style={{ marginTop: 22, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 2, color: "#8a5a2c" }}>VIEW:</span>
+            <div style={{ display: "inline-flex", border: "3px solid #1d1006", boxShadow: "0 3px 0 #1d1006" }}>
+              {(["2d", "3d"] as const).map((v) => {
+                const on = view === v, off = v === "3d" && !gl
+                return (
+                  <button key={v} disabled={off} onClick={() => { setView(v); playSound("click") }} className="parch-btn" aria-pressed={on} style={{
+                    fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 2, padding: "9px 14px", cursor: off ? "not-allowed" : "pointer", border: 0,
+                    background: on ? "linear-gradient(180deg, #fff1b8, #ffd76a 50%, #f5a623)" : "#f4e6c0", color: on ? "#3a1d08" : "#8f7246", opacity: off ? 0.5 : 1,
+                    boxShadow: on ? "inset 0 -3px 0 rgba(160,80,0,.35)" : "inset 0 0 0 2px #fff8e2",
+                  }}>{v.toUpperCase()}</button>
+                )
+              })}
+            </div>
+            {!gl && <span style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#8f6a3a" }}>3D needs WebGL2, not available here.</span>}
           </div>
         </div>
 

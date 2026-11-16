@@ -1,13 +1,15 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import dynamic from "next/dynamic"
 import { useGameStore, type BuildingId } from "@/lib/store"
 import { playSound, playMusic } from "@/lib/audio"
 import { useContentStore } from "@/lib/content"
 import { runtime, toggleNight } from "@/lib/runtime"
+import { engine, type ActorRT, type SceneRT, type EngineState } from "@/lib/engine"
 import { fontFamily } from "@/lib/fonts"
 import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
-import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type ActorDef, type Hotspot, type Box, type Action } from "@/lib/world/core"
+import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type Hotspot, type Box, type Action } from "@/lib/world/core"
 import { buildVillage, BUILDINGS, doorOf, VILLAGE_PRELOAD } from "@/lib/world/village"
 import { buildInteriors, INTERIOR_PRELOAD } from "@/lib/world/interiors"
 import TitleScreen from "@/components/ui/TitleScreen"
@@ -20,47 +22,28 @@ import DialogBox from "@/components/ui/DialogBox"
 import AreaTitle from "@/components/ui/AreaTitle"
 import Arcade from "@/components/arcade/Arcade"
 
+const World3D = dynamic(() => import("@/components/game/World3D"), { ssr: false, loading: () => null })
+
 const SPEED = 62           // native px / sec
 const FOOT = { w: 10, h: 6 }
-
-interface ActorRT {
-  def: ActorDef
-  x: number; y: number
-  facing: Facing
-  animT: number
-  moving: boolean
-  tx: number | null; ty: number | null
-  idle: number
-  talkT: number
-  barkI: number
-  hurt: number
-  dead: number
-}
-
-interface SceneRT {
-  scene: Scene
-  solids: SolidIndex
-  actors: ActorRT[]
-}
-
-interface Particle { x: number; y: number; vx: number; vy: number; life: number; max: number; col: string; size: number; kind?: "smoke" }
 
 const footBox = (x: number, y: number): Box => ({ x: x - FOOT.w / 2, y: y - FOOT.h, w: FOOT.w, h: FOOT.h })
 
 export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const phase = useGameStore((s) => s.phase)
+  const view = useGameStore((s) => s.view)
   const scenes = useRef<Record<string, SceneRT>>({})
-  const st = useRef({
+  const st = useRef<EngineState>({
     scene: "village",
     hero: { x: 0, y: 0, facing: "down" as Facing, animT: 0, moving: false, attackT: 0, hurtT: 0, path: [] as { x: number; y: number }[], pending: null as Hotspot | null, pendingNpc: null as ActorRT | null },
     keys: {} as Record<string, boolean>,
     cam: { x: 0, y: 0, init: false },
-    particles: [] as Particle[],
-    fade: { a: 1, dir: -1 as 1 | -1, then: null as (() => void) | null },
-    near: null as Hotspot | null,
-    nearNpc: null as ActorRT | null,
-    returnTo: null as { x: number; y: number } | null,
+    particles: [],
+    fade: { a: 1, dir: -1, then: null },
+    near: null,
+    nearNpc: null,
+    returnTo: null,
     chests: new Set<string>(),
     ready: false,
     last: 0,
@@ -70,6 +53,8 @@ export default function GameCanvas() {
   // ── build world once the art is loaded
   useEffect(() => {
     let cancelled = false
+    engine.state = st.current
+    engine.scenes = scenes.current
     // art (85%) + fonts; the title screen's map and hero are part of the boot set
     const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready.catch(() => undefined) : Promise.resolve()
     Promise.all([
@@ -124,6 +109,9 @@ export default function GameCanvas() {
     return { scene, solids, actors }
   }
 
+  // fetch the three.js chunk early, but only for people who will use it
+  useEffect(() => { if (view === "3d") void import("@/components/game/World3D") }, [view])
+
   // ── scene switching with an iris fade
   function goTo(id: string, at?: { x: number; y: number; facing?: Facing }) {
     const S = st.current
@@ -170,7 +158,7 @@ export default function GameCanvas() {
       if (S.chests.has(a.id)) { store.say({ name: "Chest", lines: ["It's empty now. You already took the loot!"] }); return }
       S.chests.add(a.id)
       playSound("secret")
-      for (let i = 0; i < 24; i++) S.particles.push({ x: S.hero.x, y: S.hero.y - 20, vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 60, life: 0.9, max: 0.9, col: i % 2 ? "#ffd76a" : "#fff4c2", size: 2 })
+      for (let i = 0; i < 24; i++) S.particles.push({ gy: S.hero.y, x: S.hero.x, y: S.hero.y - 20, vx: (Math.random() - 0.5) * 90, vy: -40 - Math.random() * 60, life: 0.9, max: 0.9, col: i % 2 ? "#ffd76a" : "#fff4c2", size: 2 })
       store.unlockAchievement("chest_mine")
       const c = useContentStore.getState().data
       store.say({ name: "Treasure!", lines: [`You found a scroll: "${c.profile.motto}"`, `It's signed ${c.profile.name}. Thanks for exploring this far ✦`] })
@@ -203,6 +191,7 @@ export default function GameCanvas() {
       if (S.nearNpc) talkTo(S.nearNpc)
       else if (S.near) doAction(S.near.action)
     }
+    engine.interact = interact
     const down = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].includes(k)) e.preventDefault()
@@ -245,7 +234,7 @@ export default function GameCanvas() {
         playSound("kill")
         runtime.kills++
         if (runtime.kills >= 10) useGameStore.getState().unlockAchievement("kills_10")
-        S.particles.push({ x: a.x, y: a.y - 8, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "", size: 32, kind: "smoke" })
+        S.particles.push({ gy: a.y, x: a.x, y: a.y - 8, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "", size: 32, kind: "smoke" })
       }
     }
   }
@@ -254,12 +243,12 @@ export default function GameCanvas() {
   useEffect(() => {
     const cv = canvasRef.current
     if (!cv) return
-    const onDown = (e: PointerEvent) => {
+    // shared by both views: (wx, wy) is a scene-px position
+    const click = (wx: number, wy: number) => {
       const S = st.current
       const store = useGameStore.getState()
       if (store.phase !== "playing" || store.dialog || !S.ready) return
       const rt = scenes.current[S.scene]
-      const wx = e.clientX / S.scale + S.cam.x, wy = e.clientY / S.scale + S.cam.y
       // clicked a hotspot or an NPC?
       const hs = rt.scene.hotspots.find((h) => wx >= h.box.x - 6 && wx <= h.box.x + h.box.w + 6 && wy >= h.box.y - 30 && wy <= h.box.y + h.box.h + 6)
       const npc = rt.actors.find((a) => a.def.kind === "npc" && Math.abs(a.x - wx) < 10 && wy > a.y - 20 && wy < a.y + 4)
@@ -269,11 +258,16 @@ export default function GameCanvas() {
         S.hero.path = path
         S.hero.pending = npc ? null : hs ?? null
         S.hero.pendingNpc = npc ?? null
-        S.particles.push({ x: target.x, y: target.y, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "#fff4c2", size: 3 })
+        S.particles.push({ gy: target.y, x: target.x, y: target.y, vx: 0, vy: 0, life: 0.5, max: 0.5, col: "#fff4c2", size: 3 })
       }
     }
+    const onDown = (e: PointerEvent) => {
+      const S = st.current
+      click(e.clientX / S.scale + S.cam.x, e.clientY / S.scale + S.cam.y)
+    }
+    engine.click = click
     cv.addEventListener("pointerdown", onDown)
-    return () => cv.removeEventListener("pointerdown", onDown)
+    return () => { cv.removeEventListener("pointerdown", onDown); engine.click = () => {} }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase === "title"])
 
@@ -347,6 +341,7 @@ export default function GameCanvas() {
       const rt = scenes.current[S.scene]
       const sc = rt.scene
       const H = S.hero
+      engine.now = now; engine.paused = paused
 
       // fade
       if (S.fade.dir === 1) { S.fade.a = Math.min(1, S.fade.a + dt * 3.2); if (S.fade.a >= 1) { S.fade.then?.(); S.fade.then = null; S.fade.dir = -1 } }
@@ -410,7 +405,7 @@ export default function GameCanvas() {
         H.animT += dt
         const exit = S.scene !== "village" && sc.hotspots.find((h) => h.action.type === "exit")
         if (exit && H.y > exit.box.y + 9 && H.x > exit.box.x && H.x < exit.box.x + exit.box.w) doAction(exit.action)
-        if (Math.random() < dt * 6) S.particles.push({ x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: S.scene === "village" ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
+        if (Math.random() < dt * 6) S.particles.push({ gy: H.y, x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: S.scene === "village" ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
       } else H.animT = 0
       H.attackT = Math.max(0, H.attackT - dt)
       H.hurtT = Math.max(0, H.hurtT - dt)
@@ -462,7 +457,16 @@ export default function GameCanvas() {
       if (!S.nearNpc) {
         for (const h of rt.scene.hotspots) if (overlaps(pb, h.box)) { S.near = h; break }
       }
+      if (!paused) sc.tick?.(now, dt)
       runtime.nearLabel = S.nearNpc ? `TALK TO ${(S.nearNpc.def.name ?? "").toUpperCase()}` : S.near?.label ?? null
+
+      // the 3D view draws itself; keep the shared particles ticking and skip all 2D drawing
+      if (store.view === "3d") {
+        for (const p of S.particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.kind === "smoke" ? 0 : 60 * dt }
+        S.particles = S.particles.filter((p) => p.life > 0)
+        S.cam.init = false
+        return
+      }
 
       // ── camera + scale
       const fit = Math.min(cw / (sc.w * TS + 24), ch / (sc.h * TS + 72))
@@ -682,7 +686,8 @@ export default function GameCanvas() {
 
   return (
     <>
-      <canvas ref={canvasRef} className="pixelated" style={{ display: "block", position: "absolute", inset: 0, cursor: "pointer" }} />
+      <canvas ref={canvasRef} className="pixelated" style={{ display: view === "3d" ? "none" : "block", position: "absolute", inset: 0, cursor: "pointer" }} />
+      {phase !== "title" && view === "3d" && <World3D />}
       {phase === "title" && <TitleScreen />}
       {phase !== "title" && <HUD />}
       {phase !== "title" && <AreaTitle />}

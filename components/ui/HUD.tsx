@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { useGameStore } from "@/lib/store"
+import { useGameStore, webgl2Supported } from "@/lib/store"
 import { gameAchievements } from "@/lib/data"
 import { playSound, setMusicEnabled } from "@/lib/audio"
 import { useContent } from "@/lib/content"
@@ -42,6 +42,7 @@ function IconBtn({ onClick, title, active = true, children, href }: {
 
 export default function HUD() {
   const c = useContent()
+  const view = useGameStore((s) => s.view)
   const { unlockedAchievements, sfxEnabled, toggleSfx, musicEnabled, toggleMusic, visited, mapOpen, setMapOpen, phase, sceneId } = useGameStore()
   const [night, setNight] = useState(runtime.nightTarget > 0.5)
   const arrowRef = useRef<HTMLDivElement>(null)
@@ -75,6 +76,7 @@ export default function HUD() {
       const k = e.key.toLowerCase()
       const st = useGameStore.getState()
       if (k === "m" && !e.repeat && !st.dialog && st.phase !== "building") { st.setMapOpen(!st.mapOpen); playSound(st.mapOpen ? "close" : "open") }
+      if (k === "v" && !e.repeat && st.phase === "playing" && !st.dialog && !st.mapOpen && !(e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) && webgl2Supported()) { st.toggleView(); playSound("click") }
       if (k === "escape" && st.mapOpen) st.setMapOpen(false)
     }
     window.addEventListener("keydown", onKey)
@@ -147,6 +149,11 @@ export default function HUD() {
             {night ? <Sun size={18} /> : <Moon size={18} />}
           </IconBtn>
         )}
+        {webgl2Supported() && (
+          <IconBtn title={view === "3d" ? "Switch to 2D (V)" : "Switch to 3D (V)"} onClick={() => { useGameStore.getState().toggleView(); playSound("click") }}>
+            <span style={{ fontFamily: "var(--font-pixel)", fontSize: 10 }}>{view === "3d" ? "2D" : "3D"}</span>
+          </IconBtn>
+        )}
         <IconBtn title={musicEnabled ? "Mute music" : "Play music"} active={musicEnabled} onClick={() => { toggleMusic(); setMusicEnabled(!musicEnabled) }}>
           {musicEnabled ? <Music size={18} /> : <Music2 size={18} />}
         </IconBtn>
@@ -167,6 +174,7 @@ export default function HUD() {
         <span style={hint}><span className="kbd">E</span> TALK / ENTER</span>
         <span style={hint}><span className="kbd">M</span> MAP</span>
         {!inside && <span style={hint}><span className="kbd">N</span> NIGHT</span>}
+        {webgl2Supported() && <span style={hint}><span className="kbd">V</span> 2D/3D</span>}
         {sceneId === "cave" && <span style={hint}><span className="kbd" style={{ minWidth: 48 }}>SPACE</span> SWING</span>}
       </div>
 

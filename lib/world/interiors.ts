@@ -1,7 +1,7 @@
 // Walkable interiors for every building, plus the mine dungeon.
 import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalSheet, type Rect } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
-import { TS, sheet, img, blit, hash, mulberry, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
+import { TS, G, sheet, img, blit, hash, mulberry, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
 const WALL_OFF: Record<WallVariant, [number, number]> = { beige: [0, 0], orange: [5, 0], brown: [0, 6], green: [5, 6] }
@@ -23,6 +23,7 @@ function room(id: string, title: string, o: RoomOpts) {
   const { w, h } = o
   const { c: gcv, ctx: g } = canvas(w * TS, h * TS)
   const blocked = new Uint8Array(w * h)
+  const tiles = new Uint8Array(w * h).fill(G.Floor)
   const sprites: Sprite[] = []
   const hotspots: Hotspot[] = []
   const actors: ActorDef[] = []
@@ -52,6 +53,7 @@ function room(id: string, title: string, o: RoomOpts) {
 
   for (let c = 0; c < w; c++) { blocked[c] = 1; if (c !== doorC) blocked[(h - 1) * w + c] = 1 }
   for (let r = 0; r < h; r++) { blocked[r * w] = 1; blocked[r * w + w - 1] = 1 }
+  for (let i = 0; i < w * h; i++) if (blocked[i]) tiles[i] = G.Void
 
   const put = (name: string, c: number, r: number, extra?: Partial<Sprite>, solid = true) => {
     const p = PROPS[name] ?? HOUSE_PROPS[name]
@@ -71,7 +73,7 @@ function room(id: string, title: string, o: RoomOpts) {
   hotspots.push({ id: "exit", box: { x: doorC * TS - 4, y: (h - 1) * TS, w: 24, h: 16 }, label: "LEAVE", action: { type: "exit" } })
 
   const finish = (extra: Partial<Scene>): Scene => ({
-    id, title, w, h, ground: gcv, sprites, blocked, hotspots, actors, lights,
+    id, title, w, h, ground: gcv, sprites, blocked, hotspots, actors, lights, tiles,
     spawn: { x: doorC * TS + 8, y: (h - 2) * TS + 10, facing: "up" }, dark: 0.15, music: "chill", scale: 4, bg: "#0d0b14",
     ...extra,
   })

@@ -410,6 +410,8 @@ export function buildVillage(): Scene {
   }
   for (const d of decals) blit(g, sheet(d.src), d.r, d.x, d.y)
 
+  const { c: clean, ctx: cctx } = canvas(W * TS, H * TS)
+  cctx.drawImage(gcv, 0, 0)
   // bake far-forest trees straight into the ground (they never occlude the hero)
   const baked = sprites.filter((s) => s.tag === "bake").sort((a, b) => a.baseY - b.baseY)
   for (const s of baked) blit(g, s.src as CanvasImageSource, s.rect, s.x, s.y)
@@ -448,6 +450,7 @@ export function buildVillage(): Scene {
   return {
     id: "village", title: "Rayan's Village", w: W, h: H, ground: gcv, sprites: live, blocked, hotspots, actors, lights,
     spawn: { x: 40 * TS + 8, y: 24 * TS + 8, facing: "down" }, dark: 0, music: "village", water,
+    tiles: ground, ground3d: clean, baked,
     meta: { trees: treeMeta },
   }
 }

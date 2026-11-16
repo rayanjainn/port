@@ -3,6 +3,22 @@ import { gameAchievements } from "./data"
 
 export type BuildingId = "townhall" | "tavern" | "academy" | "gallery" | "forge" | "wizard" | "cave" | null
 
+export type ViewMode = "2d" | "3d"
+const VIEW_KEY = "rayan-world:view"
+let gl2: boolean | null = null
+export function webgl2Supported() {
+  if (gl2 !== null) return gl2
+  if (typeof document === "undefined") return false
+  try { gl2 = !!document.createElement("canvas").getContext("webgl2") } catch { gl2 = false }
+  return gl2
+}
+function initialView(): ViewMode {
+  if (typeof window === "undefined" || !webgl2Supported()) return "2d"
+  try { const v = localStorage.getItem(VIEW_KEY); if (v === "2d" || v === "3d") return v } catch { /* private mode */ }
+  const small = matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 600
+  return small ? "2d" : "3d"
+}
+
 export interface DialogState {
   name: string
   face?: string
@@ -24,6 +40,9 @@ interface GameStore {
   arcade: string | null
   areaTitle: { title: string; sub: string; key: number } | null
   sceneId: string
+  view: ViewMode
+  setView: (v: ViewMode, persist?: boolean) => void
+  toggleView: () => void
   startGame: () => void
   openBuilding: (id: BuildingId, focus?: string | null) => void
   closeBuilding: () => void
@@ -53,6 +72,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
   arcade: null,
   areaTitle: null,
   sceneId: "village",
+  view: initialView(),
+  setView: (v, persist = true) => {
+    if (v === "3d" && !webgl2Supported()) return
+    if (persist) { try { localStorage.setItem(VIEW_KEY, v) } catch { /* ignore */ } }
+    set({ view: v })
+  },
+  toggleView: () => get().setView(get().view === "3d" ? "2d" : "3d"),
 
   startGame: () => {
     set({ phase: "playing" })
