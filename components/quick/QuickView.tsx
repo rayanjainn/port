@@ -111,7 +111,7 @@ function Page() {
             </div>
             <div className={`qv-rise ${mono} mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-white/50`} style={{ ["--d" as string]: "0.6s" }}>
               <span className="inline-flex items-center gap-1.5"><MapPin size={14} /> {p.location}</span>
-              <span className="inline-flex items-center gap-1.5"><Command size={14} /> Press <kbd className="qv-kbd">⌘K</kbd> to jump anywhere</span>
+              <span className="inline-flex items-center gap-1.5"><Command size={14} /> Press <kbd className="qv-kbd">Cmd/Ctrl K</kbd> to jump anywhere</span>
             </div>
           </div>
           <HeroIsland />

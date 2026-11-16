@@ -38,7 +38,7 @@ export default function ProjectArt({ project, className = "", label = true }: { 
   const gx = 18 + ((hashStr(project.id) >> 3) % 64)
   return (
     <div ref={host} data-live="0" className={`qa ${className}`}>
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`${project.title}: ${MOTIF_LABEL[motif]} illustration`} className="h-full w-full">
+      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={`${project.title}: ${MOTIF_LABEL[motif]} illustration`} className="h-full w-full">
         <defs>
           <radialGradient id={`${uid}g`} cx={`${gx}%`} cy="18%" r="90%">
             <stop offset="0" stopColor={A} stopOpacity="0.2" />
@@ -48,10 +48,10 @@ export default function ProjectArt({ project, className = "", label = true }: { 
           <pattern id={`${uid}p`} width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#fff" opacity="0.1" /></pattern>
           <linearGradient id={`${uid}l`} x1="0" x2="1"><stop offset="0" stopColor={A} stopOpacity="0" /><stop offset="0.5" stopColor={A} stopOpacity="0.9" /><stop offset="1" stopColor={A} stopOpacity="0" /></linearGradient>
         </defs>
-        <rect width={W} height={H} fill="#0d0b13" />
-        <rect width={W} height={H} fill={`url(#${uid}p)`} />
-        <rect width={W} height={H} fill={`url(#${uid}g)`} />
-        <g transform="translate(320 200) scale(0.9) translate(-320 -200)">
+        <rect x="-640" y="-400" width={W * 3} height={H * 3} fill="#0d0b13" />
+        <rect x="-640" y="-400" width={W * 3} height={H * 3} fill={`url(#${uid}p)`} />
+        <rect x="-640" y="-200" width={W * 3} height={H * 2} fill={`url(#${uid}g)`} />
+        <g transform="translate(320 200) scale(0.94) translate(-320 -200)">
         {body}
         {label && <text x="44" y="372" className="qa-t" fontSize="11" fill="#fff" opacity="0.38" letterSpacing="2">{MOTIF_LABEL[motif].toUpperCase()}</text>}
         </g>
@@ -149,7 +149,7 @@ const BODY: Record<Motif, (c: Ctx) => ReactNode> = {
         {xs.map((x, i) => (
           <g key={i}>
             <rect x={x} y="166" width="70" height="68" rx="14" fill="#13101b" stroke="#fff" strokeOpacity="0.18" />
-            <rect x={x} y="166" width="70" height="68" rx="14" fill={A} stroke={A} className="qa-stage" style={dl(i * 0.7)} />
+            <rect x={x} y="166" width="70" height="68" rx="14" fill={A} fillOpacity="0" stroke={A} strokeOpacity="0" className="qa-stage" style={dl(i * 0.7)} />
             <path d={`M${x + 24} 202 l8 8 l16 -18`} fill="none" stroke={A} strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" />
             <T x={x + 35} y="258" s="11" o={0.6} anchor="middle">{names[i]}</T>
           </g>

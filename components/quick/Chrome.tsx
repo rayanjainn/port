@@ -1,7 +1,7 @@
 "use client"
 // Shared page chrome: sticky nav with active-section indicator, command palette,
 // and the print-only résumé. Used by the Quick View and the case-study pages.
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
@@ -13,6 +13,13 @@ import { scrollToAnchor, setScrollLocked } from "./fx"
 
 type Group = "Go to" | "Projects" | "Actions" | "Elsewhere"
 interface Cmd { id: string; group: Group; label: string; hint?: string; icon: ReactNode; keywords: string; run: () => void }
+
+const subscribeNone = () => () => {}
+function modKey() {
+  const nav = navigator as Navigator & { userAgentData?: { platform?: string } }
+  const plat = nav.userAgentData?.platform || navigator.platform || navigator.userAgent
+  return /mac|iphone|ipad|ipod/i.test(plat) ? "⌘" : "Ctrl "
+}
 
 export function printResume(name: string) {
   const prev = document.title
@@ -109,6 +116,7 @@ export default function Chrome({ home, staticIds, children }: { home: boolean; s
 /* ── nav ─────────────────────────────────────────────────── */
 function Nav({ home, active, onOpen, name, onPrint }: { home: boolean; active: string; onOpen: () => void; name: string; onPrint: () => void }) {
   const first = name.split(" ")[0]
+  const mod = useSyncExternalStore(subscribeNone, modKey, () => "⌘")
   return (
     <header className="fixed inset-x-0 top-0 z-50">
       <nav aria-label="Primary" className="mx-auto mt-3 flex h-14 max-w-6xl items-center gap-1 rounded-2xl border border-white/10 bg-[#0b0a10]/75 px-2.5 backdrop-blur-xl sm:gap-2 sm:px-3 [width:calc(100%-24px)]">
@@ -132,9 +140,9 @@ function Nav({ home, active, onOpen, name, onPrint }: { home: boolean; active: s
           })}
         </ul>
         <div className="ml-auto flex items-center gap-1.5">
-          <button onClick={onOpen} aria-label="Open command palette (Cmd or Ctrl K)" aria-keyshortcuts="Meta+K Control+K" title="Jump anywhere: ⌘K on Mac, Ctrl K elsewhere"
+          <button onClick={onOpen} aria-label="Open command palette (Cmd or Ctrl K)" aria-keyshortcuts="Meta+K Control+K" title="Jump anywhere (Cmd/Ctrl K)"
             className="flex min-h-10 items-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] pl-3 pr-2 text-sm text-white/65 transition hover:bg-white/[0.09] hover:text-white">
-            <Search size={15} /><span className="hidden sm:inline">Jump to…</span><kbd className="qv-kbd qv-mono">⌘K</kbd>
+            <Search size={15} /><span className="hidden sm:inline">Jump to…</span><kbd className="qv-kbd qv-mono whitespace-nowrap">{mod}K</kbd>
           </button>
           <button onClick={onPrint} aria-label="Download résumé" title="Download résumé (print to PDF)" className="flex min-h-10 min-w-10 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.04] px-2.5 text-sm text-white/70 transition hover:bg-white/[0.09] hover:text-white xl:px-3.5">
             <Download size={16} /><span className="hidden xl:inline">Résumé</span>
