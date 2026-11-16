@@ -12,6 +12,7 @@ import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
 import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type Hotspot, type Box, type Action } from "@/lib/world/core"
 import { buildVillage, BUILDINGS, doorOf, VILLAGE_PRELOAD } from "@/lib/world/village"
 import { buildInteriors, INTERIOR_PRELOAD } from "@/lib/world/interiors"
+import { buildCity, CITY_PRELOAD } from "@/lib/world/city"
 import TitleScreen from "@/components/ui/TitleScreen"
 import { useLoading, bootStart } from "@/lib/loading"
 import HUD from "@/components/ui/HUD"
@@ -58,12 +59,12 @@ export default function GameCanvas() {
     // art (85%) + fonts; the title screen's map and hero are part of the boot set
     const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready.catch(() => undefined) : Promise.resolve()
     Promise.all([
-      loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD, "/village-map.png", charSheet(CHARS.hero)], (n, total) => useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })),
+      loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD, ...CITY_PRELOAD, "/village-map.png", charSheet(CHARS.hero)], (n, total) => useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })),
       fonts,
     ]).then(() => {
       if (cancelled) return
       const content = useContentStore.getState().data
-      const all: Record<string, Scene> = { village: buildVillage(), ...buildInteriors(content) }
+      const all: Record<string, Scene> = { village: buildVillage(), city: buildCity(), ...buildInteriors(content) }
       for (const [id, sc] of Object.entries(all)) scenes.current[id] = prepare(sc)
       // shared village map for the minimap / world map
       const v = all.village
@@ -83,7 +84,7 @@ export default function GameCanvas() {
       setTimeout(() => useLoading.setState({ done: true }), Math.max(350, 1400 - (performance.now() - bootStart)))
       if (process.env.NODE_ENV !== "production") {
         // dev-only hooks for automated screenshots
-        (window as unknown as { __rw: unknown }).__rw = { goTo, doAction, hero: S.hero, mapURL: () => runtime.mapCanvas?.toDataURL(), trees: () => scenes.current.village.scene.meta?.trees }
+        (window as unknown as { __rw: unknown }).__rw = { goTo, doAction, hero: S.hero, mapURL: () => runtime.mapCanvas?.toDataURL(), scenes: () => scenes.current, trees: () => scenes.current.village.scene.meta?.trees }
       }
     })
     const h = new Date().getHours()
@@ -202,7 +203,7 @@ export default function GameCanvas() {
       if (store.phase === "title") return
       if ((k === "e" || k === "enter") && !e.repeat) interact()
       if (k === " " && !e.repeat) attack()
-      if (k === "n" && !e.repeat && S.scene === "village") { toggleNight(); playSound("click") }
+      if (k === "n" && !e.repeat && (S.scene === "village" || S.scene === "city")) { toggleNight(); playSound("click") }
     }
     const up = (e: KeyboardEvent) => { st.current.keys[e.key.toLowerCase()] = false }
     const blur = () => { st.current.keys = {} }
@@ -360,6 +361,7 @@ export default function GameCanvas() {
           else { H.x = d.x; H.y = d.y + 4; H.facing = "up"; H.path = []; S.cam.init = false; playSound("magic") }
         }
       }
+
 
       // ── hero movement
       let dx = 0, dy = 0
@@ -595,11 +597,11 @@ export default function GameCanvas() {
       }
 
       // ── lighting
-      const dark = sc.id === "village" ? runtime.night * 0.78 : sc.dark
+      const dark = sc.id === "village" || sc.id === "city" ? runtime.night * 0.78 : sc.dark
       if (dark > 0.02) {
         lctx.globalCompositeOperation = "source-over"
         lctx.clearRect(0, 0, vw, vh)
-        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.id === "village" ? `rgba(14,18,58,${dark})` : `rgba(24,14,8,${dark})`
+        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.id === "village" || sc.id === "city" ? `rgba(14,18,58,${dark})` : `rgba(24,14,8,${dark})`
         lctx.fillRect(0, 0, vw, vh)
         lctx.globalCompositeOperation = "destination-out"
         const hole = (x: number, y: number, r: number, s: number) => {

@@ -144,7 +144,7 @@ export interface Scene {
   lights: Light[]
   spawn: { x: number; y: number; facing: Facing }
   dark: number                   // ambient darkness 0..1 (interiors/dungeon)
-  music: "village" | "dungeon" | "chill"
+  music: "village" | "dungeon" | "chill" | "city"
   scale?: number                 // preferred zoom
   water?: { c: number; r: number }[]   // water tiles for ripples
   bg?: string
