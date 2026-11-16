@@ -104,6 +104,7 @@ export type Action =
   | { type: "door"; to: string; label: string }
   | { type: "exit" }
   | { type: "sign"; lines: string[] }
+  | { type: "travel" }           // opens the world-select screen (dock, metro, caravan, gate)
 
 export interface Hotspot {
   id: string
@@ -131,6 +132,11 @@ export interface ActorDef {
   action?: Action        // what talking leads to
 }
 
+export type MusicTrack = "village" | "dungeon" | "chill" | "city" | "desert" | "ruins" | "sea"
+
+/** A named place a world wants on its quest list, minimap and fast-travel map. x / y = where you stand at its door. */
+export interface Landmark { id: string; label: string; sub: string; accent: string; x: number; y: number; quest?: string }
+
 export interface Scene {
   id: string
   title: string
@@ -144,7 +150,7 @@ export interface Scene {
   lights: Light[]
   spawn: { x: number; y: number; facing: Facing }
   dark: number                   // ambient darkness 0..1 (interiors/dungeon)
-  music: "village" | "dungeon" | "chill" | "city"
+  music: MusicTrack
   scale?: number                 // preferred zoom
   water?: { c: number; r: number }[]   // water tiles for ripples
   bg?: string
@@ -156,6 +162,13 @@ export interface Scene {
   outdoor?: boolean              // open-air world: day/night cycle and sky apply (village, city, ...)
   signs?: SceneSign[]            // floating name boards over landmarks, drawn by both views
   world?: string                 // id of the world this scene belongs to (interiors inherit their world's)
+  landmarks?: Landmark[]         // the world's checklist (entry scene only)
+  arrive?: { x: number; y: number; facing: Facing }   // where travellers land (the dock, the metro platform...); spawn if absent
+  ambient?: "meadow" | "cave"    // drifting butterflies / fireflies
+  /** night-time tuning for the 2D light pass; omitted = the village defaults */
+  lighting?: { dark?: number; holeStrength?: number; heroRadius?: number; radiusScale?: number; glow?: number; tint?: string }
+  /** self-lit things (window panes, neon, screens) drawn after the darkness, so they are not dimmed. a = night 0..1, t = seconds */
+  emissive?: (ctx: CanvasRenderingContext2D, camX: number, camY: number, vw: number, vh: number, a: number, t: number) => void
 }
 
 /** A floating name board. x = centre, y = bottom edge, in scene pixels. */

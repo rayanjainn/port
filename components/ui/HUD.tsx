@@ -6,21 +6,8 @@ import { gameAchievements } from "@/lib/data"
 import { playSound, setMusicEnabled } from "@/lib/audio"
 import { useContent } from "@/lib/content"
 import { runtime, toggleNight, requestTeleport } from "@/lib/runtime"
-import { BUILDINGS } from "@/lib/world/village"
-import { Trophy, Volume2, VolumeX, Moon, Sun, Map as MapIcon, LayoutList, Navigation, X, Music, Music2, DoorOpen } from "lucide-react"
-
-const ACCENT: Record<string, string> = Object.fromEntries(BUILDINGS.filter((b) => b.accent).map((b) => [b.id, b.accent!]))
-const QUEST_TEXT: Record<string, string> = {
-  townhall: "Meet the Mayor in the Town Hall",
-  gallery: "Tour the paintings in the Gallery",
-  tavern: "Read the quest board at the Tavern",
-  forge: "Inspect the weapon racks at the Forge",
-  academy: "Read the scrolls at the Academy",
-  wizard: "Send a raven from the Raven Post",
-  cave: "Find the arcade hidden in the Old Mine",
-}
-const QUEST_ORDER = ["townhall", "gallery", "tavern", "forge", "academy", "wizard", "cave"]
-const SECTIONS = BUILDINGS.filter((b) => b.section)
+import { worldById, visitKey } from "@/lib/world/worlds"
+import { Trophy, Volume2, VolumeX, Moon, Sun, Map as MapIcon, LayoutList, Navigation, X, Music, Music2, DoorOpen, Globe } from "lucide-react"
 
 const panel: React.CSSProperties = {
   background: "linear-gradient(180deg, #fbf1d6 0%, #efdeb2 100%)",
@@ -43,15 +30,20 @@ function IconBtn({ onClick, title, active = true, children, href }: {
 export default function HUD() {
   const c = useContent()
   const view = useGameStore((s) => s.view)
-  const { unlockedAchievements, sfxEnabled, toggleSfx, musicEnabled, toggleMusic, visited, mapOpen, setMapOpen, phase, sceneId } = useGameStore()
+  const { unlockedAchievements, sfxEnabled, toggleSfx, musicEnabled, toggleMusic, visited, mapOpen, setMapOpen, phase, sceneId, world: worldId } = useGameStore()
+  const world = worldById(worldId)
+  const lms = runtime.landmarks
+  const accentOf = (id: string) => lms.find((l) => l.id === id)?.accent ?? "#8a5a2c"
   const [night, setNight] = useState(runtime.nightTarget > 0.5)
   const arrowRef = useRef<HTMLDivElement>(null)
   const distRef = useRef<HTMLSpanElement>(null)
 
-  const done = QUEST_ORDER.filter((q) => visited.has(q))
-  const nextQuest = QUEST_ORDER.find((q) => !visited.has(q))
-  const inside = sceneId !== "village"
-  const here = BUILDINGS.find((b) => b.id === sceneId)
+  const QUEST_ORDER = lms.map((l) => l.id)
+  const isV = (q: string) => visited.has(visitKey(worldId, q))
+  const done = QUEST_ORDER.filter(isV)
+  const nextQuest = QUEST_ORDER.find((q) => !isV(q))
+  const inside = sceneId !== world.scene
+  const here = lms.find((b) => b.id === sceneId)
 
   useEffect(() => {
     let raf = 0, last = 0
@@ -61,7 +53,8 @@ export default function HUD() {
       last = t
       setNight(runtime.nightTarget > 0.5)
       const d = nextQuest ? runtime.doors[nextQuest] : null
-      if (d && arrowRef.current && distRef.current && runtime.scene === "village") {
+      const entry = worldById(useGameStore.getState().world).scene
+      if (d && arrowRef.current && distRef.current && runtime.scene === entry) {
         const dx = d.x - runtime.player.x, dy = d.y - runtime.player.y
         arrowRef.current.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`
         distRef.current.textContent = `${Math.round(Math.hypot(dx, dy) / 16)}m`
@@ -69,12 +62,14 @@ export default function HUD() {
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [nextQuest])
+  }, [nextQuest, worldId])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase()
       const st = useGameStore.getState()
+      if (st.worldSelect || st.travel) return
+      if (k === "g" && !e.repeat && st.phase === "playing" && !st.dialog && !st.mapOpen) { st.openWorldSelect("hud"); playSound("open"); return }
       if (k === "m" && !e.repeat && !st.dialog && st.phase !== "building") { st.setMapOpen(!st.mapOpen); playSound(st.mapOpen ? "close" : "open") }
       if (k === "v" && !e.repeat && st.phase === "playing" && !st.dialog && !st.mapOpen && !(e.target instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) && webgl2Supported()) { st.toggleView(); playSound("click") }
       if (k === "escape" && st.mapOpen) st.setMapOpen(false)
@@ -110,7 +105,7 @@ export default function HUD() {
         <div style={{ marginTop: 10, paddingTop: 10, borderTop: "2px dashed #c9a96a", display: "flex", alignItems: "center", gap: 10 }}>
           {inside && here ? (
             <>
-              <div style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", background: ACCENT[here.id] ?? "#8a5a2c", border: "3px solid #1d1006", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+              <div style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", background: accentOf(here.id), border: "3px solid #1d1006", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
                 <DoorOpen size={14} />
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
@@ -120,22 +115,29 @@ export default function HUD() {
             </>
           ) : nextQuest ? (
             <>
-              <div style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", background: ACCENT[nextQuest], border: "3px solid #1d1006", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <div style={{ width: 30, height: 30, flexShrink: 0, borderRadius: "50%", background: accentOf(nextQuest), border: "3px solid #1d1006", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <div ref={arrowRef} style={{ color: "#fff", display: "flex", transition: "transform .15s linear" }}>
                   <Navigation size={14} fill="#fff" style={{ transform: "rotate(-45deg)" }} />
                 </div>
               </div>
               <div style={{ minWidth: 0, flex: 1 }}>
                 <div style={{ fontFamily: "var(--font-pixel)", fontSize: 7, color: "#c8463b", letterSpacing: 1 }}>QUEST · <span ref={distRef} /></div>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#3a2412", marginTop: 3, lineHeight: 1.2 }}>{QUEST_TEXT[nextQuest]}</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#3a2412", marginTop: 3, lineHeight: 1.2 }}>{lms.find((l) => l.id === nextQuest)?.quest}</div>
               </div>
               <button onClick={() => { requestTeleport(nextQuest); playSound("magic") }} title="Fast travel"
                 style={{ fontFamily: "var(--font-pixel)", fontSize: 7, padding: "7px 8px", background: "#3a2412", color: "#ffe39a", border: "2px solid #1d1006", cursor: "pointer" }}>GO</button>
             </>
           ) : (
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "#2f6b2a" }}>✦ Village fully explored! Thanks for visiting {first}&apos;s world.</div>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "#2f6b2a" }}>✦ {world.name} fully explored! Thanks for visiting {first}&apos;s world.</div>
           )}
         </div>
+        {worldId !== "village" && (
+          <div style={{ marginTop: 9, display: "flex", gap: 4, flexWrap: "wrap" }} aria-label="Landmark checklist">
+            {lms.map((l) => (
+              <span key={l.id} title={l.label} style={{ flex: 1, minWidth: 30, textAlign: "center", fontFamily: "var(--font-pixel)", fontSize: 6, padding: "4px 0", border: "2px solid #1d1006", background: isV(l.id) ? l.accent : "#e2cf9c", color: isV(l.id) ? "#fff" : "#8f7246" }}>{isV(l.id) ? "✓" : "·"}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* top-right controls */}
@@ -143,6 +145,7 @@ export default function HUD() {
         <div title="Achievements" style={{ ...panel, height: 42, padding: "0 12px", display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "var(--font-pixel)", fontSize: 9, color: "#3a2412" }}>
           <Trophy size={15} color="#c58a12" /> {unlockedAchievements.size}/{total}
         </div>
+        <IconBtn title="Worlds (G)" onClick={() => { useGameStore.getState().openWorldSelect(world.travel.kind); playSound("open") }}><Globe size={18} /></IconBtn>
         <IconBtn title="Map (M)" onClick={() => { setMapOpen(!mapOpen); playSound("open") }}><MapIcon size={18} /></IconBtn>
         {!inside && (
           <IconBtn title={night ? "Day (N)" : "Night (N)"} onClick={() => { toggleNight(); playSound("click"); setNight(!night) }}>
@@ -173,6 +176,7 @@ export default function HUD() {
         <span style={hint}><span className="kbd" style={{ minWidth: 44 }}>CLICK</span> WALK HERE</span>
         <span style={hint}><span className="kbd">E</span> TALK / ENTER</span>
         <span style={hint}><span className="kbd">M</span> MAP</span>
+        <span style={hint}><span className="kbd">G</span> WORLDS</span>
         {!inside && <span style={hint}><span className="kbd">N</span> NIGHT</span>}
         {webgl2Supported() && <span style={hint}><span className="kbd">V</span> 2D/3D</span>}
         {sceneId === "cave" && <span style={hint}><span className="kbd" style={{ minWidth: 48 }}>SPACE</span> SWING</span>}
@@ -211,11 +215,12 @@ function MiniMap({ onOpen }: { onOpen: () => void }) {
       const y0 = Math.max(0, Math.min(runtime.mapSize.h - vh, runtime.player.y - vh / 2))
       ctx.drawImage(map, x0, y0, vw, vh, 0, 0, W, H)
       if (runtime.night > 0.05) { ctx.fillStyle = `rgba(10,14,50,${runtime.night * 0.4})`; ctx.fillRect(0, 0, W, H) }
-      for (const [id, d] of Object.entries(runtime.doors)) {
+      for (const lm of runtime.landmarks) {
+        const d = lm, id = lm.id
         const x = (d.x - x0) * Z, y = (d.y - y0) * Z
         if (x < -6 || y < -6 || x > W + 6 || y > H + 6) continue
         ctx.fillStyle = "#1d1006"; ctx.fillRect(x - 5, y - 9, 10, 10)
-        ctx.fillStyle = ACCENT[id] ?? "#fff"; ctx.fillRect(x - 3, y - 7, 6, 6)
+        ctx.fillStyle = lm.accent; ctx.fillRect(x - 3, y - 7, 6, 6); void id
       }
       const px = (runtime.player.x - x0) * Z, py = (runtime.player.y - y0) * Z
       ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.beginPath(); ctx.arc(px, py, 6 + Math.sin(t / 200) * 2, 0, Math.PI * 2); ctx.fill()
@@ -236,7 +241,9 @@ function MiniMap({ onOpen }: { onOpen: () => void }) {
 function WorldMap({ onClose, visited, first }: { onClose: () => void; visited: Set<string>; first: string }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const [hover, setHover] = useState<string | null>(null)
-  const inVillage = useGameStore((s) => s.sceneId) === "village"
+  const worldId = useGameStore((s) => s.world)
+  const inVillage = useGameStore((s) => s.sceneId) === worldById(worldId).scene
+  const lms = runtime.landmarks
 
   useEffect(() => {
     let raf = 0
@@ -262,6 +269,7 @@ function WorldMap({ onClose, visited, first }: { onClose: () => void; visited: S
 
   const travel = (id: string) => { requestTeleport(id); playSound("magic"); onClose() }
   const W = runtime.mapSize.w || 1344, H = runtime.mapSize.h || 1024
+  void first
 
   return (
     <div className="fade-in" onClick={(e) => { if (e.target === e.currentTarget) onClose() }} style={{
@@ -270,13 +278,13 @@ function WorldMap({ onClose, visited, first }: { onClose: () => void; visited: S
     }}>
       <div className="modal-in" style={{ ...panel, padding: 14, maxWidth: "min(1180px, 100%)", width: "100%", maxHeight: "94vh", overflow: "auto", position: "relative" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, gap: 10 }}>
-          <div style={{ fontFamily: "var(--font-pixel)", fontSize: 12, color: "#3a2412", letterSpacing: 2 }}>MAP OF {first.toUpperCase()}&apos;S VILLAGE</div>
+          <div style={{ fontFamily: "var(--font-pixel)", fontSize: 12, color: "#3a2412", letterSpacing: 2 }}>{worldId === "village" ? `MAP OF ${first.toUpperCase()}'S VILLAGE` : `MAP OF ${worldById(worldId).name.toUpperCase()}`}</div>
           <button onClick={onClose} aria-label="Close map" style={{ width: 34, height: 34, background: "#c8463b", color: "#fff", border: "3px solid #1d1006", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={16} strokeWidth={3} /></button>
         </div>
         <div className="map-grid" style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) 250px", gap: 14 }}>
           <div style={{ position: "relative", border: "3px solid #1d1006", lineHeight: 0 }}>
             <canvas ref={ref} width={W} height={H} className="pixelated" style={{ width: "100%", height: "auto", display: "block" }} />
-            {SECTIONS.map((b) => {
+            {lms.map((b) => {
               const d = runtime.doors[b.id]
               if (!d) return null
               return (
@@ -284,26 +292,26 @@ function WorldMap({ onClose, visited, first }: { onClose: () => void; visited: S
                   style={{
                     position: "absolute", left: `${(d.x / W) * 100}%`, top: `${((d.y - 64) / H) * 100}%`, transform: `translate(-50%, -100%) scale(${hover === b.id ? 1.12 : 1})`,
                     fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 1, whiteSpace: "nowrap", lineHeight: 1,
-                    background: ACCENT[b.id], color: "#fff", border: "2px solid #1d1006", padding: "6px 8px", cursor: "pointer", boxShadow: "0 3px 0 #1d1006", transition: "transform .12s",
+                    background: b.accent, color: "#fff", border: "2px solid #1d1006", padding: "6px 8px", cursor: "pointer", boxShadow: "0 3px 0 #1d1006", transition: "transform .12s",
                   }}>
-                  {visited.has(b.id) ? "✓ " : ""}{b.section}
+                  {visited.has(visitKey(worldId, b.id)) ? "✓ " : ""}{b.sub}
                 </button>
               )
             })}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "#5c4022", marginBottom: 2 }}>Click a place to fast-travel to its door.</div>
-            {SECTIONS.map((b) => (
+            {lms.map((b) => (
               <button key={b.id} onClick={() => travel(b.id)} onMouseEnter={() => setHover(b.id)} onMouseLeave={() => setHover(null)} className="parch-btn" style={{
                 display: "flex", alignItems: "center", gap: 10, textAlign: "left", cursor: "pointer",
                 background: hover === b.id ? "#fff8e2" : "#f4e6c0", border: "2px solid #1d1006", padding: "9px 10px", boxShadow: "0 3px 0 #1d1006",
               }}>
-                <span style={{ width: 14, height: 14, background: ACCENT[b.id], border: "2px solid #1d1006", flexShrink: 0 }} />
+                <span style={{ width: 14, height: 14, background: b.accent, border: "2px solid #1d1006", flexShrink: 0 }} />
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: "block", fontFamily: "var(--font-pixel)", fontSize: 8, color: "#3a2412" }}>{b.label}</span>
-                  <span style={{ display: "block", fontFamily: "var(--font-body)", fontSize: 14, color: "#8f6a3a", marginTop: 3 }}>{b.section!.charAt(0) + b.section!.slice(1).toLowerCase()}</span>
+                  <span style={{ display: "block", fontFamily: "var(--font-body)", fontSize: 14, color: "#8f6a3a", marginTop: 3 }}>{b.sub.charAt(0) + b.sub.slice(1).toLowerCase()}</span>
                 </span>
-                {visited.has(b.id) && <span style={{ color: "#2f6b2a", fontFamily: "var(--font-pixel)", fontSize: 10 }}>✓</span>}
+                {visited.has(visitKey(worldId, b.id)) && <span style={{ color: "#2f6b2a", fontFamily: "var(--font-pixel)", fontSize: 10 }}>✓</span>}
               </button>
             ))}
           </div>

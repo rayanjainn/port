@@ -11,5 +11,7 @@ export const gameAchievements = [
   { id: "a10", title: "TREASURE HUNTER", description: "Opened the mine's chest", icon: "💰", unlockedBy: "chest_mine" },
   { id: "a11", title: "ARCADE CHAMP", description: "Played every arcade game", icon: "🕹️", unlockedBy: "arcade_all" },
   { id: "a12", title: "MONSTER TAMER", description: "Bonked 10 mine monsters", icon: "⚔️", unlockedBy: "kills_10" },
+  { id: "a13", title: "FIRST VOYAGE", description: "Left home for another world", icon: "⛵", unlockedBy: "world_travel" },
+  { id: "a14", title: "WORLD WALKER", description: "Set foot in every open world", icon: "🧭", unlockedBy: "worlds_all" },
   { id: "a9", title: "COMPLETIONIST", description: "Discovered everything!", icon: "⭐", unlockedBy: "all_complete" },
 ]

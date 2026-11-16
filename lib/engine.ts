@@ -1,5 +1,6 @@
 // Bridge between the simulation (GameCanvas) and the renderers. The 2D loop owns
 // the state; the 3D view only reads it and calls back into the shared pointer logic.
+import type { WorldSelectOrigin } from "@/lib/store"
 import type { Scene, ActorDef, Facing, Hotspot, SolidIndex } from "@/lib/world/core"
 
 export interface ActorRT {
@@ -66,4 +67,10 @@ export const engine = {
   click: (wx: number, wy: number) => { void wx; void wy },
   /** the E key: talk to / use whatever is nearest */
   interact: () => { /* replaced by GameCanvas */ },
+  /** load (once) and build a world's scenes; resolves false if the world is not registered */
+  ensureWorld: (id: string) => { void id; return Promise.resolve(false) },
+  /** swap the active world without a fade; `arrive` lands at the travel point instead of the spawn */
+  enterWorld: (id: string, mode?: "spawn" | "arrive") => { void id; void mode; return false },
+  /** the world-select screen made a choice */
+  chooseWorld: (id: string, origin: WorldSelectOrigin) => { void id; void origin },
 }

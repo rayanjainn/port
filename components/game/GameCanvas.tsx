@@ -10,9 +10,8 @@ import { engine, type ActorRT, type SceneRT, type EngineState } from "@/lib/engi
 import { fontFamily } from "@/lib/fonts"
 import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
 import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type Hotspot, type Box, type Action } from "@/lib/world/core"
-import { buildVillage, BUILDINGS, doorOf, VILLAGE_PRELOAD } from "@/lib/world/village"
-import { buildInteriors, INTERIOR_PRELOAD } from "@/lib/world/interiors"
-import { buildCity, CITY_PRELOAD } from "@/lib/world/city"
+import { BUILDINGS } from "@/lib/world/village"
+import { OPEN_WORLDS, loaderFor, worldById, visitKey } from "@/lib/world/worlds"
 import TitleScreen from "@/components/ui/TitleScreen"
 import { useLoading, bootStart } from "@/lib/loading"
 import HUD from "@/components/ui/HUD"
@@ -21,6 +20,8 @@ import BuildingModal from "@/components/ui/BuildingModal"
 import TouchControls from "@/components/ui/TouchControls"
 import DialogBox from "@/components/ui/DialogBox"
 import AreaTitle from "@/components/ui/AreaTitle"
+import WorldSelect from "@/components/ui/WorldSelect"
+import TravelTransition from "@/components/ui/TravelTransition"
 import Arcade from "@/components/arcade/Arcade"
 
 const World3D = dynamic(() => import("@/components/game/World3D"), { ssr: false, loading: () => null })
@@ -34,9 +35,11 @@ export default function GameCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const phase = useGameStore((s) => s.phase)
   const view = useGameStore((s) => s.view)
+  const worldId = useGameStore((s) => s.world)
+  useEffect(() => { document.documentElement.dataset.world = worldId }, [worldId])
   const scenes = useRef<Record<string, SceneRT>>({})
   const st = useRef<EngineState>({
-    scene: "village",
+    scene: worldById(useGameStore.getState().world).scene,
     hero: { x: 0, y: 0, facing: "down" as Facing, animT: 0, moving: false, attackT: 0, hurtT: 0, path: [] as { x: number; y: number }[], pending: null as Hotspot | null, pendingNpc: null as ActorRT | null },
     keys: {} as Record<string, boolean>,
     cam: { x: 0, y: 0, init: false },
@@ -51,40 +54,120 @@ export default function GameCanvas() {
     scale: 4,
   })
 
-  // ── build world once the art is loaded
+  // ── worlds: only the current world's art gates the boot loader, the rest streams in afterwards
+  const loaded = useRef<Record<string, boolean>>({})
+  const inflight = useRef<Record<string, Promise<boolean> | undefined>>({})
+
+  function ensureWorld(id: string): Promise<boolean> {
+    if (loaded.current[id]) return Promise.resolve(true)
+    const running = inflight.current[id]
+    if (running) return running
+    const load = loaderFor(id)
+    if (!load) return Promise.resolve(false)
+    useGameStore.getState().setWorldLoad(id, { state: "loading", progress: 0.02 })
+    const boot = !st.current.ready
+    const p = (async () => {
+      const mod = await load()
+      await loadAll(
+        boot ? [...mod.preload, charSheet(CHARS.hero)] : mod.preload,
+        (n, total) => {
+          useGameStore.getState().setWorldLoad(id, { progress: 0.05 + (n / total) * 0.85 })
+          if (boot) useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })
+        },
+      )
+      await new Promise((r) => setTimeout(r, 0))
+      const all = mod.build(useContentStore.getState().data)
+      for (const [sid, sc] of Object.entries(all)) scenes.current[sid] = prepare(sc)
+      runtime.maps[id] = makeMap(all[worldById(id).scene])
+      loaded.current[id] = true
+      useGameStore.getState().setWorldLoad(id, { state: "ready", progress: 1 })
+      return true
+    })().catch(() => { useGameStore.getState().setWorldLoad(id, { state: "error" }); return false })
+    inflight.current[id] = p
+    return p
+  }
+
+  /** static render of a world's entry scene: minimap, map screen */
+  function makeMap(v: Scene) {
+    const { c, ctx } = canvas(v.w * TS, v.h * TS)
+    ctx.drawImage(v.ground, 0, 0)
+    for (const s of [...v.sprites].sort((a, b) => a.baseY - b.baseY)) {
+      if (s.tag === "car") continue
+      const src = typeof s.src === "function" ? s.src() : s.src
+      if (src) ctx.drawImage(src, s.rect[0], s.rect[1], s.rect[2], s.rect[3], Math.round(s.x), Math.round(s.y), s.rect[2], s.rect[3])
+    }
+    return { canvas: c, w: v.w * TS, h: v.h * TS }
+  }
+
+  /** point the shared runtime (minimap, quest list, fast travel) at a world */
+  function bindWorld(id: string) {
+    const rt = scenes.current[worldById(id).scene]
+    const m = runtime.maps[id]
+    if (!rt || !m) return false
+    runtime.mapCanvas = m.canvas
+    runtime.mapSize = { w: m.w, h: m.h }
+    runtime.landmarks = rt.scene.landmarks ?? []
+    runtime.doors = Object.fromEntries(runtime.landmarks.map((l) => [l.id, { x: l.x, y: l.y }]))
+    return true
+  }
+
+  /** swap the active world right now (no fade). `arrive` lands at the travel point instead of the spawn. */
+  function enterWorld(id: string, mode: "spawn" | "arrive" = "spawn") {
+    if (!bindWorld(id)) return false
+    const w = worldById(id)
+    const rt = scenes.current[w.scene]
+    const S = st.current
+    const sp = mode === "arrive" ? rt.scene.arrive ?? rt.scene.spawn : rt.scene.spawn
+    S.scene = w.scene
+    runtime.scene = w.scene
+    S.hero.x = sp.x; S.hero.y = sp.y; S.hero.facing = sp.facing
+    S.hero.path = []; S.hero.pending = null; S.hero.pendingNpc = null
+    S.cam.init = false; S.returnTo = null
+    const store = useGameStore.getState()
+    store.setScene(w.scene)
+    store.setWorld(id)
+    playMusic(rt.scene.music)
+    return true
+  }
+
   useEffect(() => {
     let cancelled = false
     engine.state = st.current
     engine.scenes = scenes.current
-    // art (85%) + fonts; the title screen's map and hero are part of the boot set
+    engine.ensureWorld = ensureWorld
+    engine.enterWorld = enterWorld
+    engine.chooseWorld = (id, origin) => {
+      const store = useGameStore.getState()
+      if (origin === "title") {
+        store.closeWorldSelect()
+        if (id !== store.world) enterWorld(id, "spawn")
+        store.requestStart()
+      } else if (id === store.world) store.closeWorldSelect()
+      else store.beginTravel({ from: store.world, to: id, origin })
+    }
     const fonts = typeof document !== "undefined" && document.fonts ? document.fonts.ready.catch(() => undefined) : Promise.resolve()
-    Promise.all([
-      loadAll([...VILLAGE_PRELOAD, ...INTERIOR_PRELOAD, ...CITY_PRELOAD, "/village-map.png", charSheet(CHARS.hero)], (n, total) => useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })),
-      fonts,
-    ]).then(() => {
+    const startWorld = worldById(useGameStore.getState().world).id
+    Promise.all([ensureWorld(startWorld), fonts]).then(() => {
       if (cancelled) return
-      const content = useContentStore.getState().data
-      const all: Record<string, Scene> = { village: buildVillage(), city: buildCity(), ...buildInteriors(content) }
-      for (const [id, sc] of Object.entries(all)) scenes.current[id] = prepare(sc)
-      // shared village map for the minimap / world map
-      const v = all.village
-      const { c, ctx } = canvas(v.w * TS, v.h * TS)
-      ctx.drawImage(v.ground, 0, 0)
-      for (const s of [...v.sprites].sort((a, b) => a.baseY - b.baseY)) {
-        const src = typeof s.src === "function" ? s.src() : s.src
-        if (src) ctx.drawImage(src, s.rect[0], s.rect[1], s.rect[2], s.rect[3], Math.round(s.x), Math.round(s.y), s.rect[2], s.rect[3])
-      }
-      runtime.mapCanvas = c
-      runtime.mapSize = { w: v.w * TS, h: v.h * TS }
-      for (const b of BUILDINGS) if (b.section) { const d = doorOf(b); runtime.doors[b.id] = { x: d.x, y: d.y + 10 } }
+      const w = worldById(startWorld)
       const S = st.current
-      S.hero.x = v.spawn.x; S.hero.y = v.spawn.y; S.hero.facing = v.spawn.facing
+      S.scene = w.scene
+      const sp = scenes.current[w.scene].scene.spawn
+      S.hero.x = sp.x; S.hero.y = sp.y; S.hero.facing = sp.facing
+      bindWorld(startWorld)
+      runtime.scene = w.scene
+      useGameStore.getState().setScene(w.scene)
       S.ready = true
       useLoading.setState({ progress: 1 })
       setTimeout(() => useLoading.setState({ done: true }), Math.max(350, 1400 - (performance.now() - bootStart)))
+      // the other worlds stream in quietly once the title is up
+      setTimeout(() => { OPEN_WORLDS.filter((o) => o.id !== startWorld).reduce((p, o) => p.then(() => ensureWorld(o.id).then(() => undefined)), Promise.resolve()) }, 2500)
       if (process.env.NODE_ENV !== "production") {
         // dev-only hooks for automated screenshots
-        (window as unknown as { __rw: unknown }).__rw = { goTo, doAction, hero: S.hero, mapURL: () => runtime.mapCanvas?.toDataURL(), scenes: () => scenes.current, trees: () => scenes.current.village.scene.meta?.trees }
+        (window as unknown as { __rw: unknown }).__rw = {
+          goTo, doAction, hero: S.hero, st: S, enterWorld, ensureWorld, mapURL: () => runtime.mapCanvas?.toDataURL(), scenes: () => scenes.current,
+          trees: () => scenes.current.village?.scene.meta?.trees, store: useGameStore, runtime,
+        }
       }
     })
     const h = new Date().getHours()
@@ -127,11 +210,12 @@ export default function GameCanvas() {
         S.hero.x = sp.x; S.hero.y = sp.y; S.hero.facing = at?.facing ?? rt.scene.spawn.facing
         S.hero.path = []; S.cam.init = false
         playMusic(rt.scene.music)
-        if (id !== "village") {
+        const world = worldById(useGameStore.getState().world)
+        if (id !== world.scene) {
           const b = BUILDINGS.find((x) => x.id === id)
           useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? "")
           useGameStore.getState().markVisited(id)
-        } else useGameStore.getState().showArea("THE VILLAGE", "WELCOME BACK")
+        } else useGameStore.getState().showArea(world.id === "village" ? "THE VILLAGE" : world.name.toUpperCase(), "WELCOME BACK")
       },
     }
   }
@@ -145,12 +229,16 @@ export default function GameCanvas() {
       goTo(a.to)
     } else if (a.type === "exit") {
       playSound("close")
-      goTo("village", S.returnTo ? { ...S.returnTo, facing: "down" } : undefined)
+      goTo(worldById(store.world).scene, S.returnTo ? { ...S.returnTo, facing: "down" } : undefined)
     } else if (a.type === "section") {
       playSound("open")
-      store.openBuilding(a.id as BuildingId, a.focus ?? null)
+      store.openBuilding(a.id as BuildingId, a.focus ?? null, store.world)
+    } else if (a.type === "travel") {
+      playSound("open")
+      store.openWorldSelect(worldById(store.world).travel.kind)
     } else if (a.type === "game") {
       playSound("magic")
+      if (store.world !== "village") store.markVisited(visitKey(store.world, "arcade"))
       store.openArcade(a.id)
     } else if (a.type === "sign") {
       playSound("menu")
@@ -188,7 +276,7 @@ export default function GameCanvas() {
     const interact = () => {
       const S = st.current
       const store = useGameStore.getState()
-      if (store.phase !== "playing" || store.dialog || store.mapOpen) return
+      if (store.phase !== "playing" || store.dialog || store.mapOpen || store.worldSelect || store.travel) return
       if (S.nearNpc) talkTo(S.nearNpc)
       else if (S.near) doAction(S.near.action)
     }
@@ -203,7 +291,7 @@ export default function GameCanvas() {
       if (store.phase === "title") return
       if ((k === "e" || k === "enter") && !e.repeat) interact()
       if (k === " " && !e.repeat) attack()
-      if (k === "n" && !e.repeat && (S.scene === "village" || S.scene === "city")) { toggleNight(); playSound("click") }
+      if (k === "n" && !e.repeat && scenes.current[S.scene]?.scene.outdoor && !store.worldSelect && !store.travel) { toggleNight(); playSound("click") }
     }
     const up = (e: KeyboardEvent) => { st.current.keys[e.key.toLowerCase()] = false }
     const blur = () => { st.current.keys = {} }
@@ -248,7 +336,7 @@ export default function GameCanvas() {
     const click = (wx: number, wy: number) => {
       const S = st.current
       const store = useGameStore.getState()
-      if (store.phase !== "playing" || store.dialog || !S.ready) return
+      if (store.phase !== "playing" || store.dialog || !S.ready || store.worldSelect || store.travel) return
       const rt = scenes.current[S.scene]
       // clicked a hotspot or an NPC?
       const hs = rt.scene.hotspots.find((h) => wx >= h.box.x - 6 && wx <= h.box.x + h.box.w + 6 && wy >= h.box.y - 30 && wy <= h.box.y + h.box.h + 6)
@@ -326,8 +414,8 @@ export default function GameCanvas() {
     }
     resize()
     window.addEventListener("resize", resize)
-    playMusic("village")
     const S = st.current
+    playMusic(scenes.current[S.scene]?.scene.music ?? "village")
     const heroImg = img(charSheet(CHARS.hero))
     const smoke = img(SHEETS.smoke)
 
@@ -338,7 +426,7 @@ export default function GameCanvas() {
       const now = time / 1000
       if (!S.ready) { ctx.fillStyle = "#0c0a1a"; ctx.fillRect(0, 0, cw, ch); return }
       const store = useGameStore.getState()
-      const paused = store.phase !== "playing" || !!store.dialog || store.mapOpen || S.fade.dir === 1
+      const paused = store.phase !== "playing" || !!store.dialog || store.mapOpen || !!store.worldSelect || !!store.travel || S.fade.dir === 1
       const rt = scenes.current[S.scene]
       const sc = rt.scene
       const H = S.hero
@@ -348,7 +436,7 @@ export default function GameCanvas() {
       if (S.fade.dir === 1) { S.fade.a = Math.min(1, S.fade.a + dt * 3.2); if (S.fade.a >= 1) { S.fade.then?.(); S.fade.then = null; S.fade.dir = -1 } }
       else S.fade.a = Math.max(0, S.fade.a - dt * 2.4)
 
-      // night (village only)
+      // night (outdoor worlds only)
       runtime.night += (runtime.nightTarget - runtime.night) * Math.min(1, dt * 2)
 
       // fast travel
@@ -357,7 +445,8 @@ export default function GameCanvas() {
         runtime.teleportTo = null
         const d = runtime.doors[id]
         if (d) {
-          if (S.scene !== "village") goTo("village", { x: d.x, y: d.y + 4, facing: "up" })
+          const entry = worldById(store.world).scene
+          if (S.scene !== entry) goTo(entry, { x: d.x, y: d.y + 4, facing: "up" })
           else { H.x = d.x; H.y = d.y + 4; H.facing = "up"; H.path = []; S.cam.init = false; playSound("magic") }
         }
       }
@@ -405,9 +494,9 @@ export default function GameCanvas() {
           if (!solids.hits(footBox(H.x - 3, H.y + vy))) { H.y += vy; H.x -= 1.5 } else if (!solids.hits(footBox(H.x + 3, H.y + vy))) { H.y += vy; H.x += 1.5 }
         }
         H.animT += dt
-        const exit = S.scene !== "village" && sc.hotspots.find((h) => h.action.type === "exit")
+        const exit = S.scene !== worldById(store.world).scene && sc.hotspots.find((h) => h.action.type === "exit")
         if (exit && H.y > exit.box.y + 9 && H.x > exit.box.x && H.x < exit.box.x + exit.box.w) doAction(exit.action)
-        if (Math.random() < dt * 6) S.particles.push({ gy: H.y, x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: S.scene === "village" ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
+        if (Math.random() < dt * 6) S.particles.push({ gy: H.y, x: H.x + (Math.random() - 0.5) * 6, y: H.y, vx: (Math.random() - 0.5) * 8, vy: -6, life: 0.35, max: 0.35, col: sc.outdoor ? "rgba(235,220,180,0.8)" : "rgba(180,170,160,0.6)", size: 2 })
       } else H.animT = 0
       H.attackT = Math.max(0, H.attackT - dt)
       H.hurtT = Math.max(0, H.hurtT - dt)
@@ -575,17 +664,17 @@ export default function GameCanvas() {
       S.particles = S.particles.filter((p) => p.life > 0)
 
       // ambient life: butterflies by day, fireflies at night / in the mine
-      const nightAmt = sc.id === "village" ? runtime.night : 0
-      if (sc.id === "village" || sc.id === "cave") {
+      const nightAmt = sc.outdoor ? runtime.night : 0
+      if (sc.ambient) {
         for (let i = 0; i < 46; i++) {
           const wx = hash(i, 1, sc.w) * sw + Math.sin(now * (0.4 + hash(i, 3) * 0.5) + i) * 30
           const wy = hash(i, 2, sc.h) * sh + Math.cos(now * (0.3 + hash(i, 4) * 0.4) + i * 2) * 20
           const x = Math.round(wx - camX), y = Math.round(wy - camY)
           if (x < -4 || y < -4 || x > vw + 4 || y > vh + 4) continue
-          if (nightAmt > 0.3 || sc.id === "cave") {
+          if (nightAmt > 0.3 || sc.ambient === "cave") {
             const gl = 0.5 + 0.5 * Math.sin(now * 3 + i * 1.7)
             fctx.globalAlpha = gl * 0.9
-            fctx.fillStyle = sc.id === "cave" ? "#9fe8ff" : "#fff7a8"
+            fctx.fillStyle = sc.ambient === "cave" ? "#9fe8ff" : "#fff7a8"
             fctx.fillRect(x, y, 1, 1)
           } else if (i % 3 === 0) {
             const flap = Math.sin(now * 14 + i) > 0 ? 2 : 1
@@ -597,11 +686,12 @@ export default function GameCanvas() {
       }
 
       // ── lighting
-      const dark = sc.id === "village" || sc.id === "city" ? runtime.night * 0.78 : sc.dark
+      const LT = sc.lighting
+      const dark = sc.outdoor ? runtime.night * (LT?.dark ?? 0.78) : sc.dark
       if (dark > 0.02) {
         lctx.globalCompositeOperation = "source-over"
         lctx.clearRect(0, 0, vw, vh)
-        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.id === "village" || sc.id === "city" ? `rgba(14,18,58,${dark})` : `rgba(24,14,8,${dark})`
+        lctx.fillStyle = sc.id === "cave" ? `rgba(6,8,18,${dark})` : sc.outdoor ? `rgba(${LT?.tint ?? "14,18,58"},${dark})` : `rgba(24,14,8,${dark})`
         lctx.fillRect(0, 0, vw, vh)
         lctx.globalCompositeOperation = "destination-out"
         const hole = (x: number, y: number, r: number, s: number) => {
@@ -610,10 +700,11 @@ export default function GameCanvas() {
           gr.addColorStop(0, `rgba(0,0,0,${s})`); gr.addColorStop(1, "rgba(0,0,0,0)")
           lctx.fillStyle = gr; lctx.fillRect(x - r, y - r, r * 2, r * 2)
         }
-        hole(H.x - camX, H.y - 8 - camY, sc.id === "cave" ? 56 : 60, 0.9)
+        const hs = LT?.holeStrength ?? 0.9
+        hole(H.x - camX, H.y - 8 - camY, LT?.heroRadius ?? (sc.id === "cave" ? 56 : 60), hs)
         for (const l of sc.lights) {
           const fl = l.flicker ? 1 + Math.sin(now * 9 + l.x) * 0.04 * l.flicker + Math.sin(now * 23 + l.y) * 0.03 * l.flicker : 1
-          hole(l.x - camX, l.y - camY, l.r * fl * (sc.id === "village" ? 0.8 : 1), 0.9)
+          hole(l.x - camX, l.y - camY, l.r * fl * (LT?.radiusScale ?? (sc.outdoor ? 0.8 : 1)), hs)
         }
         fctx.drawImage(light, 0, 0)
         fctx.globalCompositeOperation = "lighter"
@@ -623,11 +714,12 @@ export default function GameCanvas() {
           const fl = l.flicker ? 1 + Math.sin(now * 11 + l.x) * 0.06 * l.flicker : 1
           const r = l.r * 0.5 * fl
           const gr = fctx.createRadialGradient(x, y, 0, x, y, r)
-          gr.addColorStop(0, `rgba(${l.color},${0.16 * dark})`); gr.addColorStop(1, `rgba(${l.color},0)`)
+          gr.addColorStop(0, `rgba(${l.color},${(LT?.glow ?? 0.16) * dark})`); gr.addColorStop(1, `rgba(${l.color},0)`)
           fctx.fillStyle = gr; fctx.fillRect(x - r, y - r, r * 2, r * 2)
         }
         fctx.globalCompositeOperation = "source-over"
-      } else if (sc.id === "village") {
+        sc.emissive?.(fctx, camX, camY, vw, vh, runtime.night, now)
+      } else if (sc.outdoor) {
         fctx.fillStyle = "rgba(255,214,150,0.045)"; fctx.fillRect(0, 0, vw, vh)
       }
 
@@ -645,13 +737,11 @@ export default function GameCanvas() {
 
       // ── crisp screen-space UI: building signs, markers, bubbles, prompt
       const toS = (x: number, y: number) => [(x - camX) * scale, (y - camY) * scale] as const
-      if (sc.id === "village") {
-        for (const b of BUILDINGS) {
-          if (!b.label) continue
-          const d = doorOf(b)
-          const [sx, sy] = toS(b.c * TS + d.w / 2, b.r * TS - 2)
+      if (sc.signs) {
+        for (const sg of sc.signs) {
+          const [sx, sy] = toS(sg.x, sg.y)
           if (sx < -200 || sx > cw + 200 || sy < -100 || sy > ch + 200) continue
-          drawSign(ctx, b.label, b.section ?? "", b.accent ?? "#c8463b", sx, sy, S.near?.id === `door-${b.id}`)
+          drawSign(ctx, sg.label, sg.sub ?? "", sg.accent ?? "#c8463b", sx, sy, !!sg.hotspot && S.near?.id === sg.hotspot)
         }
       }
       for (const h of sc.hotspots) {
@@ -695,6 +785,8 @@ export default function GameCanvas() {
       {phase !== "title" && <AreaTitle />}
       {phase !== "title" && <AchievementToast />}
       {phase !== "title" && <TouchControls />}
+      <WorldSelect />
+      <TravelTransition />
       <DialogBox />
       <BuildingModal />
       <Arcade />

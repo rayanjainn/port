@@ -5,7 +5,8 @@ import { useGameStore, webgl2Supported } from "@/lib/store"
 import { playSound } from "@/lib/audio"
 import { useContent } from "@/lib/content"
 import { charSheet, CHARS } from "@/lib/na"
-import { ArrowRight, Play } from "lucide-react"
+import { ArrowRight, Play, Globe } from "lucide-react"
+import { worldById } from "@/lib/world/worlds"
 import { Github } from "@/components/icons"
 
 function useTypewriter(lines: string[]) {
@@ -46,6 +47,11 @@ export default function TitleScreen() {
   const setView = useGameStore((s) => s.setView)
   const gl = webgl2Supported()
   const [leaving, setLeaving] = useState(false)
+  const world = worldById(useGameStore((s) => s.world))
+  const selecting = useGameStore((s) => !!s.worldSelect)
+  const startRequest = useGameStore((s) => s.startRequest)
+  const pv = world.preview
+  const pans = world.id === "village" ? [[1900, 1250], [2500, 1500], [1300, 1750]] : pv ? [[pv.pan[0][0] / 100 * pv.w * 3, pv.pan[0][1] / 100 * pv.h * 3], [pv.pan[1][0] / 100 * pv.w * 3, pv.pan[1][1] / 100 * pv.h * 3], [pv.w * 1.5, pv.h * 1.5]] : [[0, 0], [0, 0], [0, 0]]
   const lines = useMemo(() => [c.profile.title.toLowerCase(), c.profile.tagline.toLowerCase(), c.profile.motto].filter(Boolean), [c.profile.title, c.profile.tagline, c.profile.motto])
   const typed = useTypewriter(lines)
 
@@ -56,8 +62,10 @@ export default function TitleScreen() {
     setTimeout(startGame, 650)
   }
 
+  useEffect(() => { if (startRequest > 0) { const id = setTimeout(start, 0); return () => clearTimeout(id) } }, [startRequest]) // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Enter") start() }
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Enter" && !useGameStore.getState().worldSelect) start() }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   })
@@ -65,7 +73,12 @@ export default function TitleScreen() {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, overflow: "hidden", background: "#4d7a2e" }}>
       {/* the actual village, drifting slowly underneath */}
-      <div className="title-map" aria-hidden />
+      <div className="title-map" aria-hidden style={{
+        backgroundImage: `url(${pv?.start === "night" ? pv.night : pv?.day ?? "/village-map.png"})`, width: (pv?.w ?? 1344) * 3, height: (pv?.h ?? 1024) * 3,
+        ["--p0" as string]: `translate(calc(50vw - ${pans[0][0]}px), calc(50vh - ${pans[0][1]}px))`,
+        ["--p1" as string]: `translate(calc(50vw - ${pans[1][0]}px), calc(50vh - ${pans[1][1]}px))`,
+        ["--p2" as string]: `translate(calc(50vw - ${pans[2][0]}px), calc(50vh - ${pans[2][1]}px))`,
+      }} />
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(255,190,110,.18) 0%, rgba(40,20,10,.15) 45%, rgba(20,10,4,.65) 100%)" }} />
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(18,9,2,.6) 100%)" }} />
       {/* drifting petals */}
@@ -84,7 +97,7 @@ export default function TitleScreen() {
       {/* parchment title card */}
       <div style={{
         position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "70px 14px 40px",
-        transition: "opacity .6s ease, transform .6s ease", opacity: leaving ? 0 : 1, transform: leaving ? "scale(1.05)" : "none",
+        transition: "opacity .6s ease, transform .6s ease", opacity: leaving || selecting ? 0 : 1, transform: leaving ? "scale(1.05)" : "none",
       }}>
         <div className="title-card" style={{ ...panel, position: "relative", width: "min(640px, 100%)", padding: "54px clamp(20px, 5vw, 48px) 34px", textAlign: "center" }}>
           {/* ribbon */}
@@ -112,6 +125,14 @@ export default function TitleScreen() {
             }}>
               <Play size={13} fill="currentColor" /> START ADVENTURE
             </button>
+            <button onClick={() => { playSound("open"); useGameStore.getState().openWorldSelect("title") }} onMouseEnter={() => playSound("click")} className="parch-btn" aria-label="Choose a world" style={{
+              display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer",
+              fontFamily: "var(--font-pixel)", fontSize: "clamp(9px, 1.2vw, 11px)", letterSpacing: 2, color: "#fff4dc", padding: "16px 20px",
+              background: `linear-gradient(180deg, color-mix(in srgb, ${world.accent} 70%, #fff), ${world.accent} 60%, color-mix(in srgb, ${world.accent} 70%, #000))`, border: "3px solid #1d1006",
+              boxShadow: "inset 0 3px 0 rgba(255,255,255,.4), inset 0 -4px 0 rgba(0,0,0,.2), 0 5px 0 #1d1006", textShadow: "0 2px 0 rgba(0,0,0,.45)",
+            }}>
+              <Globe size={14} /> WORLDS
+            </button>
             <Link href="/quick" onClick={() => playSound("click")} className="parch-btn" style={{
               display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none",
               fontFamily: "var(--font-pixel)", fontSize: "clamp(9px, 1.2vw, 11px)", letterSpacing: 2, color: "#3a2412", padding: "16px 20px",
@@ -120,7 +141,8 @@ export default function TitleScreen() {
               QUICK VIEW <ArrowRight size={13} />
             </Link>
           </div>
-          <div style={{ marginTop: 22, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ marginTop: 16, fontFamily: "var(--font-pixel)", fontSize: 7, letterSpacing: 2, color: "#8a5a2c" }}>NOW ENTERING · <span style={{ color: "#3a2412" }}>{world.name.toUpperCase()}</span></div>
+          <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
             <span style={{ fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 2, color: "#8a5a2c" }}>VIEW:</span>
             <div style={{ display: "inline-flex", border: "3px solid #1d1006", boxShadow: "0 3px 0 #1d1006" }}>
               {(["2d", "3d"] as const).map((v) => {

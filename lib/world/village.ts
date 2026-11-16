@@ -1,6 +1,6 @@
 // The village: a hand-shaped layout with procedural detail.
 import { BUILDING_ART, TREES, PLANTS, PROPS, HOUSE_PROPS, DIRT, WATER, GRASS, PLANK, CHARS, charSheet, charFace, animalSheet, SHEETS, type Rect } from "@/lib/na"
-import { TS, G, sheet, img, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
+import { TS, G, sheet, img, blit, hash, mulberry, autotile, canvas, type Scene, type SceneSign, type Landmark, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 export const VW = 84
 export const VH = 64
@@ -38,6 +38,17 @@ export function doorOf(b: BuildingSpot) {
   const dx = (a.door[0] + a.door[1]) / 2
   return { x: b.c * TS + dx, y: b.r * TS + h, w, h }
 }
+
+const QUEST_TEXT: Record<string, string> = {
+  townhall: "Meet the Mayor in the Town Hall",
+  gallery: "Tour the paintings in the Gallery",
+  tavern: "Read the quest board at the Tavern",
+  forge: "Inspect the weapon racks at the Forge",
+  academy: "Read the scrolls at the Academy",
+  wizard: "Send a raven from the Raven Post",
+  cave: "Find the arcade hidden in the Old Mine",
+}
+const QUEST_ORDER = ["townhall", "gallery", "tavern", "forge", "academy", "wizard", "cave"]
 
 const RIVER_W = 3
 export function riverX(r: number) {
@@ -346,6 +357,20 @@ export function buildVillage(): Scene {
     const c = dock.c - k
     if (ground[idx(c, dock.r0)] === G.Water) { ground[idx(c, dock.r0)] = G.Bridge; ground[idx(c, dock.r0 + 1)] = G.Bridge; bridgeTiles.push({ c, r: dock.r0 }, { c, r: dock.r0 + 1 }) }
   }
+  // the ferry: a moored boat off the end of the dock, a ferryman and a SET SAIL spot
+  const boatImg = img("/na/vehicles/Boat.png"), sailImg = img("/na/vehicles/Sail.png")
+  const boatX = (dock.c - dock.len + 1) * TS - 80 + 10, boatY = dock.r0 * TS + 5
+  const boat: Sprite = { kind: "sprite", src: boatImg, rect: [0, 0, 80, 32], x: boatX, y: boatY, baseY: boatY + 26, dynamic: true, tag: "boat" }
+  const sail: Sprite = { kind: "sprite", src: sailImg, rect: [0, 0, 30, 43], x: boatX + 26, y: boatY - 33, baseY: boatY + 27, dynamic: true, tag: "boat-sail" }
+  sprites.push(boat, sail)
+  lights.push({ x: boatX + 14, y: boatY + 8, r: 46, color: "255,190,100", flicker: 1 })
+  lights.push({ x: (dock.c - 1) * TS + 8, y: dock.r0 * TS + 6, r: 42, color: "255,200,120", flicker: 0.6 })
+  const dockEnd = (dock.c - dock.len + 1) * TS
+  hotspots.push({
+    id: "dock-travel", box: { x: dockEnd - 2, y: dock.r0 * TS - 2, w: 4 * TS, h: 36 }, label: "SET SAIL", action: { type: "travel" },
+    marker: true, markerX: boatX + 41, markerY: boatY - 40,
+  })
+
   // signposts with directions
   const sign = (c: number, r: number, lines: string[]) => {
     prop("sign", ...tile(c, r))
@@ -446,12 +471,34 @@ export function buildVillage(): Scene {
   animal("chick1", "chicken", 11, 46); animal("chick2", "chicken", 16, 46); animal("chick3", "chicken", 13, 37)
   animal("cat", "cat", 41, 32, 20); animal("dog", "dog", 26, 41, 40); animal("cow1", "cow", 6, 30, 20); animal("cow2", "cow", 9, 28, 20)
   animal("frog1", "frog", 22, 45, 16); animal("frog2", "frog", 9, 53, 16)
+  actors.push({
+    id: "ferryman", kind: "npc", sheet: charSheet("Noble"), face: charFace("Noble"), name: "Captain Orrin", x: (dock.c - 1) * TS + 8, y: dock.r0 * TS + 15, wander: 0, facing: "left",
+    lines: ["Mind the planks, traveller!", "Beyond this lake the water runs to other worlds. A neon harbour first, and stranger shores after.", "Say the word and we cast off."],
+    action: { type: "travel" },
+  })
+
+  const landmarks: Landmark[] = QUEST_ORDER.map((id) => {
+    const b = BUILDINGS.find((x) => x.id === id)!
+    const d = doorOf(b)
+    return { id, label: b.label!, sub: b.section!, accent: b.accent!, x: d.x, y: d.y + 10, quest: QUEST_TEXT[id] }
+  })
+  const signs: SceneSign[] = BUILDINGS.filter((b) => b.label).map((b) => {
+    const d = doorOf(b)
+    return { x: b.c * TS + d.w / 2, y: b.r * TS - 2, label: b.label!, sub: b.section ?? "", accent: b.accent ?? "#c8463b", hotspot: `door-${b.id}` }
+  })
+  const tick = (t: number) => {
+    const bob = Math.round(Math.sin(t * 0.9) * 1.2)
+    boat.y = boatY + bob; sail.y = boatY - 33 + bob
+    boat.baseY = boat.y + 26; sail.baseY = boat.y + 27
+  }
 
   return {
     id: "village", title: "Rayan's Village", w: W, h: H, ground: gcv, sprites: live, blocked, hotspots, actors, lights,
     spawn: { x: 40 * TS + 8, y: 24 * TS + 8, facing: "down" }, dark: 0, music: "village", water,
     tiles: ground, ground3d: clean, baked,
     meta: { trees: treeMeta },
+    outdoor: true, world: "village", ambient: "meadow", signs, landmarks, tick,
+    arrive: { x: (dock.c + 1) * TS + 8, y: (dock.r0 + 1) * TS + 4, facing: "right" },
   }
 }
 

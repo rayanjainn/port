@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { gameAchievements } from "./data"
+import { DEFAULT_WORLD, OPEN_WORLDS, visitKey } from "./world/worlds"
 
 export type BuildingId = "townhall" | "tavern" | "academy" | "gallery" | "forge" | "wizard" | "cave" | null
 
@@ -18,6 +19,18 @@ function initialView(): ViewMode {
   const small = matchMedia("(pointer: coarse)").matches || Math.min(window.innerWidth, window.innerHeight) < 600
   return small ? "2d" : "3d"
 }
+
+const WORLD_KEY = "rayan-world:world"
+function initialWorld(): string {
+  if (typeof window === "undefined") return DEFAULT_WORLD
+  try { const w = localStorage.getItem(WORLD_KEY); if (w && OPEN_WORLDS.some((o) => o.id === w)) return w } catch { /* private mode */ }
+  return DEFAULT_WORLD
+}
+
+/** where the world-select screen was opened from; the dock / metro origins pick the travel interstitial */
+export type WorldSelectOrigin = "title" | "hud" | "dock" | "metro" | "caravan" | "gate"
+export interface TravelState { from: string; to: string; origin: WorldSelectOrigin }
+export interface WorldLoad { state: "idle" | "loading" | "ready" | "error"; progress: number }
 
 export interface DialogState {
   name: string
@@ -41,10 +54,23 @@ interface GameStore {
   areaTitle: { title: string; sub: string; key: number } | null
   sceneId: string
   view: ViewMode
+  world: string
+  worldSelect: WorldSelectOrigin | null
+  travel: TravelState | null
+  worldLoad: Record<string, WorldLoad>
+  /** bumped by the world-select screen when a pick on the title should start the game */
+  startRequest: number
+  setWorld: (id: string) => void
+  openWorldSelect: (origin: WorldSelectOrigin) => void
+  closeWorldSelect: () => void
+  beginTravel: (t: TravelState) => void
+  endTravel: () => void
+  setWorldLoad: (id: string, w: Partial<WorldLoad>) => void
+  requestStart: () => void
   setView: (v: ViewMode, persist?: boolean) => void
   toggleView: () => void
   startGame: () => void
-  openBuilding: (id: BuildingId, focus?: string | null) => void
+  openBuilding: (id: BuildingId, focus?: string | null, world?: string) => void
   closeBuilding: () => void
   unlockAchievement: (unlockedBy: string) => void
   popToast: () => void
@@ -73,6 +99,25 @@ export const useGameStore = create<GameStore>((set, get) => ({
   areaTitle: null,
   sceneId: "village",
   view: initialView(),
+  world: initialWorld(),
+  worldSelect: null,
+  travel: null,
+  worldLoad: {},
+  startRequest: 0,
+  setWorld: (id) => {
+    try { localStorage.setItem(WORLD_KEY, id) } catch { /* ignore */ }
+    set({ world: id })
+    get().markVisited(`world:${id}`)
+  },
+  openWorldSelect: (origin) => set({ worldSelect: origin, mapOpen: false }),
+  closeWorldSelect: () => set({ worldSelect: null }),
+  beginTravel: (t) => set({ travel: t, worldSelect: null, mapOpen: false, dialog: null }),
+  endTravel: () => {
+    set({ travel: null })
+    get().unlockAchievement("world_travel")
+  },
+  setWorldLoad: (id, w) => set((s) => ({ worldLoad: { ...s.worldLoad, [id]: { ...(s.worldLoad[id] ?? { state: "idle", progress: 0 }), ...w } } })),
+  requestStart: () => set((s) => ({ startRequest: s.startRequest + 1 })),
   setView: (v, persist = true) => {
     if (v === "3d" && !webgl2Supported()) return
     if (persist) { try { localStorage.setItem(VIEW_KEY, v) } catch { /* ignore */ } }
@@ -82,13 +127,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   startGame: () => {
     set({ phase: "playing" })
+    get().markVisited(`world:${get().world}`)
     setTimeout(() => get().unlockAchievement("game_start"), 1200)
   },
 
-  openBuilding: (id, focus = null) => {
+  openBuilding: (id, focus = null, world = "village") => {
     if (!id) return
     set({ activeBuilding: id, focus, phase: "building", mapOpen: false, dialog: null })
-    get().markVisited(id)
+    // the same chapters live in every world; each world keeps its own checklist
+    get().markVisited(visitKey(world, id))
+    if (world !== "village") get().unlockAchievement(`visit_${id}`)
   },
 
   closeBuilding: () => {
@@ -102,6 +150,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     visited.add(id)
     set({ visited })
     get().unlockAchievement(`visit_${id}`)
+    // every open world seen at least once
+    if (id.startsWith("world:") && OPEN_WORLDS.every((w) => visited.has(`world:${w.id}`))) setTimeout(() => get().unlockAchievement("worlds_all"), 900)
   },
 
   unlockAchievement: (unlockedBy) => {

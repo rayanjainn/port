@@ -33,7 +33,7 @@ export function playSound(name: SoundName) {
 }
 
 // ── music ──────────────────────────────────────────────────────
-type Track = "village" | "dungeon" | "chill" | "city"
+export type Track = "village" | "dungeon" | "chill" | "city" | "desert" | "ruins" | "sea"
 const tracks: Partial<Record<Track, Howl>> = {}
 let current: Track | null = null
 

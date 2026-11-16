@@ -74,7 +74,7 @@ function room(id: string, title: string, o: RoomOpts) {
 
   const finish = (extra: Partial<Scene>): Scene => ({
     id, title, w, h, ground: gcv, sprites, blocked, hotspots, actors, lights, tiles,
-    spawn: { x: doorC * TS + 8, y: (h - 2) * TS + 10, facing: "up" }, dark: 0.15, music: "chill", scale: 4, bg: "#0d0b14",
+    spawn: { x: doorC * TS + 8, y: (h - 2) * TS + 10, facing: "up" }, dark: 0.15, music: "chill", scale: 4, bg: "#0d0b14", world: "village",
     ...extra,
   })
   return { g, put, spot, sprites, hotspots, actors, lights, blocked, finish, doorC }
@@ -307,7 +307,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
       lines: [`Psst! You found the old mine.`, `${first} hid an arcade down here. Four altars, four games.`, `Beat my high scores if you can. The chest is yours too!`],
       bark: ["Try Slime Smash!", "Rune Recall is tricky..."],
     }))
-    out.cave = R.finish({ dark: 0.88, music: "dungeon", title: "Old Mine" })
+    out.cave = R.finish({ dark: 0.88, music: "dungeon", title: "Old Mine", ambient: "cave" })
   }
 
   return out
