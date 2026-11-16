@@ -84,9 +84,9 @@ const LOADERS: Record<string, () => Promise<WorldModule>> = {
     return { build: (content) => ({ city: c.buildCity(content) }), preload: [...c.CITY_PRELOAD, "/worlds/city.png", "/worlds/city-night.png"] }
   },
   // TODO(worlds): switch on the desert once lib/world/desert.ts exists (adjust the call if buildDesert takes the content):
-  // desert: async () => { const d = await import("./desert"); return { build: () => ({ desert: d.buildDesert() }), preload: d.DESERT_PRELOAD } },
+  desert: async () => { const d = await import("./desert"); return { build: () => ({ desert: d.buildDesert() }), preload: d.DESERT_PRELOAD } },
   // TODO(worlds): switch on the ruins once lib/world/ruins.ts exists:
-  // ruins: async () => { const r = await import("./ruins"); return { build: () => ({ ruins: r.buildRuins() }), preload: r.RUINS_PRELOAD } },
+  ruins: async () => { const r = await import("./ruins"); return { build: () => ({ ruins: r.buildRuins() }), preload: r.RUINS_PRELOAD } },
 }
 
 export type WorldStatus = "open" | "soon"
