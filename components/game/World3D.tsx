@@ -59,6 +59,19 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
 
   useEffect(() => () => post?.dispose(), [post])
 
+  // dev-only readout behind ?stats: fps, draw calls, triangles, instance counts
+  const stat = useRef({ el: null as HTMLDivElement | null, n: 0, t: 0 })
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" || !new URLSearchParams(window.location.search).has("stats")) return
+    const el = document.createElement("div")
+    el.style.cssText = "position:fixed;left:8px;bottom:56px;z-index:200;font:11px monospace;color:#9f9;background:rgba(0,0,0,.7);padding:4px 6px;pointer-events:none;white-space:pre"
+    document.body.appendChild(el)
+    const holder = stat.current
+    holder.el = el
+    gl.info.autoReset = false
+    return () => { el.remove(); holder.el = null; gl.info.autoReset = true }
+  }, [gl])
+
   useEffect(() => {
     const el = gl.domElement
     const lost = (e: Event) => { e.preventDefault(); useGameStore.getState().setView("2d", false) }
@@ -104,6 +117,7 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     cam3.updateProjectionMatrix()
     cam3.updateMatrixWorld()
 
+    if (process.env.NODE_ENV !== "production") (window as unknown as { __w3: unknown }).__w3 = w
     w.sh.uFog.value.set(dist * 1.1, dist * 3.2, 0.75)
     w.res.set(size.width, size.height)
     w.update(engine.now || state.clock.elapsedTime, tmp)
@@ -115,6 +129,19 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
       return [(v.x + 1) / 2 * size.width, (1 - v.y) / 2 * size.height, v.z < 1] as const
     }, engine.now, size.width, size.height)
 
+    const st = stat.current
+    if (st.el) {
+      st.n++
+      const now2 = performance.now()
+      if (now2 - st.t > 500) {
+        const c = w.counts(), info = gl.info.render
+        const txt = `${rt.scene.id}  fps ${(st.n * 1000 / (now2 - st.t)).toFixed(0)}\ncalls ${info.calls}  tris ${info.triangles}\nbatches ${c.batches}  instances ${c.instances}`
+        st.el.textContent = txt
+        ;(window as unknown as { __stats: unknown }).__stats = { scene: rt.scene.id, calls: info.calls, tris: info.triangles, ...c }
+        st.n = 0; st.t = now2
+      }
+      gl.info.reset()
+    }
     if (ui.fade) ui.fade.style.opacity = String(Math.min(1, S.fade.a))
     if (ui.vig) {
       const dark = isOutdoor(sc) ? (w.sh.uAmb.value.b < 0.8 ? 0.4 : 0.1) : sc.dark * 0.3

@@ -39,6 +39,9 @@ export class World {
   private glow!: CardBatch
   private slash!: CardBatch
   res = new THREE.Vector2(1, 1)
+  private emisCv: HTMLCanvasElement | null = null
+  private emisTex: THREE.Texture | null = null
+  private emisT = -9
   dark = 0
   private sky: THREE.Mesh
   private skyMat = skyMaterial()
@@ -61,6 +64,13 @@ export class World {
     this.sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.skyMat)
     this.sky.frustumCulled = false; this.sky.renderOrder = 100; this.sky.visible = this.terrain.outdoor   // thin strip along the top, outdoor scenes only
     this.group.add(this.sky)
+    if (sc.emissive) {
+      this.emisCv = document.createElement("canvas")
+      this.emisCv.width = sc.w * TS; this.emisCv.height = sc.h * TS
+      this.emisTex = makeTexture(this.emisCv)
+      this.sh.uEmis.value = this.emisTex
+      this.sh.uEmisInfo.value.set(sc.w * TS, sc.h * TS, 0)
+    }
     this.buildSprites()
     this.buildActors()
     this.buildFx()
@@ -116,7 +126,7 @@ export class World {
     for (const [src, list] of staticMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
       const n = list.reduce((a, s) => a + this.layersOf(s), 0)
-      const b = new CardBatch(this.sh, tex, n, "opaque", true)
+      const b = new CardBatch(this.sh, tex, n, "opaque", true, false, !!sc.emissive)
       let at = 0
       for (const s of list) at += this.place(b, at, s, tw, th)
       b.flush(n)
@@ -126,7 +136,7 @@ export class World {
     for (const [src, list] of dynMap) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
       const n = list.reduce((a, s) => a + this.layersOf(s), 0)
-      const b = new CardBatch(this.sh, tex, n, "opaque", true, true)
+      const b = new CardBatch(this.sh, tex, n, "opaque", true, true, !!sc.emissive)
       this.dyn.push({ b, list, src: () => src })
       let at = 0
       for (const s of list) at += this.place(b, at, s, tw, th)
@@ -164,12 +174,21 @@ export class World {
       dz = pz - z + (s.baseY >= at.parent.baseY ? 0.02 : -0.02)
       x = at.dx * P
     }
-    const L = this.layersOf(s)
+    // wall-mounted: a sprite painted on a cliff face (a waterfall) stands vertical against the real wall
+    let up = 0
+    if (!at && !s.dynamic && rw > 0) {
+      const wl = this.terrain.wallAt(s.x + rw / 2, s.y + rh - 1)
+      if (wl) { up = 1; z = wl.z + 0.01; y = this.terrain.heightAt(x, wl.z + 0.5) + Math.max(0, (wl.z * TS - (s.y + rh)) * P); dz = 0 }
+    }
+    // ground decals (rugs, quicksand swirls: sorted below everything, baseY above their own top) lie flat
+    if (!at && !s.dynamic && !up && s.baseY < s.y && rw > 0) { up = -1; z = (s.y + rh) * P; y = gy(x, z) + 0.002 }
+    const L = up < 0 ? 1 : this.layersOf(s)
     for (let k = 0; k < L; k++) {
       const i = i0 + k
       b.set(i, x, y, z, rw * P, rh * P, rx, ry, rw, rh, tw, th, s.flip, s.anim, s.sway ?? 0, dz - k * 0.004)
       if (k) b.setLayer(i, k * P, 1 - 0.26 * (k / (L - 1)))
-      b.setTint(i, 1, 1, 1, at || k ? 0 : 1)   // only a ground sprite's front face casts a shadow
+      b.setUp(i, up); b.setOrg(i, s.x, s.y)
+      b.setTint(i, 1, 1, 1, at || k || up ? 0 : 1)   // only a ground sprite's front face casts a shadow
     }
     return L
   }
@@ -245,18 +264,23 @@ export class World {
     // lighting ------------------------------------------------------
     const village = isOutdoor(sc)
     const night = village ? runtime.night : 0
-    const dark = village ? night * 0.78 : sc.dark
+    const LT = sc.lighting
+    const dark = village ? night * (LT?.dark ?? 0.78) : sc.dark
     const deep = !village && sc.dark >= 0.6
     const amb = this.ambient
     if (village) amb.setRGB(1 - night * 0.82, 0.98 - night * 0.76, 0.93 - night * 0.48, THREE.SRGBColorSpace)
     else {
       const v = 1 - dark * 0.92
-      if (deep) amb.setRGB(v * 0.85, v * 0.95, v * 1.2, THREE.SRGBColorSpace)
+      if (LT?.tint) {
+        // the scene's own cold (or warm) twilight: base light dimmed by `dark`, pulled toward its tint
+        const t = LT.tint.split(",").map((q) => parseInt(q, 10) / 255)
+        amb.setRGB(1 - dark + dark * t[0] * 1.8, 1 - dark + dark * t[1] * 1.8, 1 - dark + dark * t[2] * 1.8, THREE.SRGBColorSpace)
+      } else if (deep) amb.setRGB(v * 0.85, v * 0.95, v * 1.2, THREE.SRGBColorSpace)
       else amb.setRGB(v, v * 0.94, v * 0.88, THREE.SRGBColorSpace)
     }
     sh.uAmb.value.copy(amb)
     const ambAvg = (amb.r + amb.g + amb.b) / 3
-    const k = 1.05 * (1 - ambAvg)
+    const k = 1.05 * (1 - ambAvg) * Math.min(1.3, (LT?.holeStrength ?? 0.9) / 0.9 + 0.25)
     // nearest lights to the camera focus + the hero's own light
     const L = sc.lights
     const idx = this.lightIdx
@@ -265,7 +289,7 @@ export class World {
     idx.sort((a, b) => a.d - b.d)
     let n = 0
     if (dark > 0.02) {
-      sh.uLP.value[0].set(H.x * P, 0.7, (H.y - 4) * P, (deep ? 3.6 : 3.9) * 1.1)
+      sh.uLP.value[0].set(H.x * P, 0.7, (H.y - 4) * P, (LT?.heroRadius ?? (deep ? 56 : 60)) / TS * 1.1)
       sh.uLC.value[0].set(0.95 * k, 0.9 * k, 0.8 * k)
       n = 1
     }
@@ -273,7 +297,7 @@ export class World {
       const l = L[idx[j].i]
       const fl = l.flicker ? 1 + Math.sin(now * 9 + l.x) * 0.04 * l.flicker + Math.sin(now * 23 + l.y) * 0.03 * l.flicker : 1
       const [r, g, b] = rgbOf(l.color)
-      sh.uLP.value[n].set(l.x * P, 1.0, (l.y + 16) * P, (l.r / TS) * fl * (village ? 0.85 : 1.05))
+      sh.uLP.value[n].set(l.x * P, 1.0, (l.y + 16) * P, (l.r / TS) * fl * (LT?.radiusScale ? LT.radiusScale * 1.05 : village ? 0.85 : 1.05))
       sh.uLC.value[n].set(r * k, g * k, b * k)
     }
     for (; n < NL; n++) { sh.uLP.value[n].set(1e4, 1e4, 1e4, 1); sh.uLC.value[n].set(0, 0, 0) }
@@ -288,6 +312,17 @@ export class World {
     sm.uScroll.value = target.x * 6; sm.uRes.value.copy(this.res); sm.uAspect.value = this.res.x / this.res.y
     sh.uFogColor.value.copy(this.terrain.outdoor ? this.fogDay.clone().lerp(this.fogNight, night).lerp(this.c.duskHor, dusk * 0.3) : this.terrain.bg)
     sh.uFog.value.z = 0.75
+    // self-lit window panes / neon: re-rasterise the scene's emissive layer a couple of times a second while it is dark
+    if (this.emisCv && sc.emissive) {
+      sh.uEmisInfo.value.z = night
+      if (night > 0.04 && now - this.emisT > 0.4) {
+        this.emisT = now
+        const g = this.emisCv.getContext("2d")!
+        g.clearRect(0, 0, this.emisCv.width, this.emisCv.height)
+        sc.emissive(g, 0, 0, this.emisCv.width, this.emisCv.height, 1, now)
+        this.emisTex!.needsUpdate = true
+      }
+    }
     sh.uSky.value.copy(this.hor).lerp(this.top, 0.5)
 
     // glow halos ----------------------------------------------------
@@ -298,7 +333,7 @@ export class World {
         const fl = l.flicker ? 1 + Math.sin(now * 11 + l.x) * 0.06 * l.flicker : 1
         const d = (l.r / TS) * fl * 0.7
         this.glow.set(gn, l.x * P, 0.9 - d / 2, (l.y + 16) * P, d, d, 0, 0, 64, 64, 64, 64)
-        this.glow.setTint(gn, r, g, b, 0.34 * dark)
+        this.glow.setTint(gn, r, g, b, 0.34 * dark * Math.min(1.5, Math.sqrt((LT?.glow ?? 0.16) / 0.16)))
         gn++
       }
     }
@@ -379,15 +414,17 @@ export class World {
 
     // butterflies by day, fireflies at night / in the mine
     let ln = 0
-    if ((village && sc.meta?.trees?.length) || deep) {
+    const amb2 = sc.ambient ?? (village && sc.meta?.trees?.length ? "meadow" : deep ? "cave" : null)
+    const cave = amb2 === "cave"
+    if (amb2) {
       const sw = sc.w * TS, shh = sc.h * TS
       for (let i = 0; i < 46; i++) {
         const wx = hash(i, 1, sc.w) * sw + Math.sin(now * (0.4 + hash(i, 3) * 0.5) + i) * 30
         const wy = hash(i, 2, sc.h) * shh + Math.cos(now * (0.3 + hash(i, 4) * 0.4) + i * 2) * 20
-        if (night > 0.3 || deep) {
+        if (night > 0.3 || cave) {
           const gl = 0.5 + 0.5 * Math.sin(now * 3 + i * 1.7)
           this.life.set(ln, wx * P, 0.5 + 0.2 * Math.sin(now + i), wy * P, P * 1.5, P * 1.5, 0, 0, 2, 2, 2, 2)
-          this.life.setTint(ln, deep ? 0.5 : 1, deep ? 0.9 : 0.95, deep ? 1 : 0.5, gl * 0.95)
+          this.life.setTint(ln, cave ? 0.5 : 1, cave ? 0.9 : 0.95, cave ? 1 : 0.5, gl * 0.95)
           ln++
         } else if (i % 3 === 0) {
           const flap = Math.sin(now * 14 + i) > 0 ? 3 : 1.5
@@ -401,8 +438,17 @@ export class World {
     this.life.flush(ln)
   }
 
+  /** dev stats: instance and batch counts */
+  counts() {
+    let inst = 0
+    const all = [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, ...(this.smoke ? [this.smoke] : [])]
+    for (const b of all) inst += b.geo.instanceCount
+    return { batches: all.length, instances: inst }
+  }
+
   dispose() {
     for (const b of [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, ...(this.smoke ? [this.smoke] : [])]) b.dispose()
+    this.emisTex?.dispose()
     this.terrain.dispose(); this.sky.geometry.dispose(); this.skyMat.dispose()
     this.group.clear()
   }

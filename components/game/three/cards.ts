@@ -26,11 +26,11 @@ export class CardBatch {
   shadow: THREE.Mesh | null = null
   geo = new THREE.InstancedBufferGeometry()
   private foot: Float32Array; private size: Float32Array; private rect: Float32Array
-  private anim: Float32Array; private tint: Float32Array; private dz: Float32Array; private layer: Float32Array
+  private anim: Float32Array; private tint: Float32Array; private dz: Float32Array; private layer: Float32Array; private up: Float32Array; private org: Float32Array
   private attrs: THREE.InstancedBufferAttribute[] = []
   mats: THREE.ShaderMaterial[] = []
 
-  constructor(sh: Shared, public tex: THREE.Texture, public cap: number, mode: CardMode = "opaque", shadow = false, dynamic = false) {
+  constructor(sh: Shared, public tex: THREE.Texture, public cap: number, mode: CardMode = "opaque", shadow = false, dynamic = false, emis = false) {
     const g = this.geo
     g.setAttribute("aCorner", new THREE.BufferAttribute(CORNERS, 2))
     g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(18), 3))
@@ -44,10 +44,10 @@ export class CardBatch {
       return arr
     }
     this.foot = mk("aFoot", 3); this.size = mk("aSize", 2); this.rect = mk("aRect", 4)
-    this.anim = mk("aAnim", 4); this.tint = mk("aTint", 4); this.dz = mk("aDz", 1); this.layer = mk("aLayer", 2)
+    this.anim = mk("aAnim", 4); this.tint = mk("aTint", 4); this.dz = mk("aDz", 1); this.layer = mk("aLayer", 2); this.up = mk("aUp", 1); this.org = mk("aOrg", 2)
     for (let i = 0; i < cap; i++) { this.tint.set([1, 1, 1, 1], i * 4); this.layer[i * 2 + 1] = 1 }
     g.instanceCount = 0
-    const m = cardMaterial(sh, tex, mode)
+    const m = cardMaterial(sh, tex, mode, emis)
     this.mats.push(m)
     this.mesh = new THREE.Mesh(g, m)
     this.mesh.frustumCulled = false
@@ -75,6 +75,10 @@ export class CardBatch {
   setTint(i: number, r: number, g: number, b: number, a: number) { this.tint.set([r, g, b, a], i * 4) }
   /** thickness layer: offset in tiles behind the front face and its colour shade (front = 0, 1) */
   setLayer(i: number, off: number, shade: number) { this.layer[i * 2] = off; this.layer[i * 2 + 1] = shade }
+  /** 1 = stands vertical (no lean): wall-mounted things such as a waterfall on its cliff face */
+  setUp(i: number, v: number) { this.up[i] = v }
+  /** the sprite's top-left in scene px, so night emissives (lit windows) can be sampled by 2D position */
+  setOrg(i: number, x: number, y: number) { this.org[i * 2] = x; this.org[i * 2 + 1] = y }
   hide(i: number) { this.size[i * 2] = 0 }
 
   flush(n: number) {
