@@ -1,6 +1,6 @@
 "use client"
 // Game-screen versions of the section cards (character sheet, inventory, quest log). Lab-only until approved.
-import type { CSSProperties } from "react"
+import { useState, type CSSProperties } from "react"
 import { useContent, type Project } from "@/lib/content"
 import { Button, Chip, Bar } from "@/components/ui/kit"
 import { MapPin, Mail, Globe, FileText } from "lucide-react"
@@ -157,7 +157,7 @@ function progress(start: string, end: string, now: number) {
 
 export function QuestLog() {
   const { experience } = useContent()
-  const now = Date.now()
+  const [now] = useState(() => Date.now())
   return (
     <section className="ql">
       <div className="inv-head"><Ico n="scroll" size={2} /> <b>QUEST LOG</b> <span>{experience.length} chapters</span></div>
