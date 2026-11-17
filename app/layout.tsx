@@ -11,6 +11,7 @@ import "./surfaces-arcade.css"
 import "./cover-art.css"
 import "./art.css"
 import "./art-worlds.css"
+import "./art-variants.css"
 
 const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--ff-pixel", display: "swap" })
 const pixelify = Pixelify_Sans({ subsets: ["latin"], variable: "--ff-pixelify", display: "swap" })

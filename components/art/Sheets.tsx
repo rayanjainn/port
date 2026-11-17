@@ -8,15 +8,20 @@ import { Github, Linkedin, XLogo } from "@/components/icons"
 import { skillIcon } from "@/lib/itemIcons"
 import ProjectCover from "@/components/ui/ProjectCover"
 
-const icon = (n: string) => `/ui/icons/${n}.png`
-export function Ico({ n, size = 3 }: { n: string; size?: number }) {
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={icon(n)} alt="" className="ico" style={{ width: 16 * size, height: 16 * size }} />
-}
+import { Ico } from "./Ico"
+import { AboutCity, AboutDesert, AboutRuins, InventoryCity, InventoryDesert, InventoryRuins, QuestCity, QuestDesert, QuestRuins, Shipped, when, type LogItem } from "./Variants"
+export { Ico }
 
 const tier = (l: number) => (l >= 88 ? { n: "LEGENDARY", c: "#f0b400" } : l >= 78 ? { n: "EPIC", c: "#a98bff" } : l >= 65 ? { n: "RARE", c: "#4aa3e8" } : { n: "UNCOMMON", c: "#5fc24a" })
 
 export function AboutSheet({ world = "village" }: { world?: string }) {
+  if (world === "city") return <AboutCity />
+  if (world === "desert") return <AboutDesert />
+  if (world === "ruins") return <AboutRuins />
+  return <AboutVillage world="village" />
+}
+
+function AboutVillage({ world }: { world: string }) {
   const c = useContent()
   const p = c.profile, s = c.socials
   const langs = new Set(c.projects.map((x) => x.language)).size
@@ -101,8 +106,15 @@ export function AboutSheet({ world = "village" }: { world?: string }) {
 
 const RARITY = [{ n: "LEGENDARY", c: "#f0b400" }, { n: "EPIC", c: "#a98bff" }, { n: "RARE", c: "#4aa3e8" }, { n: "COMMON", c: "#9aa68a" }]
 
-export function ProjectsInventory() {
+export function ProjectsInventory({ world = "village" }: { world?: string }) {
   const { projects } = useContent()
+  if (world === "city") return <InventoryCity projects={projects} />
+  if (world === "desert") return <InventoryDesert projects={projects} />
+  if (world === "ruins") return <InventoryRuins projects={projects} />
+  return <InventoryVillage projects={projects} />
+}
+
+function InventoryVillage({ projects }: { projects: Project[] }) {
   const list = projects.slice(0, 6)
   return (
     <section className="inv">
@@ -126,20 +138,21 @@ export function ProjectsInventory() {
   )
 }
 
-const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
-function when(s: string): number | null {
-  const m = s.toLowerCase().match(/([a-z]{3})\w*\s+(\d{4})/)
-  return m && MONTHS.includes(m[1]) ? new Date(Number(m[2]), MONTHS.indexOf(m[1]) + 1, 0).getTime() : null
-}
 function progress(start: string, end: string, now: number) {
   const a = when(start), b = when(end)
   if (a === null || b === null) return 0.5
   return Math.max(0.05, Math.min(0.97, (now - a) / Math.max(1, b - a)))
 }
 
-export function QuestLog() {
+export function QuestLog({ world = "village" }: { world?: string }) {
   const { experience } = useContent()
   const [now] = useState(() => Date.now())
+  if (world !== "village") {
+    const items: LogItem[] = experience.map((e) => { const endT = when(e.end); return { e, active: /present|now/i.test(e.end) || (endT !== null && endT > now) } })
+    if (world === "city") return <QuestCity items={items} />
+    if (world === "desert") return <QuestDesert items={items} />
+    return <QuestRuins items={items} />
+  }
   return (
     <section className="ql">
       <div className="inv-head"><Ico n="scroll" size={2} /> <b>QUEST LOG</b> <span>{experience.length} chapters</span></div>

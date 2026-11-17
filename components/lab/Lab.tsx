@@ -2,7 +2,7 @@
 import { Suspense, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { Panel, Button, IconButton, Ribbon, Chip, Pill, Bar, Kbd, Rule } from "@/components/ui/kit"
-import { AboutSheet, ProjectsInventory, QuestLog, Ico } from "./Sheets"
+import { AboutSheet, ProjectsInventory, QuestLog, Ico } from "@/components/art/Sheets"
 import { useContent } from "@/lib/content"
 import { PixelFilter } from "@/components/ui/ProjectCover"
 import { Map as MapIcon, Music, Volume2, Globe, X } from "lucide-react"
@@ -50,8 +50,8 @@ function Inner() {
 
         <Rule />
         <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE HERO&apos;S CHRONICLE</Ribbon></div><div className="bm-body lab-body"><AboutSheet world={world} /></div></Panel>
-        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE GALLERY</Ribbon></div><div className="bm-body lab-body"><ProjectsInventory /></div></Panel>
-        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE TAVERN</Ribbon></div><div className="bm-body lab-body"><QuestLog /></div></Panel>
+        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE GALLERY</Ribbon></div><div className="bm-body lab-body"><ProjectsInventory world={world} /></div></Panel>
+        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE TAVERN</Ribbon></div><div className="bm-body lab-body"><QuestLog world={world} /></div></Panel>
       </div>
     </div>
   )
