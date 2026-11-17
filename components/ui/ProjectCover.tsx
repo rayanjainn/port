@@ -8,11 +8,12 @@ import type { Project } from "@/lib/content"
 import ProjectArt from "@/components/quick/ProjectArt"
 import { motifFor } from "@/lib/quick/motif"
 import { MOTIF_ICON } from "@/lib/itemIcons"
+import { exhibitArtPath } from "@/lib/world/exhibits"
 
 /** Hook for per-project pixel illustrations (lib/world/exhibits.ts). Return a PNG/GIF URL, or undefined to use the generative art. */
+const BAKED = new Set(["aio", "boomsuite", "chess", "classroom-mcp", "creatorai", "creditiq", "ctrlfixit", "daily-games", "dapdap", "devhub", "draw-app", "duckops", "ferrite-browser", "financial-research-automation", "glitch", "ip-sniffer", "nebula", "neurocred", "poker", "sentinel", "skrgrep", "stackit", "vendex"])
 export function exhibitArt(id: string): string | undefined {
-  void id
-  return undefined
+  return BAKED.has(id) ? exhibitArtPath(id) : undefined
 }
 
 /** One shared pixelate filter (4px cells). Mounted once per page by the first cover. */
