@@ -752,8 +752,8 @@ function build(w: World, content?: Portfolio) {
     }
     // slots: staggered rows below the door, nearest the aisle first
     const slots: { cx: number; fy: number }[] = []
-    for (let k = 0; k < 4; k++) {
-      const fy = Y0 + 76 + k * 80, offs = k % 2 ? [-102, 102, -190, 190, -278, 278] : [-58, 58, -146, 146, -234, 234, -322, 322]
+    for (let k = 0; k < 6; k++) {
+      const fy = Y0 + 76 + k * 80, offs = (k % 2 ? [-102, 102, -190, 190, -278, 278, -366, 366, -454, 454] : [-58, 58, -146, 146, -234, 234, -322, 322, -410, 410, -498, 498])
       for (const o of offs) slots.push({ cx: X0 + o, fy })
     }
     let placed = 0

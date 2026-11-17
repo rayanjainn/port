@@ -1069,3 +1069,51 @@ export function exhibitArtDataUrl(p: ExProject, scale = 3): string | null {
   return url
 }
 export const exhibitArtPath = (id: string) => `/exhibits/art/${id}.png`
+
+// ── ruins: memories ─────────────────────────────────────────────
+const cell = (strip: HTMLCanvasElement, f: number, w: number, h: number) => { const k = canvas(w, h); k.ctx.drawImage(strip, f * w, 0, w, h, 0, 0, w, h); return k.c }
+/** a floating spectral pane over a small obelisk, as an animated strip of `frames` cells of 80 x 82 */
+export function memoryPane(p: ExProject, frames = 4): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
+  const sp = spectral(exhibitArt(p), p.accent, frames)
+  const FW = 80, FH = 82
+  const { c, ctx } = canvas(FW * frames, FH)
+  for (let f = 0; f < frames; f++) {
+    const ox = f * FW
+    const lift = f % 2 ? 1 : 0
+    const fr = frameAround(cell(sp, f, ART_W, ART_H), "spectral", true, "#0a2a34")
+    const gr = ctx.createRadialGradient(ox + 40, 30 - lift, 4, ox + 40, 30 - lift, 44)
+    gr.addColorStop(0, "rgba(140,255,230,.35)"); gr.addColorStop(1, "rgba(140,255,230,0)")
+    ctx.fillStyle = gr; ctx.fillRect(ox, 0, FW, FH)
+    ctx.drawImage(fr, ox, 2 - lift)
+    ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 27, 62, 26, 20); ctx.fillStyle = "#2a4a58"; ctx.fillRect(ox + 28, 63, 24, 18); ctx.fillStyle = "#4a7a88"; ctx.fillRect(ox + 28, 63, 24, 2); ctx.fillStyle = "#16303c"; ctx.fillRect(ox + 46, 65, 6, 16)
+    ctx.fillStyle = "#6effd6"; ctx.fillRect(ox + 38, 70, 4, 4); ctx.fillStyle = "#ffffff"; ctx.fillRect(ox + 39, 71, 2, 2)
+    ctx.fillStyle = "rgba(200,255,245,.85)"
+    for (let k = 0; k < 3; k++) ctx.fillRect(ox + 30 + k * 9, 60 - ((f * 3 + k * 5) % 9), 1, 1)
+  }
+  return { cv: c, w: FW, h: FH, frames }
+}
+/** a tome on a lectern with a faint hologram of the art above it: strip of `frames` cells of 44 x 62 */
+export function memoryTome(p: ExProject, frames = 3): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
+  const sp = spectral(exhibitArt(p), p.accent, frames)
+  const FW = 44, FH = 62
+  const { c, ctx } = canvas(FW * frames, FH)
+  const f0 = fitTitle(p.title, 38)
+  for (let f = 0; f < frames; f++) {
+    const ox = f * FW
+    const bob = f === 1 ? 1 : 0
+    const gr = ctx.createRadialGradient(ox + 22, 14, 2, ox + 22, 14, 26)
+    gr.addColorStop(0, "rgba(140,255,230,.3)"); gr.addColorStop(1, "rgba(140,255,230,0)")
+    ctx.fillStyle = gr; ctx.fillRect(ox, 0, FW, 40)
+    ctx.fillStyle = "rgba(160,255,235,.16)"; ctx.beginPath(); ctx.moveTo(ox + 14, 36); ctx.lineTo(ox + 30, 36); ctx.lineTo(ox + 37, 22); ctx.lineTo(ox + 7, 22); ctx.fill()
+    ctx.imageSmoothingEnabled = true
+    ctx.drawImage(cell(sp, f, ART_W, ART_H), 0, 0, ART_W, ART_H, ox + 4, 1 - bob, 36, 22)
+    ctx.imageSmoothingEnabled = false
+    ctx.fillStyle = "rgba(200,255,245,.8)"; ctx.fillRect(ox + 4, 0 - bob, 36, 1); ctx.fillRect(ox + 4, 23 - bob, 36, 1); ctx.fillRect(ox + 4, 1 - bob, 1, 22); ctx.fillRect(ox + 39, 1 - bob, 1, 22)
+    ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 4, 36, 36, 26); ctx.fillStyle = "#26424e"; ctx.fillRect(ox + 5, 37, 34, 24); ctx.fillStyle = "#3c6270"; ctx.fillRect(ox + 5, 37, 34, 2)
+    ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 8, 32, 28, 6)
+    ctx.fillStyle = "#bff7ec"; ctx.fillRect(ox + 9, 33, 12, 4); ctx.fillRect(ox + 23, 33, 12, 4); ctx.fillStyle = "#6edcc4"; ctx.fillRect(ox + 21, 32, 2, 6)
+    const tx = ox + 5 + Math.round((34 - f0.w) / 2)
+    if (f0.micro) drawMicro(ctx, f0.s, tx, 46, "#a8f0e0"); else drawText(ctx, f0.s, tx, 44, "#a8f0e0")
+  }
+  return { cv: c, w: FW, h: FH, frames }
+}
