@@ -5,7 +5,7 @@ import {
   CARS, PEOPLE, STATUES, personSheet, personFace, type RoofSet, type WallSet,
 } from "@/lib/kenney"
 import { runtime } from "@/lib/runtime"
-import { ordered, billboard, titledArt, exhibitArt, type ExProject } from "./exhibits"
+import { ordered, billboard, type ExProject } from "./exhibits"
 import type { Portfolio } from "@/lib/content"
 import { TS, img, sheet, blit, hash, mulberry, canvas, type Scene, type SceneSign, type Landmark, type Sprite, type Hotspot, type ActorDef, type Light, type Box } from "./core"
 
