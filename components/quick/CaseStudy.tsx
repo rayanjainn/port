@@ -5,7 +5,8 @@ import { useContent, loadPreviewDraft, LANG_COLORS, type Project } from "@/lib/c
 import { STATIC_IDS, emphasize, projectHref } from "@/lib/quick/data"
 import { Github } from "@/components/icons"
 import PreviewBadge from "@/components/ui/PreviewBadge"
-import { ArrowLeft, ArrowRight, ArrowUpRight, Globe } from "lucide-react"
+import { ArrowLeft, ArrowRight, ArrowUpRight, Globe, Medal } from "lucide-react"
+import { monthLabel } from "@/lib/quick/time"
 import Chrome from "./Chrome"
 import ProjectArt from "./ProjectArt"
 import { Reveal, ScrollProgress } from "./fx"
@@ -57,8 +58,9 @@ export default function CaseStudy({ id }: { id: string }) {
 function Body({ p, i, all }: { p: Project; i: number; all: Project[] }) {
   const n = all.length
   const prev = all[(i - 1 + n) % n], next = all[(i + 1) % n]
+  const honour = useContent().achievements.find((a) => a.projectId === p.id && a.kind === "hackathon" && /^1st/i.test(a.title))
   const meta: [string, ReactNode][] = [
-    ["Year", p.year],
+    [p.started ? "Started" : "Year", p.started ? monthLabel(p.started) : p.year],
     ["Category", p.category],
     ["Primary language", <span key="l" className="inline-flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ background: LANG_COLORS[p.language] ?? "#888" }} />{p.language}</span>],
     ["Links", (
@@ -78,6 +80,7 @@ function Body({ p, i, all }: { p: Project; i: number; all: Project[] }) {
 
       <header className="qv-rise mt-8" style={{ ["--d" as string]: "0.08s" }}>
         <div className={`${mono} text-xs uppercase tracking-[0.22em] text-[#ffb547]`}>{p.category} · {p.year}</div>
+        {honour && <div className={`${mono} mt-4 inline-flex items-center gap-2 rounded-lg border border-[#ffb547]/45 bg-[#ffb547]/[0.08] px-3 py-1.5 text-xs uppercase tracking-[0.14em] text-[#ffb547]`}><Medal size={14} />{honour.title} · {honour.issuer}</div>}
         <h1 className="mt-4 text-[clamp(52px,10vw,132px)] font-semibold leading-[0.9] tracking-[-0.055em]">{p.title}</h1>
         <p className="mt-6 max-w-3xl text-[clamp(21px,2.6vw,32px)] font-medium leading-snug tracking-tight text-white/80">{p.tagline}</p>
         <div className="mt-8 flex flex-wrap gap-3">

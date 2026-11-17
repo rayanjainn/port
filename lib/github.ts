@@ -65,6 +65,7 @@ export function projectFromRepo(r: Repo, index = 0): Project {
     image: "",
     accent: ACCENTS[index % ACCENTS.length],
     featured: false,
+    started: r.created_at.slice(0, 7),
   }
 }
 

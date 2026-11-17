@@ -5,16 +5,17 @@ import raw from "@/content/portfolio.json"
 /** Ids that have a prerendered /quick/[id] page (the published content). */
 export const STATIC_IDS: ReadonlySet<string> = new Set(raw.projects.map((p) => p.id))
 
-export const SITE_ANCHORS = [
+// Page order. `nav: false` keeps an anchor in the command palette but out of the top bar.
+export const SITE_ANCHORS: readonly { id: string; label: string; nav?: boolean }[] = [
   { id: "about", label: "About" },
   { id: "work", label: "Work" },
+  { id: "log", label: "Build log", nav: false },
   { id: "experience", label: "Experience" },
   { id: "skills", label: "Skills" },
+  { id: "numbers", label: "Numbers" },
   { id: "studies", label: "Education" },
   { id: "contact", label: "Contact" },
-] as const
-
-export type SectionId = (typeof SITE_ANCHORS)[number]["id"]
+]
 
 /** Where a project's card should go: its case study when one is prerendered, else its own URL. */
 export function projectHref(p: Project, staticIds: ReadonlySet<string>): { href: string; external: boolean } | null {

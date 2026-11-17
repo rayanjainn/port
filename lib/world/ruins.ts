@@ -666,7 +666,7 @@ export function buildRuins(): Scene {
     bark: ["Ship fast... break things... la la la..."],
   })
   npc("marrow", RUINS_CHARS.innkeeper, "Granny Marrow", Math.floor(id0.x / TS) + 2, Math.floor(id0.y / TS) + 2, {
-    lines: ["Welcome to the Last Lantern. The tea is cold, the stories are warm.", "Rayan builds at raycode.tech, hackathon after hackathon, and ran the web side of the CSI student chapter.", "Take the board by the door. It lists every quest."],
+    lines: ["Welcome to the Last Lantern. The tea is cold, the stories are warm.", "Rayan interned at Barclays and LazerBelieve, and led the tech side of the CSI-SPIT student chapter.", "Take the board by the door. It lists every quest."],
     action: { type: "section", id: "tavern" },
   })
   npc("quill", RUINS_CHARS.courier, "Quill the Courier", Math.floor(wd.x / TS) + 3, Math.floor(wd.y / TS) + 1, {
@@ -674,7 +674,7 @@ export function buildRuins(): Scene {
     action: { type: "section", id: "wizard" },
   })
   npc("hex", RUINS_CHARS.apprentice, "Apprentice Hex", Math.floor(ld.x / TS) + 3, Math.floor(ld.y / TS) + 2, {
-    lines: ["The Library keeps Rayan's honours: Amazon ML Challenge 2026, Pull Shark twice, Quickdraw and YOLO.", "He also published a Homebrew package, skrgrep. I tried to borrow it. It is a CLI, apparently."],
+    lines: ["The Library keeps Rayan's honours: first place at Ignisa '26 with CreditIQ, Pull Shark twice, Quickdraw and YOLO.", "He also ships skrgrep through his own Homebrew tap. I tried to borrow it. It is a CLI, apparently."],
     bark: ["Shh. Books are sleeping."],
   })
   for (const [id, c, r] of [["owl1", 12, 15], ["owl2", 54, 20], ["owl3", 74, 30]] as [string, number, number][])
@@ -778,6 +778,10 @@ export function buildRuins(): Scene {
   const water: { c: number; r: number }[] = []
   for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (kind[idx(c, r)] === K.Water && isWater(c - 1, r) && isWater(c + 1, r) && isWater(c, r - 1) && isWater(c, r + 1) && hash(c, r, 50) < 0.5) water.push({ c, r })
   const tiles = new Uint8Array(W * H)
+  // 3D elevation: graveyard terrace up, north cliff up, chasm a deep pit (the bridge planks keep their own deck height)
+  const heights = new Float32Array(W * H)
+  for (let i = 0; i < W * H; i++) heights[i] = kind[i] === K.Hill ? 1 : kind[i] === K.Cliff ? 3 : kind[i] === K.Chasm ? -2.2 : 0
+  for (const c of LADDER) heights[idx(c, HILL.r1)] = 0.5   // the ladder is a half step up onto the terrace
   for (let i = 0; i < W * H; i++) { const v = kind[i]; tiles[i] = v === K.Water ? G.Water : v === K.Plank ? G.Bridge : v === K.Mud ? G.Dirt : v === K.Plaza ? G.Plaza : G.Grass }
 
   const QUEST: Record<string, string> = {
@@ -793,7 +797,7 @@ export function buildRuins(): Scene {
   return {
     id: "ruins", title: "Hollow Reach", w: W, h: H, ground: gcv, sprites: live, blocked, hotspots, actors, lights, signs,
     spawn: { x: 40 * TS + 8, y: 54 * TS + 8, facing: "up" }, dark: 0.6, music: "ruins", bg: "#0a0d1c", tick, water, world: "ruins",
-    tiles, ground3d: clean.c, baked, landmarks,
+    tiles, heights, ground3d: clean.c, baked, landmarks,
     lighting: { tint: "8,12,38" }, arrive: { x: 12 * TS + 8, y: 46 * TS + 6, facing: "right" },
   }
 }

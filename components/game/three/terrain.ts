@@ -15,6 +15,8 @@ export interface Terrain {
   heightAt: (x: number, z: number) => number
   outdoor: boolean
   pad: number
+  /** if the tile under this scene-px point is part of a raised cliff face, where its wall plane is (z, tiles) */
+  wallAt: (xPx: number, yPx: number) => { z: number } | null
 }
 
 function avgColor(ctx: CanvasRenderingContext2D, x: number, y: number): [number, number, number] {
@@ -44,9 +46,27 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   const T = sc.tiles
   const inb = (c: number, r: number) => c >= 0 && r >= 0 && c < W && r < H
   const type = (c: number, r: number) => (T && inb(c, r) ? T[r * W + c] : G.Floor)
-  const isWall = (c: number, r: number) => inb(c, r) && type(c, r) === G.Void
+  const isWall = (c: number, r: number) => inb(c, r) && type(c, r) === G.Void && !(sc.heights && sc.heights[r * W + c] !== 0)
   const pi = (c: number, r: number) => (r + PAD) * PW + (c + PAD)
   const pin = (c: number, r: number) => c >= -PAD && r >= -PAD && c < W + PAD && r < H + PAD
+
+  // scene-provided elevation (tiles): plateaus > 0, pits < 0. Outside the map it continues the nearest edge tile's plateau.
+  const HT = sc.heights
+  const ev = (c: number, r: number) => {
+    if (!HT) return 0
+    if (inb(c, r)) return HT[r * W + c]
+    return Math.max(0, HT[Math.max(0, Math.min(H - 1, r)) * W + Math.max(0, Math.min(W - 1, c))])
+  }
+  // a raised blocked tile belongs to a cliff face when it is within n rows of the south edge of its run, where n is the
+  // drop to whatever lies south of it (the painted face is that many rows tall)
+  const raisedBlocked = (c: number, r: number) => inb(c, r) && ev(c, r) >= 0.75 && sc.blocked[r * W + c] === 1
+  const southRun = (c: number, r: number) => {
+    const h0 = ev(c, r)
+    let s0 = 0
+    while (inb(c, r + s0 + 1) && ev(c, r + s0 + 1) >= h0 - 0.01 && sc.blocked[(r + s0 + 1) * W + c] === 1) s0++
+    const hn = inb(c, r + s0 + 1) ? Math.max(ev(c, r + s0 + 1), 0) : 0
+    return { s: s0, n: Math.max(1, Math.round(h0 - hn)) }
+  }
 
   // ── relief (optional): the far rim only. Distance from anything walkable / watery / built-on; only land more than
   // 4 tiles deep rises, in 0.5-tile terraces, and keeps rising beyond the map edge so the edge is never a flat cut.
@@ -54,7 +74,7 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   if (hills) {
     const dist = new Int16Array(PW * PH).fill(-1)
     const queue: number[] = []
-    const raisable = (c: number, r: number) => !inb(c, r) || (sc.blocked[r * W + c] === 1 && type(c, r) !== G.Water && type(c, r) !== G.Bridge && type(c, r) !== G.Void)
+    const raisable = (c: number, r: number) => !inb(c, r) || (ev(c, r) === 0 && sc.blocked[r * W + c] === 1 && type(c, r) !== G.Water && type(c, r) !== G.Bridge && type(c, r) !== G.Void)
     const seed = (c: number, r: number) => { if (inb(c, r) && dist[pi(c, r)] < 0) { dist[pi(c, r)] = 0; queue.push(c, r) } }
     for (let r = 0; r < H; r++) for (let c = 0; c < W; c++) if (!raisable(c, r)) seed(c, r)
     for (const sp of sc.sprites) {   // never under or next to anything solid / a building
@@ -81,10 +101,11 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
 
   const hOf = (c: number, r: number) => {
     if (!pin(c, r)) return 0
-    if (!inb(c, r)) return relief[pi(c, r)]
-    const t = type(c, r)
+    if (!inb(c, r)) { const e = ev(c, r); return e > 0 ? e : relief[pi(c, r)] }
+    const t = type(c, r), e = ev(c, r)
     if (t === G.Water) return -WATER_DEPTH
     if (t === G.Bridge) return BRIDGE_H
+    if (e !== 0) return e
     if (t === G.Void) return inb(c, r - 1) && !isWall(c, r - 1) ? WALL_LOW : WALL_H
     return relief[pi(c, r)]
   }
@@ -153,9 +174,12 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
   for (let r = -PAD; r < H + PAD; r++)
     for (let c = -PAD; c < W + PAD; c++) {
       const h = hArr[pi(c, r)]
-      const mc = refl(c, W), mr = refl(r, H)
+      const mc = refl(c, W); let mr = refl(r, H)
+      // cliff-face rows are painted as a vertical face; on top of the plateau show the plateau art instead
+      if (raisedBlocked(c, r)) { const q = southRun(c, r); if (q.s < q.n) { const r0 = r + q.s - q.n; if (r0 >= 0 && raisedBlocked(c, r0)) mr = r0 } }
       const u0 = (mc * TS + E) / gw, u1 = ((mc + 1) * TS - E) / gw, v0 = (mr * TS + E) / TH, v1 = ((mr + 1) * TS - E) / TH
-      const sh2 = h > 0.05 && !isWall(c, r) ? 0.97 + Math.min(0.06, h * 0.03) : 1
+      const pit = h < -0.4 && type(c, r) !== G.Water
+      const sh2 = pit ? Math.max(0.28, 1 + h * 0.3) : h > 0.05 && !isWall(c, r) ? 0.97 + Math.min(0.06, h * 0.03) : 1
       quad([[c, h, r], [c + 1, h, r], [c, h, r + 1], [c + 1, h, r + 1]], [[u0, v0], [u1, v0], [u0, v1], [u1, v1]], [sh2, sh2, sh2, sh2])
       const t = type(c, r), wallT = isWall(c, r)
       for (const [dc, dr] of [[0, 1], [0, -1], [-1, 0], [1, 0]]) {
@@ -163,8 +187,16 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
         if (!pin(nc, nr)) continue
         const hn = hArr[pi(nc, nr)]
         if (h - hn < 0.01) continue
-        const cell = t === G.Bridge && inb(c, r) ? 3 : wallT ? 1 : hn < 0 ? 0 : 2
-        side(c, r, h, hn, dc, dr, cell, cell === 0 ? 0.95 : 1)
+        // south edge of a raised, blocked region: the painted cliff face, stood up as a real vertical wall
+        if (dr === 1 && inb(c, r) && raisedBlocked(c, r) && h - hn >= 0.5 && southRun(c, r).s === 0) {
+          const n = Math.max(1, Math.min(r + 1, Math.round(h - hn)))
+          const fu0 = (c * TS + E) / gw, fu1 = ((c + 1) * TS - E) / gw, fv0 = ((r + 1 - n) * TS + E) / TH, fv1 = ((r + 1) * TS - E) / TH
+          const hh = h - hn, hb = hn
+          quad([[c, h, r + 1], [c + 1, h, r + 1], [c, hb, r + 1], [c + 1, hb, r + 1]], [[fu0, fv0], [fu1, fv0], [fu0, fv0 + (fv1 - fv0) * (hh / n)], [fu1, fv0 + (fv1 - fv0) * (hh / n)]], [1, 1, 0.8, 0.8])
+          continue
+        }
+        const cell = t === G.Bridge && inb(c, r) ? 3 : wallT ? 1 : hn < 0 && h <= 0.01 ? 0 : 2
+        side(c, r, h, hn, dc, dr, cell, cell === 0 ? 0.95 : hn < -0.4 && cell === 2 ? 0.55 : 1)
       }
     }
   // bridge rails + posts along the water edges
@@ -251,10 +283,11 @@ export function buildTerrain(sc: Scene, sh: Shared): Terrain {
     farGeo = new THREE.ShapeGeometry(o).rotateX(-Math.PI / 2)
   } else farGeo = new THREE.PlaneGeometry(400, 400).rotateX(-Math.PI / 2)
   const far = new THREE.Mesh(farGeo, flatMaterial(sh, hills ? new THREE.Color().setRGB(grass[0] / 255 * 0.8, grass[1] / 255 * 0.8, grass[2] / 255 * 0.8, THREE.SRGBColorSpace) : bg))
-  far.position.set(hills ? 0 : W / 2, hills ? CAP - 0.04 : -WATER_DEPTH - 0.02, hills ? 0 : H / 2)
+  far.position.set(hills ? 0 : W / 2, hills ? Math.max(CAP, hArr[pi(-PAD, -PAD)]) - 0.04 : -WATER_DEPTH - 0.02, hills ? 0 : H / 2)
   far.frustumCulled = false
   objects.push(far)
   disposables.push(far.geometry, far.material as THREE.Material)
 
-  return { objects, bg, heightAt, outdoor, pad: PAD, dispose: () => disposables.forEach((d) => d.dispose()) }
+  return { objects, bg, heightAt, outdoor, pad: PAD,
+    wallAt: (xPx, yPx) => { const c = Math.floor(xPx / TS), r = Math.floor(yPx / TS); if (!raisedBlocked(c, r)) return null; const q = southRun(c, r); return q.s < q.n ? { z: r + q.s + 1 } : null }, dispose: () => disposables.forEach((d) => d.dispose()) }
 }

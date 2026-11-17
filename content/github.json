@@ -1,0 +1,255 @@
+{
+  "generatedAt": "2026-11-17T03:32:59.376Z",
+  "username": "rayanjainn",
+  "source": "file",
+  "totals": {
+    "publicRepos": 51,
+    "owned": 43,
+    "forks": 7,
+    "withLanguage": 43
+  },
+  "firstRepoAt": "2024-09-02",
+  "languages": [
+    {
+      "name": "TypeScript",
+      "repos": 20,
+      "share": 0.465
+    },
+    {
+      "name": "JavaScript",
+      "repos": 7,
+      "share": 0.163
+    },
+    {
+      "name": "Python",
+      "repos": 4,
+      "share": 0.093
+    },
+    {
+      "name": "Rust",
+      "repos": 4,
+      "share": 0.093
+    },
+    {
+      "name": "Swift",
+      "repos": 2,
+      "share": 0.047
+    },
+    {
+      "name": "C#",
+      "repos": 1,
+      "share": 0.023
+    },
+    {
+      "name": "C++",
+      "repos": 1,
+      "share": 0.023
+    },
+    {
+      "name": "EJS",
+      "repos": 1,
+      "share": 0.023
+    },
+    {
+      "name": "Java",
+      "repos": 1,
+      "share": 0.023
+    },
+    {
+      "name": "Lua",
+      "repos": 1,
+      "share": 0.023
+    },
+    {
+      "name": "Ruby",
+      "repos": 1,
+      "share": 0.023
+    }
+  ],
+  "createdByYear": [
+    {
+      "year": "2024",
+      "repos": 6
+    },
+    {
+      "year": "2025",
+      "repos": 12
+    },
+    {
+      "year": "2026",
+      "repos": 25
+    }
+  ],
+  "createdByMonth": [
+    {
+      "month": "2024-09",
+      "repos": 3
+    },
+    {
+      "month": "2024-10",
+      "repos": 1
+    },
+    {
+      "month": "2024-11",
+      "repos": 1
+    },
+    {
+      "month": "2024-12",
+      "repos": 1
+    },
+    {
+      "month": "2025-01",
+      "repos": 1
+    },
+    {
+      "month": "2025-02",
+      "repos": 3
+    },
+    {
+      "month": "2025-03",
+      "repos": 0
+    },
+    {
+      "month": "2025-04",
+      "repos": 1
+    },
+    {
+      "month": "2025-05",
+      "repos": 0
+    },
+    {
+      "month": "2025-06",
+      "repos": 1
+    },
+    {
+      "month": "2025-07",
+      "repos": 1
+    },
+    {
+      "month": "2025-08",
+      "repos": 4
+    },
+    {
+      "month": "2025-09",
+      "repos": 0
+    },
+    {
+      "month": "2025-10",
+      "repos": 0
+    },
+    {
+      "month": "2025-11",
+      "repos": 0
+    },
+    {
+      "month": "2025-12",
+      "repos": 1
+    },
+    {
+      "month": "2026-01",
+      "repos": 2
+    },
+    {
+      "month": "2026-02",
+      "repos": 1
+    },
+    {
+      "month": "2026-03",
+      "repos": 8
+    },
+    {
+      "month": "2026-04",
+      "repos": 4
+    },
+    {
+      "month": "2026-05",
+      "repos": 1
+    },
+    {
+      "month": "2026-06",
+      "repos": 0
+    },
+    {
+      "month": "2026-07",
+      "repos": 0
+    },
+    {
+      "month": "2026-08",
+      "repos": 0
+    },
+    {
+      "month": "2026-09",
+      "repos": 3
+    },
+    {
+      "month": "2026-10",
+      "repos": 6
+    }
+  ],
+  "recent": [
+    {
+      "name": "port",
+      "description": "",
+      "language": "TypeScript",
+      "url": "https://github.com/rayanjainn/port",
+      "homepage": "https://raycode.tech",
+      "pushedAt": "2026-11-16"
+    },
+    {
+      "name": "aio",
+      "description": "",
+      "language": "Swift",
+      "url": "https://github.com/rayanjainn/aio",
+      "homepage": "http://cortex.raycode.tech/",
+      "pushedAt": "2026-11-14"
+    },
+    {
+      "name": "daily-games",
+      "description": "",
+      "language": "TypeScript",
+      "url": "https://github.com/rayanjainn/daily-games",
+      "homepage": "https://everydaily.raycode.tech",
+      "pushedAt": "2026-11-14"
+    },
+    {
+      "name": "CreatorAi",
+      "description": "",
+      "language": "Python",
+      "url": "https://github.com/rayanjainn/CreatorAi",
+      "homepage": "",
+      "pushedAt": "2026-10-28"
+    },
+    {
+      "name": "Ferrite-Browser",
+      "description": "",
+      "language": "Rust",
+      "url": "https://github.com/rayanjainn/Ferrite-Browser",
+      "homepage": "http://ferrite.raycode.tech/",
+      "pushedAt": "2026-10-27"
+    },
+    {
+      "name": "duckops",
+      "description": "An internal developer platform that takes you from \"pick a stack\" to fully deployed, monitored, and CI/CD-wired application — automatically.",
+      "language": "TypeScript",
+      "url": "https://github.com/rayanjainn/duckops",
+      "homepage": "https://app.raycode.tech",
+      "pushedAt": "2026-10-25"
+    },
+    {
+      "name": "sentinel",
+      "description": "",
+      "language": "Rust",
+      "url": "https://github.com/rayanjainn/sentinel",
+      "homepage": "http://sentinel.raycode.tech/",
+      "pushedAt": "2026-10-25"
+    },
+    {
+      "name": "poker",
+      "description": "",
+      "language": "TypeScript",
+      "url": "https://github.com/rayanjainn/poker",
+      "homepage": "https://pokerray.vercel.app",
+      "pushedAt": "2026-10-21"
+    }
+  ]
+}

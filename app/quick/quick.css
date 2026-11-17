@@ -70,6 +70,8 @@ a.qv-card:hover, .qv-card.is-hover:hover { border-color: rgba(255, 181, 71, 0.45
 @keyframes qa-stage { 0%, 100% { fill-opacity: 0; stroke-opacity: .0; } 12%, 30% { fill-opacity: .16; stroke-opacity: .9; } 50% { fill-opacity: 0; stroke-opacity: 0; } }
 @keyframes qa-grow { 0% { transform: scaleX(.15); } 50%, 100% { transform: scaleX(1); } }
 @keyframes qa-ring { 0% { transform: scale(.7); opacity: .7; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes qa-glitch { 0%, 70%, 100% { transform: translateX(0); } 74% { transform: translateX(var(--gx)); } 78% { transform: translateX(calc(var(--gx) * -0.5)); } 82% { transform: translateX(0); } }
+.qa-glitch { animation: qa-glitch 3.6s steps(1) infinite; }
 .qa-pulse { animation: qa-pulse 3s ease-in-out infinite; }
 .qa-float { animation: qa-float 5s ease-in-out infinite; }
 .qa-spin { animation: qa-spin 60s linear infinite; transform-origin: center; transform-box: fill-box; }

@@ -17,7 +17,7 @@ interface World {
   W: number; H: number
   idx: (c: number, r: number) => number
   inb: (c: number, r: number) => boolean
-  blocked: Uint8Array; reserved: Uint8Array; tiles: Uint8Array
+  blocked: Uint8Array; reserved: Uint8Array; tiles: Uint8Array; heights: Float32Array
   dune: Uint8Array; path: Uint8Array; lime: Uint8Array; bed: Uint8Array; water: Uint8Array; bridge: Uint8Array; mesa: Uint8Array
   sprites: Sprite[]; lights: Light[]; hotspots: Hotspot[]; signs: SceneSign[]; actors: ActorDef[]
   ops: Op[]
@@ -191,7 +191,7 @@ export function buildDesert(): Scene {
   const inb = (c: number, r: number) => c >= 0 && r >= 0 && c < W && r < H
   const w: World = {
     W, H, idx, inb,
-    blocked: new Uint8Array(W * H), reserved: new Uint8Array(W * H), tiles: new Uint8Array(W * H).fill(G.Grass),
+    blocked: new Uint8Array(W * H), reserved: new Uint8Array(W * H), tiles: new Uint8Array(W * H).fill(G.Grass), heights: new Float32Array(W * H),
     dune: new Uint8Array(W * H), path: new Uint8Array(W * H), lime: new Uint8Array(W * H), bed: new Uint8Array(W * H),
     water: new Uint8Array(W * H), bridge: new Uint8Array(W * H), mesa: new Uint8Array(W * H),
     sprites: [], lights: [], hotspots: [], signs: [], actors: [], ops: [], doors: [], tickers: [], rnd,
@@ -281,18 +281,35 @@ function terrain(w: World, set: (a: Uint8Array, c: number, r: number, v?: number
   const lk: Mesa = { c0: LOOKOUT.c0, r0: LOOKOUT.r0, w: LOOKOUT.w, top: LOOKOUT.top, face: LOOKOUT.face, ramp: LOOKOUT.ramp }
   mesas.push(lk)
   mesas.sort((a, b) => a.r0 + a.top + a.face - (b.r0 + b.top + b.face) || a.r0 - b.r0)
-  for (const m of mesas) {
+  const owner = new Int16Array(W * H).fill(-1)
+  for (const [mi, m] of mesas.entries()) {
     for (let r = m.r0; r < m.r0 + m.top + m.face; r++)
       for (let c = m.c0; c < m.c0 + m.w; c++) {
         if (!inb(c, r)) continue
+        owner[idx(c, r)] = mi
         set(w.mesa, c, r)
         w.blocked[idx(c, r)] = 1
         w.tiles[idx(c, r)] = G.Void
       }
   }
+  // 3D elevation: per column, from the south going north, each mesa stands on the one in front of it and is as tall as
+  // the rows of its painted face that are still visible (later mesas are drawn over earlier ones)
+  for (let c = 0; c < W; c++) {
+    let level = 0, r = H - 1
+    while (r >= 0) {
+      const o = owner[idx(c, r)]
+      if (o < 0) { level = 0; r--; continue }
+      const m = mesas[o]
+      let r2 = r, kv = 0
+      while (r2 >= 0 && owner[idx(c, r2)] === o) { if (r2 >= m.r0 + m.top) kv++; r2-- }
+      level += kv
+      for (let q = r2 + 1; q <= r; q++) w.heights[idx(c, q)] = level
+      r = r2
+    }
+  }
   // lookout walkability: surface interior and the stair
-  for (let r = lk.r0 + 1; r < lk.r0 + lk.top; r++) for (let c = lk.c0 + 1; c < lk.c0 + lk.w - 1; c++) { w.blocked[idx(c, r)] = 0; w.tiles[idx(c, r)] = G.Floor }
-  for (let r = lk.r0 + lk.top; r < lk.r0 + lk.top + lk.face; r++) { w.blocked[idx(lk.ramp!, r)] = 0; w.tiles[idx(lk.ramp!, r)] = G.Dirt }
+  for (let r = lk.r0 + 1; r < lk.r0 + lk.top; r++) for (let c = lk.c0 + 1; c < lk.c0 + lk.w - 1; c++) { w.blocked[idx(c, r)] = 0; w.tiles[idx(c, r)] = G.Floor; w.heights[idx(c, r)] = w.heights[idx(lk.ramp!, lk.r0 + 1)] }
+  for (let r = lk.r0 + lk.top; r < lk.r0 + lk.top + lk.face; r++) { w.blocked[idx(lk.ramp!, r)] = 0; w.tiles[idx(lk.ramp!, r)] = G.Dirt; w.heights[idx(lk.ramp!, r)] = (w.heights[idx(lk.ramp!, lk.r0 + 1)]) * (1 - (r - lk.r0 - lk.top + 1) / lk.face) }
   w.ops.push({ z: 30, fn: (g) => { for (const m of mesas) drawMesa(g, m) } })
   w.reserve(LOOKOUT.c0 - 1, LOOKOUT.r0 - 1, LOOKOUT.c0 + LOOKOUT.w, LOOKOUT.r0 + LOOKOUT.top + LOOKOUT.face + 1)
   // map border is always solid
@@ -462,7 +479,7 @@ function finish(w: World): Scene {
   return {
     id: "desert", title: "Sunscar Oasis", w: W, h: H, ground: gcv, sprites: w.sprites, blocked: w.blocked, hotspots: w.hotspots, actors: w.actors, lights: w.lights,
     spawn: { x: SPAWN.c * TS + 8, y: SPAWN.r * TS + 8, facing: "down" }, dark: 0, music: "desert", water, bg: "#c98a4a",
-    tiles: w.tiles, ground3d: gcv, baked: [], outdoor: true, world: "desert", signs: w.signs, landmarks, arrive: { x: TRAVEL.c * TS + 64, y: (TRAVEL.r + 2) * TS + 12, facing: "right" },
+    tiles: w.tiles, heights: w.heights, ground3d: gcv, baked: [], outdoor: true, world: "desert", signs: w.signs, landmarks, arrive: { x: TRAVEL.c * TS + 64, y: (TRAVEL.r + 2) * TS + 12, facing: "right" },
     tick: (t, dt) => { for (const f of w.tickers) f(t, dt) },
   }
 }
@@ -915,8 +932,8 @@ function people(w: World) {
     ["Welcome to Sunscar Oasis, traveller!", "Rayan Jain builds Rust and TypeScript things out of Mumbai. This town is his portfolio, in sand.", "Caravanserai for his story, Hall of Relics for projects, Teahouse for experience.", "Sand Forge holds his skills, the Observatory his studies, and the Falcon Post will carry your message."],
     { type: "section", id: "townhall" })
   npc("bashir", "OldMan2", "Bashir the Tea Master", 26, 24, 12,
-    ["Ferrite predicts what a task needs, then dry-runs the plan. I do that with tea.", "Independent Engineer since 2024. Strong tea, stronger commits."],
-    ["Ahh, sit! Sit! The tea is hot and the stories hotter.", "Rayan has run raycode.tech since 2024, shipping a Rust agent browser, a firewall and a Kubernetes platform.", "He also builds tooling for the CSI student chapter. A busy man, and he still finds time for tea."],
+    ["Ferrite predicts what a task needs, then dry-runs the plan. I do that with tea.", "Interned at Barclays this summer. Strong tea, stronger commits."],
+    ["Ahh, sit! Sit! The tea is hot and the stories hotter.", "Rayan studies computer engineering at SPIT and ships a Rust agent browser, a system monitor and a Kubernetes platform on the side.", "He also led the tech side of the CSI-SPIT student chapter. A busy man, and he still finds time for tea."],
     { type: "section", id: "tavern" })
   npc("zuleika", "SorcererOrange", "Zuleika the Stargazer", 63, 17, 10,
     ["Nebula reads the stars of malware: 95.4% accuracy, 0.989 AUC.", "Pull Shark twice over. A fine constellation."],
@@ -937,8 +954,8 @@ function people(w: World) {
   npc("layla", "OldWoman", "Madame Layla", 30, 40, 20, ["Poker with a Rust backend, in real time. I still lose.", "DevHub: Postman, DevTools and Burp in one. I sell rugs, not requests."])
   npc("rafi", "LionBoy", "Rafi the Caravan Driver", 12, 37, 12, ["Next stop: wherever the portfolio goes next.", "Ship fast. Break things. Fix faster. Also: water the camels."])
   npc("amon", "Monk2", "Brother Amon", 12, 11, 6,
-    ["Amazon ML Challenge 2026. A long climb, like this one.", "Breathe. The view is the point."],
-    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "HackFusion, HackRx, the Google GDG Solution Challenge, CSI Hackathon 2025... all shipped under time pressure."])
+    ["First place at Ignisa '26. A long climb, like this one.", "Breathe. The view is the point."],
+    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "CreditIQ won Ignisa '26; NeuroCred was built at the Airavat Hackathon. All shipped under time pressure."])
   npc("tomas", "Caveman", "Old Tomas the Digger", 14, 51, 14, ["Found a fossil of a bug that nobody could reproduce.", "Vendex turns a product video into a ranked supplier list. I turn dirt into bones."])
   const animal = (id: string, n: string, c: number, r: number, wander = 30) => w.actors.push({ id, kind: "animal", sheet: animalSheet(n), x: c * TS + 8, y: r * TS + 12, wander, speed: 14 })
   animal("camel1", "cow", 11, 39, 20); animal("camel2", "cow", 13, 41, 20); animal("camel3", "cow", 6, 41, 16); animal("camel4", "cow", 36, 38, 30)

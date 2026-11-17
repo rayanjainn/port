@@ -18,6 +18,8 @@ export interface Project {
   image: string
   accent: string
   featured: boolean
+  /** Optional. Month the work started, "YYYY-MM" (repository creation). Drives the build log. */
+  started?: string
 }
 
 export interface Experience {
@@ -31,6 +33,17 @@ export interface Experience {
   description: string
   highlights: string[]
   tech: string[]
+  /** Optional. Shown as a small tag on the Quick View timeline. */
+  kind?: "internship" | "leadership"
+  /** Optional. Things shipped in this role: a chip linking to a project page (projectId) or any URL. */
+  shipped?: ShippedItem[]
+}
+
+export interface ShippedItem {
+  label: string
+  /** id of an entry in `projects`; links to its case study. */
+  projectId?: string
+  url?: string
 }
 
 export interface Education {
@@ -41,6 +54,10 @@ export interface Education {
   start: string
   end: string
   note: string
+  /** Optional. Controls how prominent the entry is on the Quick View. Defaults to "university". */
+  kind?: "university" | "programme" | "school"
+  /** Optional. City or area. */
+  place?: string
 }
 
 export interface Achievement {
@@ -49,6 +66,12 @@ export interface Achievement {
   issuer: string
   date: string
   url: string
+  /** Optional. Where it sits on the honours shelf. Defaults to "badge". */
+  kind?: "hackathon" | "package" | "badge"
+  /** Optional. One plain line of context. */
+  note?: string
+  /** Optional. id of the related project. */
+  projectId?: string
 }
 
 export interface SkillGroup {

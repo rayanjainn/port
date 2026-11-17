@@ -156,6 +156,7 @@ export interface Scene {
   bg?: string
   meta?: { trees: { x: number; y: number; k: string }[] }
   tick?: (t: number, dt: number) => void   // called once per simulation frame while this scene is active
+  heights?: Float32Array         // per-tile elevation in tiles for the 3D view: plateaus > 0 (their painted cliff face becomes a real wall), pits < 0
   tiles?: Uint8Array             // per-tile terrain (G.*) so the 3D view can sink water and raise walls
   ground3d?: HTMLCanvasElement   // ground without baked sprites (3D draws `baked` as cards instead)
   baked?: Sprite[]               // sprites painted into `ground` for the 2D view

@@ -73,6 +73,7 @@ export default function Chrome({ home, staticIds, children }: { home: boolean; s
     for (const s of SITE_ANCHORS) {
       if (s.id === "experience" && !c.experience.length) continue
       if (s.id === "studies" && !c.education.length && !c.achievements.length) continue
+      if (s.id === "log" && !c.projects.some((x) => x.started)) continue
       list.push({ id: `s-${s.id}`, group: "Go to", label: s.label, hint: home ? "Section" : "Quick View", icon: <Hash size={16} />, keywords: `section ${s.id}`, run: () => go(s.id) })
     }
     c.projects.forEach((p) => {
@@ -125,7 +126,7 @@ function Nav({ home, active, onOpen, name, onPrint }: { home: boolean; active: s
           {first.toUpperCase()}.WORLD
         </Link>
         <ul className="ml-2 hidden items-center lg:flex">
-          {SITE_ANCHORS.map((s) => {
+          {SITE_ANCHORS.filter((s) => s.nav !== false).map((s) => {
             const on = active === s.id
             const cls = `relative flex min-h-10 items-center rounded-lg px-3 text-sm transition-colors ${on ? "text-white" : "text-white/60 hover:text-white"}`
             const pill = on && <motion.span layoutId="qv-nav-pill" transition={{ type: "spring", stiffness: 420, damping: 36 }} className="absolute inset-0 rounded-lg bg-white/[0.08]" />
@@ -270,9 +271,8 @@ function Resume({ data: c, staticIds }: { data: Portfolio; staticIds: ReadonlySe
         <h2>Experience</h2>
         {c.experience.map((e) => (
           <div className="rs-item" key={e.id}>
-            <div className="rs-row"><b>{e.role} <span className="rs-sub" style={{ fontWeight: 400 }}>· {e.org}</span></b><em>{[e.start, e.end].filter(Boolean).join(" – ")}</em></div>
+            <div className="rs-row"><b>{e.role} <span className="rs-sub" style={{ fontWeight: 400 }}>· {e.org}{e.location ? `, ${e.location}` : ""}</span></b><em>{[e.start, e.end].filter(Boolean).join(" – ")}</em></div>
             {e.description && <p>{e.description}</p>}
-            {e.highlights.length > 0 && <ul>{e.highlights.map((h) => <li key={h}>{h}</li>)}</ul>}
           </div>
         ))}
       </>)}
@@ -287,15 +287,15 @@ function Resume({ data: c, staticIds }: { data: Portfolio; staticIds: ReadonlySe
       ))}
       {rest.length > 0 && (<>
         <div className="rs-mono" style={{ margin: "6pt 0 3pt" }}>ALSO BUILT</div>
-        <ul style={{ paddingLeft: "11pt" }}>{rest.map((x) => <li key={x.id}><b style={{ fontWeight: 600 }}>{x.title}</b> — {x.tagline} <span className="rs-mono">{x.tech.slice(0, 3).join(" · ")}</span></li>)}</ul>
+        <ul style={{ paddingLeft: "11pt" }}>{rest.map((x) => <li key={x.id}><b style={{ fontWeight: 600 }}>{x.title}</b>: {x.tagline} <span className="rs-mono">{x.tech.slice(0, 3).join(" · ")}</span></li>)}</ul>
       </>)}
 
       <h2>Skills</h2>
       {c.skills.map((g) => <p className="rs-skill" key={g.group} style={{ marginBottom: "2pt" }}><b>{g.group}:</b> {g.items.map((i) => i.name).join(", ")}</p>)}
 
       <div className="rs-grid">
-        {c.education.length > 0 && <div><h2>Education</h2>{c.education.map((e) => <div className="rs-item" key={e.id}><div className="rs-row"><b>{e.degree}{e.field ? `, ${e.field}` : ""}</b><em>{[e.start, e.end].filter(Boolean).join(" – ")}</em></div><p className="rs-sub">{e.school}</p></div>)}</div>}
-        {c.achievements.length > 0 && <div><h2>Honours</h2><ul style={{ paddingLeft: "11pt" }}>{c.achievements.map((a) => <li key={a.id}>{a.title}{a.issuer ? ` (${a.issuer})` : ""}</li>)}</ul></div>}
+        {c.education.length > 0 && <div><h2>Education</h2>{c.education.map((e) => <div className="rs-item" key={e.id}><div className="rs-row"><b>{e.degree}{e.field ? `, ${e.field}` : ""}</b><em>{[e.start, e.end].filter(Boolean).join(" – ")}</em></div><p className="rs-sub">{e.school}{e.note ? ` · ${e.note}` : ""}</p></div>)}</div>}
+        {c.achievements.length > 0 && <div><h2>Honours</h2><ul style={{ paddingLeft: "11pt" }}>{c.achievements.filter((a) => a.kind !== "badge" && a.kind).map((a) => <li key={a.id}>{a.title} ({a.issuer}){a.note ? `. ${a.note}` : ""}</li>)}<li>GitHub: {c.achievements.filter((a) => !a.kind || a.kind === "badge").map((a) => a.title).join(", ")}</li></ul></div>}
       </div>
     </div>
   )

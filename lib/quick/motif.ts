@@ -4,7 +4,7 @@ import type { Project } from "@/lib/content"
 
 export type Motif =
   | "shield" | "network" | "pipeline" | "api" | "cards" | "wave"
-  | "terminal" | "dial" | "neural" | "scan" | "hash" | "board" | "mosaic"
+  | "terminal" | "dial" | "neural" | "scan" | "hash" | "board" | "dock" | "grid" | "glitch" | "ledger" | "tools" | "mosaic"
 
 type Keyworded = Exclude<Motif, "mosaic">
 
@@ -21,6 +21,11 @@ const KW: Record<Keyworded, string[]> = {
   neural: ["transformer", "transformers", "pytorch", "malware", "xai", "neural", "model", "llm", "llms", "tensorflow", "inference", "embedding", "embeddings", "classifier"],
   scan: ["video", "frame", "vision", "image", "images", "reel", "ocr", "camera", "scraping", "visual", "photo", "detection"],
   hash: ["fingerprint", "fingerprints", "watermark", "watermarking", "piracy", "hamming", "hash", "hashing", "checksum", "dedupe", "blockchain"],
+  dock: ["launcher", "dock", "notch", "widget", "widgets", "palette", "macos", "spotlight", "island", "appkit", "menubar"],
+  grid: ["puzzle", "puzzles", "daily", "streak", "streaks", "wordle", "crossword", "habit"],
+  glitch: ["glitch", "bug", "unity", "urp", "systemic", "corrupt", "playtest"],
+  ledger: ["sec", "edgar", "filing", "filings", "financial", "statements", "ratios", "investor", "pptx", "benchmarks"],
+  tools: ["mcp", "classroom", "assistant", "assistants", "gateway", "oauth"],
   board: ["scoreboard", "leaderboard", "competitive", "ranking", "contest", "tournament", "arena", "hackathon", "live events"],
 }
 const ORDER = Object.keys(KW) as Keyworded[]
@@ -47,7 +52,7 @@ export function motifFor(p: Probe): Motif {
 
 export const MOTIF_LABEL: Record<Motif, string> = {
   shield: "guarded agent", network: "live topology", pipeline: "delivery pipeline", api: "request / response", cards: "card table", wave: "signal path",
-  terminal: "command line", dial: "risk model", neural: "model internals", scan: "visual search", hash: "fingerprint match", board: "live standings", mosaic: "system map",
+  terminal: "command line", dock: "launcher and dock", grid: "daily grid", glitch: "corrupted level", ledger: "filing to report", tools: "assistant tools", dial: "risk model", neural: "model internals", scan: "visual search", hash: "fingerprint match", board: "live standings", mosaic: "system map",
 }
 
 /** 32-bit string hash, stable across server and client. */

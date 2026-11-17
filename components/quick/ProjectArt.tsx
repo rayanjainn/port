@@ -415,6 +415,117 @@ const BODY: Record<Motif, (c: Ctx) => ReactNode> = {
     )
   },
 
+  // launcher, palette and dock
+  dock: ({ r }) => {
+    const icons = Array.from({ length: 9 }, (_, i) => ({ i, d: Math.abs(i - 4) }))
+    return (
+      <g>
+        <rect x="236" y="40" width="168" height="26" rx="13" fill="#0a0910" stroke={A} strokeOpacity="0.5" className="qa-pulse" />
+        {[0, 1, 2, 3, 4].map((i) => <rect key={i} x={250 + i * 7} y="48" width="3.5" height="10" rx="1.7" fill={A} className="qa-bar" style={dl(i * 0.17)} />)}
+        <rect x="300" y="49" width="84" height="8" rx="4" fill="#fff" fillOpacity="0.2" />
+        <rect x="150" y="92" width="340" height="168" rx="18" fill="#13101b" stroke="#fff" strokeOpacity="0.16" />
+        <circle cx="176" cy="120" r="7" fill="none" stroke="#fff" strokeOpacity="0.5" strokeWidth="2" />
+        <rect x="192" y="116" width={120 + r() * 40} height="8" rx="4" fill="#fff" fillOpacity="0.3" />
+        <T x="474" y="124" s="10" o={0.5} anchor="end">CMD K</T>
+        {[0, 1, 2, 3].map((i) => (
+          <g key={i} transform={`translate(0 ${146 + i * 26})`}>
+            {i === 1 && <rect x="162" y="-4" width="316" height="24" rx="8" fill={A} fillOpacity="0.16" stroke={A} strokeOpacity="0.5" className="qa-pulse" />}
+            <rect x="172" y="1" width="14" height="14" rx="4" fill={i === 1 ? A : "#fff"} fillOpacity={i === 1 ? 1 : 0.22} />
+            <rect x="198" y="5" width={90 + ((i * 41) % 90)} height="6" rx="3" fill="#fff" fillOpacity={i === 1 ? 0.6 : 0.22} />
+          </g>
+        ))}
+        <rect x="104" y="296" width="432" height="58" rx="22" fill="#fff" fillOpacity="0.05" stroke="#fff" strokeOpacity="0.14" />
+        {icons.map(({ i, d }) => {
+          const s = 40 - d * 4.5
+          return <rect key={i} x={320 - 20 + (i - 4) * 46 - (s - 40) / 2} y={350 - s - 4} width={s} height={s} rx={s * 0.26} fill={A} fillOpacity={d === 0 ? 0.95 : 0.22 + (4 - d) * 0.07} className={d === 0 ? "qa-float" : undefined} />
+        })}
+      </g>
+    )
+  },
+
+  // daily puzzle grid and streak calendar
+  grid: ({ r }) => {
+    const lit = new Set(Array.from({ length: 11 }, () => Math.floor(r() * 25)))
+    return (
+      <g>
+        {Array.from({ length: 25 }, (_, k) => {
+          const x = 70 + (k % 5) * 54, y = 56 + Math.floor(k / 5) * 54, on = lit.has(k)
+          return <rect key={k} x={x} y={y} width="46" height="46" rx="9" fill={on ? A : "#fff"} fillOpacity={on ? 0.85 : 0.05} stroke={on ? A : "#fff"} strokeOpacity={on ? 0.9 : 0.14} className={on ? "qa-pulse" : undefined} style={on ? dl(k * 0.13) : undefined} />
+        })}
+        <T x="360" y="74" s="10" o={0.5}>STREAK</T>
+        {Array.from({ length: 5 }, (_, w) => Array.from({ length: 7 }, (_, d) => {
+          const done = w * 7 + d < 26 && r() > 0.18
+          return <rect key={`${w}${d}`} x={360 + d * 34} y={86 + w * 34} width="26" height="26" rx="7" fill={A} fillOpacity={done ? 0.2 + r() * 0.6 : 0.05} stroke={A} strokeOpacity={done ? 0.4 : 0.1} />
+        }))}
+        <T x="360" y="286" s="10" o={0.5}>TODAY</T>
+        <rect x="360" y="298" width="238" height="40" rx="12" fill="none" stroke={A} strokeOpacity="0.5" strokeDasharray="5 5" className="qa-dash" />
+        {[0, 1, 2, 3].map((i) => <circle key={i} cx={390 + i * 44} cy="318" r="9" fill={A} fillOpacity={0.9 - i * 0.2} />)}
+      </g>
+    )
+  },
+
+  // corrupted level geometry
+  glitch: ({ r }) => {
+    const bands = Array.from({ length: 9 }, (_, i) => ({ y: 56 + i * 31, off: (r() - 0.5) * 70, d: r() * 2 }))
+    return (
+      <g>
+        {bands.map((b, i) => (
+          <g key={i} className="qa-glitch" style={{ ...dl(b.d), ["--gx" as string]: `${b.off.toFixed(0)}px` }}>
+            <rect x="80" y={b.y} width="480" height="27" fill="#fff" fillOpacity="0.035" />
+            {[0, 1, 2].map((k) => <rect key={k} x={96 + k * 150 + (i * 37) % 60} y={b.y + 6} width={50 + ((i * 29 + k * 53) % 90)} height="15" rx="3" fill={(i + k) % 4 === 0 ? A : "#fff"} fillOpacity={(i + k) % 4 === 0 ? 0.75 : 0.2} />)}
+          </g>
+        ))}
+        <g transform="translate(320 206)" stroke={A} strokeWidth="3" strokeLinecap="round" fill="none">
+          <ellipse rx="22" ry="16" fill="#0d0b13" />
+          <path d="M-18 -8 L-34 -20 M18 -8 L34 -20 M-22 2 L-40 4 M22 2 L40 4 M-16 12 L-30 26 M16 12 L30 26 M-6 -15 L-12 -28 M6 -15 L12 -28" />
+          <circle cx="-7" cy="-2" r="3" fill={A} stroke="none" /><circle cx="7" cy="-2" r="3" fill={A} stroke="none" />
+        </g>
+        <rect x="80" y="56" width="480" height="3" fill={A} fillOpacity="0.6" className="qa-scan" />
+      </g>
+    )
+  },
+
+  // filing to table to chart
+  ledger: ({ r }) => {
+    const bars = Array.from({ length: 6 }, (_, i) => 40 + i * 14 + r() * 26)
+    return (
+      <g>
+        <rect x="44" y="60" width="170" height="240" rx="12" fill="#13101b" stroke="#fff" strokeOpacity="0.16" />
+        <T x="60" y="86" s="10" o={0.55}>10-Q · SEC EDGAR</T>
+        {Array.from({ length: 9 }, (_, i) => <g key={i}><rect x="60" y={104 + i * 20} width={60 + ((i * 23) % 40)} height="6" rx="3" fill="#fff" fillOpacity="0.22" /><rect x="152" y={104 + i * 20} width="48" height="6" rx="3" fill={A} fillOpacity={i % 3 === 0 ? 0.8 : 0.3} className={i % 3 === 0 ? "qa-pulse" : undefined} style={dl(i * 0.2)} /></g>)}
+        <path d="M222 180 H262" stroke={A} strokeWidth="2" strokeDasharray="3 5" className="qa-dash" /><path d="M254 173 L263 180 L254 187" fill="none" stroke={A} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <rect x="272" y="60" width="324" height="240" rx="12" fill="#13101b" stroke={A} strokeOpacity="0.4" />
+        <T x="288" y="86" s="10" o={0.55}>INVESTOR REPORT</T>
+        {bars.map((h, i) => <rect key={i} x={292 + i * 46} y={280 - h * 1.7} width="30" height={h * 1.7} rx="5" fill={A} fillOpacity={0.25 + i * 0.1} className="qa-bar" style={dl(i * 0.2)} />)}
+        <path d={`M300 ${250 - bars[0]} ${bars.map((h, i) => `L${307 + i * 46} ${250 - h * 1.5}`).join(" ")}`} fill="none" stroke="#fff" strokeOpacity="0.8" strokeWidth="2" strokeLinecap="round" pathLength="100" className="qa-draw" />
+      </g>
+    )
+  },
+
+  // assistant, gateway, classroom
+  tools: ({ r }) => {
+    const spokes = [[470, 100], [500, 190], [470, 280]]
+    return (
+      <g>
+        <rect x="44" y="140" width="132" height="86" rx="16" fill="#13101b" stroke="#fff" strokeOpacity="0.16" />
+        <rect x="60" y="160" width="84" height="7" rx="3.5" fill="#fff" fillOpacity="0.3" /><rect x="60" y="178" width="100" height="7" rx="3.5" fill="#fff" fillOpacity="0.2" /><rect x="60" y="196" width="56" height="7" rx="3.5" fill={A} fillOpacity="0.7" className="qa-pulse" />
+        <T x="44" y="132" s="10" o={0.5}>STUDENT ASSISTANT</T>
+        <path d="M180 183 H262" stroke={A} strokeWidth="2" strokeDasharray="3 6" className="qa-dash" />
+        <circle r="4" fill={A}><animateMotion dur="2s" repeatCount="indefinite" path="M180 183 H262" /></circle>
+        <path d="M320 128 L370 156 V210 L320 238 L270 210 V156 Z" fill={A} fillOpacity="0.08" stroke={A} strokeWidth="2" />
+        <T x="320" y="188" s="11" o={0.9} fill={A} anchor="middle" w={600}>MCP</T>
+        <T x="320" y="204" s="9" o={0.5} anchor="middle">PREVIEW → OK</T>
+        {spokes.map(([x, y], i) => (
+          <g key={i}>
+            <path d={`M370 183 L${x - 70} ${y}`} stroke="#fff" strokeOpacity="0.2" strokeDasharray="4 5" className="qa-dash" />
+            <rect x={x - 70} y={y - 22} width="140" height="44" rx="10" fill="#13101b" stroke={A} strokeOpacity={0.3 + i * 0.12} />
+            <rect x={x - 56} y={y - 8} width={60 + r() * 30} height="6" rx="3" fill="#fff" fillOpacity="0.28" /><rect x={x - 56} y={y + 5} width="34" height="5" rx="2.5" fill={A} fillOpacity="0.6" />
+          </g>
+        ))}
+      </g>
+    )
+  },
+
   // generic fallback: seeded bento mosaic
   mosaic: ({ r, p }) => {
     const cells = [[40, 50, 250, 150], [306, 50, 140, 70], [462, 50, 138, 150], [306, 136, 140, 64], [40, 216, 160, 110], [216, 216, 230, 110], [462, 216, 138, 110]]

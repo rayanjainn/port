@@ -19,6 +19,8 @@ export interface Shared {
   uMask: { value: THREE.Texture }
   uMaskInfo: { value: THREE.Vector4 }
   uSky: { value: THREE.Color }
+  uEmis: { value: THREE.Texture }
+  uEmisInfo: { value: THREE.Vector3 }
 }
 
 export function makeShared(): Shared {
@@ -37,6 +39,8 @@ export function makeShared(): Shared {
     uMask: { value: blank },
     uMaskInfo: { value: new THREE.Vector4(0, 0, 0, 0) },
     uSky: { value: new THREE.Color(0.5, 0.7, 0.9) },
+    uEmis: { value: blank },
+    uEmisInfo: { value: new THREE.Vector3(1, 1, 0) },
   }
 }
 
@@ -140,9 +144,10 @@ export function waterMaterial(sh: Shared, hi: THREE.Color, lo: THREE.Color) {
 export type CardMode = "opaque" | "blend" | "add" | "shadow"
 
 /** instanced upright card: three rows so the canopy can sway while the trunk stays put; stacked layers give it thickness */
-export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
+export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode, emis = false) {
   const defines: Record<string, string> = {}
   if (mode === "opaque") defines.FOOTDEPTH = "1"
+  if (mode === "opaque" && emis) defines.EMIS = "1"
   if (mode === "shadow") defines.SHADOW = "1"
   if (mode === "blend" || mode === "add") defines.BLEND = "1"
   const m = new THREE.ShaderMaterial({
@@ -150,7 +155,8 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
     defines,
     uniforms: { ...sh, uMap: { value: map } } as unknown as Record<string, THREE.IUniform>,
     vertexShader: /* glsl */ `
-      attribute vec2 aCorner; attribute vec3 aFoot; attribute vec2 aSize; attribute vec4 aRect; attribute vec4 aAnim; attribute vec4 aTint; attribute float aDz; attribute vec2 aLayer;
+      attribute vec2 aCorner; attribute vec3 aFoot; attribute vec2 aSize; attribute vec4 aRect; attribute vec4 aAnim; attribute vec4 aTint; attribute float aDz; attribute vec2 aLayer; attribute float aUp; attribute vec2 aOrg;
+      uniform vec3 uEmisInfo; varying vec2 vEm;
       uniform float uTime; uniform vec2 uTilt; uniform vec3 uShadow; uniform float uBias;
       varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot; varying float vBack;
       void main() {
@@ -163,24 +169,30 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
         #ifdef SHADOW
           wp = vec3(aFoot.x + lx + uShadow.x * ly, aFoot.y + 0.004, aFoot.z + uShadow.y * ly);
         #else
-          wp = aFoot + vec3(lx, ly * uTilt.x, -ly * uTilt.y) - vec3(0.0, aLayer.x * uTilt.y, aLayer.x * uTilt.x);   // back layers sit behind the front face
+          vec2 tl = mix(uTilt, vec2(1.0, 0.0), max(aUp, 0.0));
+          wp = aFoot + vec3(lx, ly * tl.x, -ly * tl.y) - vec3(0.0, aLayer.x * tl.y, aLayer.x * tl.x);
+          if (aUp < -0.5) wp = vec3(aFoot.x + lx, aFoot.y, aFoot.z - ly);   // lies flat on the ground (rugs, quicksand swirls)   // back layers sit behind the front face
         #endif
         float fy = h > 0.0 ? ly / h : 0.0;
         float fr = aAnim.x > 1.0 ? floor(mod(uTime * aAnim.y, aAnim.x)) * aAnim.z : 0.0;
         vUv = vec2(mix(aRect.x, aRect.z, aCorner.x) + fr, mix(aRect.w, aRect.y, fy));
+        vEm = (aOrg + vec2(aCorner.x * aSize.x * 16.0, (1.0 - fy) * h * 16.0)) / uEmisInfo.xy;
         vW = wp; vTint = aTint; vTint.rgb *= aLayer.y; vBack = aLayer.x > 0.0 ? 1.0 : 0.0; vFoot = aFoot;
         vec4 mv = viewMatrix * vec4(wp, 1.0); vD = -mv.z;
         gl_Position = projectionMatrix * mv;
         #ifdef FOOTDEPTH
+         if (aUp > -0.5) {
           // depth of the foot line, like the 2D painter's order: the whole card sorts as one
-          vec4 cf = projectionMatrix * viewMatrix * vec4(aFoot.x, 0.0, aFoot.z + aDz + uBias, 1.0);
+          vec4 cf = projectionMatrix * viewMatrix * vec4(aFoot.x, aUp > 0.5 ? aFoot.y : 0.0, aFoot.z + aDz + uBias, 1.0);   // wall-mounted things sort at their real height
           gl_Position.z = cf.z / cf.w * gl_Position.w;
+         }
         #endif
         if (aSize.x <= 0.0) gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
       }`,
     fragmentShader: /* glsl */ `
       uniform sampler2D uMap; uniform vec3 uShadow; uniform sampler2D uMask; uniform vec4 uMaskInfo;
-      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot; varying float vBack;
+      varying vec2 vUv; varying vec3 vW; varying vec4 vTint; varying float vD; varying vec3 vFoot; varying float vBack; varying vec2 vEm;
+      uniform sampler2D uEmis; uniform vec3 uEmisInfo;
       ${LIGHT}
       void main() {
         vec4 t = texture2D(uMap, vUv);
@@ -199,7 +211,13 @@ export function cardMaterial(sh: Shared, map: THREE.Texture, mode: CardMode) {
           if (t.a < 0.5) discard;
           // thickness layers skip the black outline pixels, so the slab's sides take the sprite's own (darkened) colours
           if (vBack > 0.5 && dot(t.rgb, vec3(0.3, 0.59, 0.11)) < 0.035) discard;
-          gl_FragColor = vec4(fogged(t.rgb * vTint.rgb * lightAt(vW), vD), 1.0);
+          vec3 lit = fogged(t.rgb * vTint.rgb * lightAt(vW), vD);
+          #ifdef EMIS
+            // self-lit window panes / neon: the scene's own night emissive layer, sampled by 2D position
+            vec4 em = texture2D(uEmis, vEm);
+            lit = mix(lit, em.rgb, clamp(em.a * uEmisInfo.z, 0.0, 1.0));
+          #endif
+          gl_FragColor = vec4(lit, 1.0);
         #endif
         #include <colorspace_fragment>
       }`,

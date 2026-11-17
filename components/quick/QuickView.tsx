@@ -2,30 +2,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { motion, useScroll, useTransform } from "framer-motion"
-import { useContent, LANG_COLORS, type Project } from "@/lib/content"
+import { useContent, type Project } from "@/lib/content"
 import { STATIC_IDS, TIERS, projectHref, projectsUsing, tierOf, type Tier } from "@/lib/quick/data"
 import { Github, Linkedin, XLogo } from "@/components/icons"
-import { ArrowUpRight, ArrowDown, Mail, MapPin, Copy, Check, Globe, GraduationCap, Medal, Clock, Gamepad2, Download, X, Command } from "lucide-react"
+import { ArrowUpRight, ArrowDown, Mail, MapPin, Copy, Check, Globe, Clock, Gamepad2, Download, X, Command } from "lucide-react"
 import { SmoothScroll, ScrollProgress, Reveal, Scramble, CountUp, Marquee, LocalClock, Terminal, scrollToAnchor } from "./fx"
 import Chrome, { printResume } from "./Chrome"
 import ProjectArt from "./ProjectArt"
+import { LangDot, SectionHead, mono } from "./parts"
+import BuildLog from "./BuildLog"
+import ExperienceSection from "./ExperienceSection"
+import NumbersSection from "./NumbersSection"
+import StudiesSection from "./StudiesSection"
+import type { QuickStats } from "@/lib/quick/github"
 
 const VoxelIsland = dynamic(() => import("./VoxelIsland"), { ssr: false })
-
-const mono = "qv-mono"
-
-function SectionHead({ n, label, title, aside, children }: { n: string; label: string; title: string; aside?: ReactNode; children?: ReactNode }) {
-  return (
-    <header>
-      <div className={`qv-eyebrow ${mono}`}><b>{n}</b><span>{label}</span><i />{aside && <span className="normal-case tracking-normal">{aside}</span>}</div>
-      <h2 className="qv-h2">{title}</h2>
-      {children && <div className="mt-5">{children}</div>}
-    </header>
-  )
-}
-
-const LangDot = ({ lang }: { lang: string }) => <span className="inline-block h-2 w-2 rounded-full" style={{ background: LANG_COLORS[lang] ?? "#888" }} />
 
 /** Card wrapper: a stretched link when the project has somewhere to go. */
 function CardLink({ p, children, className = "" }: { p: Project; children: (link: ReactNode) => ReactNode; className?: string }) {
@@ -38,17 +29,17 @@ function CardLink({ p, children, className = "" }: { p: Project; children: (link
   return <div className={`${className} ${t ? "qv-card is-hover" : "qv-card"}`}>{children(title)}</div>
 }
 
-export default function QuickView() {
+export default function QuickView({ stats }: { stats: QuickStats }) {
   return (
     <div id="top" className="qv-root relative min-h-dvh overflow-x-clip">
       <Chrome home staticIds={STATIC_IDS}>
-        <Page />
+        <Page stats={stats} />
       </Chrome>
     </div>
   )
 }
 
-function Page() {
+function Page({ stats }: { stats: QuickStats }) {
   const c = useContent()
   const p = c.profile, s = c.socials
   const [copied, setCopied] = useState(false)
@@ -101,7 +92,7 @@ function Page() {
             <p className="qv-rise mt-7 max-w-xl text-lg leading-relaxed text-white/65 sm:text-xl" style={{ ["--d" as string]: "0.35s" }}>
               {p.title} building{" "}
               <span className="block min-h-[3.1em] sm:min-h-[1.6em]">
-                <Scramble words={["browsers AI agents can trust.", "platforms that deploy themselves.", "dev tools developers love.", "fast things in Rust."]} className={`${mono} text-[0.9em] text-[#f3ede2]`} />
+                <Scramble words={["browsers AI agents can trust.", "platforms that deploy themselves.", "native Mac tools.", "event software that holds up."]} className={`${mono} text-[0.9em] text-[#f3ede2]`} />
               </span>
             </p>
             <div className="qv-rise mt-8 flex flex-wrap items-center gap-3" style={{ ["--d" as string]: "0.5s" }}>
@@ -140,6 +131,7 @@ function Page() {
                   { cmd: "whoami", out: `${p.name} · ${p.title.toLowerCase()}` },
                   { cmd: "cat now.txt", out: p.now },
                   { cmd: "ls ~/interests", out: p.interests.map((i) => `${i}/`).join("  ") },
+                  { cmd: "ls ~/roles", out: c.experience.map((e) => e.org).join("  ") },
                   { cmd: "echo $MOTTO", out: p.motto },
                 ]} />
               </div>
@@ -203,58 +195,31 @@ function Page() {
           )}
         </section>
 
+        {/* ── BUILD LOG ──────────────────────────────────── */}
+        {c.projects.some((x) => x.started) && <BuildLog />}
+
         {/* ── EXPERIENCE ─────────────────────────────────── */}
-        {c.experience.length > 0 && <Experience />}
+        {c.experience.length > 0 && <ExperienceSection />}
 
         {/* ── SKILLS ─────────────────────────────────────── */}
         <section id="skills" className="qv-section mx-auto max-w-6xl px-5">
-          <SectionHead n="04" label="Loadout" title="What I build with.">
+          <SectionHead n="05" label="Loadout" title="What I build with.">
             <p className="qv-lead">Grouped by role, ranked in three honest tiers. Hover a skill to see where it shipped; click to filter the work above.</p>
           </SectionHead>
           <Loadout peek={peek} setPeek={setPeek} filter={filter} onPick={pickSkill} />
         </section>
 
+        {/* ── NUMBERS ────────────────────────────────────── */}
+        <NumbersSection stats={stats} />
+
         {/* ── STUDIES ────────────────────────────────────── */}
-        {(c.education.length > 0 || c.achievements.length > 0) && (
-          <section id="studies" className="qv-section mx-auto max-w-6xl px-5">
-            <SectionHead n="05" label="Education & honours" title="Always learning." />
-            <div className="mt-10 grid gap-4 md:grid-cols-[1fr_1.4fr]">
-              <div className="space-y-4">
-                {c.education.map((e) => (
-                  <Reveal key={e.id}>
-                    <div className="qv-card p-6">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#ffb547]/10 text-[#ffb547]"><GraduationCap size={21} /></div>
-                      <div className="mt-4 text-xl font-semibold tracking-tight">{e.degree}{e.field ? `, ${e.field}` : ""}</div>
-                      <div className="mt-1 text-white/65">{e.school}</div>
-                      {(e.start || e.end) && <div className={`${mono} mt-3 text-xs text-white/50`}>{[e.start, e.end].filter(Boolean).join(" — ")}</div>}
-                      {e.note && <div className="mt-3 text-sm text-white/60">{e.note}</div>}
-                    </div>
-                  </Reveal>
-                ))}
-              </div>
-              <div className="grid content-start gap-3 sm:grid-cols-2">
-                {c.achievements.map((a, i) => {
-                  const inner = (
-                    <div className={`qv-card ${a.url ? "is-hover" : ""} flex h-full gap-3 p-4`}>
-                      <Medal size={18} className="mt-0.5 shrink-0 text-[#ffb547]" />
-                      <div>
-                        <div className="font-medium text-white/90">{a.title}</div>
-                        {(a.issuer || a.date) && <div className="mt-0.5 text-sm text-white/50">{[a.issuer, a.date].filter(Boolean).join(" · ")}</div>}
-                      </div>
-                    </div>
-                  )
-                  return <Reveal key={a.id} delay={(i % 4) * 0.04}>{a.url ? <a href={a.url} target="_blank" rel="noreferrer" className="block h-full">{inner}</a> : inner}</Reveal>
-                })}
-              </div>
-            </div>
-          </section>
-        )}
+        {(c.education.length > 0 || c.achievements.length > 0) && <StudiesSection />}
 
         {/* ── CONTACT ────────────────────────────────────── */}
         <section id="contact" className="qv-section relative mx-auto max-w-6xl px-5 pb-24">
           <div aria-hidden className="pointer-events-none absolute left-1/2 top-[55%] h-[420px] w-[760px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#ffb547] opacity-[0.07] blur-[130px]" />
           <div className="relative text-center">
-            <div className={`qv-eyebrow ${mono} justify-center`}><b>06</b><span>Contact</span></div>
+            <div className={`qv-eyebrow ${mono} justify-center`}><b>08</b><span>Contact</span></div>
             <h2 className="mt-6 text-[clamp(48px,10vw,140px)] font-semibold leading-[0.9] tracking-[-0.055em]">
               Let&apos;s build<br /><span className="text-[#ffb547]">something.</span>
             </h2>
@@ -443,41 +408,5 @@ function Loadout({ peek, setPeek, filter, onPick }: { peek: string | null; setPe
         )}
       </div>
     </div>
-  )
-}
-
-/* ── experience with a scroll-drawn line ─────────────────── */
-function Experience() {
-  const c = useContent()
-  const ref = useRef<HTMLDivElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start 75%", "end 60%"] })
-  const h = useTransform(scrollYProgress, [0, 1], ["0%", "100%"])
-  return (
-    <section id="experience" className="qv-section mx-auto max-w-6xl px-5">
-      <SectionHead n="03" label="Experience" title="Where I've been building." />
-      <div ref={ref} className="relative mt-10 pl-8 sm:pl-12">
-        <div className="absolute bottom-0 left-[7px] top-0 w-px bg-white/10 sm:left-[11px]" />
-        <motion.div style={{ height: h }} className="absolute left-[7px] top-0 w-px bg-gradient-to-b from-[#ffb547] to-[#ffb547]/30 sm:left-[11px]" />
-        {c.experience.map((e, i) => {
-          const now = e.end.toLowerCase() === "present"
-          return (
-            <Reveal key={e.id} delay={i * 0.04} className="relative pb-12 last:pb-0">
-              <span className="absolute -left-8 top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/20 bg-[#0b0a10] sm:-left-12 sm:h-6 sm:w-6">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#ffb547] sm:h-2 sm:w-2" style={{ boxShadow: now ? "0 0 12px #ffb547" : "none", opacity: now ? 1 : 0.6 }} />
-              </span>
-              <div className="grid gap-2 md:grid-cols-[200px_1fr] md:gap-8">
-                <div className={`${mono} text-sm text-white/55`}>{[e.start, e.end].filter(Boolean).join(" — ")}{e.location && <div className="mt-1 text-white/40">{e.location}</div>}</div>
-                <div>
-                  <h3 className="text-2xl font-semibold tracking-tight sm:text-3xl">{e.role}</h3>
-                  <div className="mt-1 text-lg font-medium text-[#ffb547]">{e.url ? <a href={e.url} target="_blank" rel="noreferrer" className="inline-flex min-h-10 items-center hover:underline">{e.org}</a> : e.org}</div>
-                  {e.description && <p className="mt-3 max-w-2xl leading-relaxed text-white/65">{e.description}</p>}
-                  {e.highlights.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{e.highlights.map((hl) => <span key={hl} className="qv-chip text-white/75">{hl}</span>)}</div>}
-                </div>
-              </div>
-            </Reveal>
-          )
-        })}
-      </div>
-    </section>
   )
 }
