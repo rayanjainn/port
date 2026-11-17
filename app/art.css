@@ -1,7 +1,7 @@
 /* Art-based UI skin for all four worlds (token driven). Generated from the village stylesheet by a script in the scratchpad, then tuned by hand below. */
 
 /* ── per-world art tokens ── */
-html[data-world="village"], html:not([data-world]) {
+html[data-world="village"], html:not([data-world]), [data-world-preview="village"] {
   --lab-bg-color: #2f4a25; --lab-bg: url(/worlds/village.png);
   --i-frame-lg: url(/ui/village/frame-lg.png); --i-frame-sm: url(/ui/village/frame-sm.png); --i-frame-med: url(/ui/village/frame-med.png); --i-frame-card: url(/ui/village/frame-card.png);
   --i-paper: url(/ui/village/parchment.png); --i-paper-dk: url(/ui/village/parchment-dk.png); --i-wood: url(/ui/village/wood.png); --i-ribbon: url(/ui/village/ribbon.png);
@@ -11,7 +11,7 @@ html[data-world="village"], html:not([data-world]) {
   --a-title-sh: #e2c48a; --a-cta-ink: #3a1d08; --a-inset: #3a2412; --a-chip: #f1dfae; --a-chip2: #f6e8c4; --a-pill: #2a1606; --a-pill-ink: #ffe39a; --a-kbd1: #7a5230; --a-kbd2: #4a2e14;
   --a-hl: rgba(255, 255, 255, .3); --a-lo: rgba(125, 80, 24, .3); --a-drop: rgba(60, 30, 8, .6); --a-btn-sh: rgba(255, 255, 255, .55); --a-btn-ink: #3a2412; --a-key-ink: #fff1d6; --a-glow: transparent;
 }
-html[data-world="city"] {
+html[data-world="city"], [data-world-preview="city"] {
   --a-cb1: #ffa6d6; --a-cb2: #ff4fa3; --a-cb3: #c42a82; --a-cb-ink: #190619;
   --a-line: rgba(93, 230, 255, .35); --a-bar1: #e4fcff; --a-bar2: #5de6ff; --a-bar3: #2a9fd0; --a-lv1: #ffc4e3; --a-lv2: #ff4fa3; --a-lv3: #c42a82; --a-lv-ink: #190619;
   --lab-bg-color: #0a0820; --lab-bg: url(/worlds/city-night.png);
@@ -23,7 +23,7 @@ html[data-world="city"] {
   --a-title-sh: #ff4fa3; --a-cta-ink: #190619; --a-inset: #05040f; --a-chip: #0f0c2e; --a-chip2: #0b0925; --a-pill: #05040f; --a-pill-ink: #5de6ff; --a-kbd1: #2a2565; --a-kbd2: #15123a;
   --a-hl: rgba(93, 230, 255, .1); --a-lo: rgba(0, 0, 0, .4); --a-drop: rgba(0, 0, 0, .6); --a-btn-sh: rgba(0, 0, 0, .65); --a-btn-ink: #f1f6ff; --a-key-ink: #021a24; --a-glow: #5de6ff;
 }
-html[data-world="desert"] {
+html[data-world="desert"], [data-world-preview="desert"] {
   --a-cb1: #ffe9a0; --a-cb2: #f5bf45; --a-cb3: #c98a22; --a-cb-ink: #2c1a08;
   --a-line: rgba(143, 106, 53, .5); --a-bar1: #fff0b0; --a-bar2: #e0a21f; --a-bar3: #b8431f; --a-lv1: #3ac4b8; --a-lv2: #0e7771; --a-lv3: #074a46; --a-lv-ink: #fffbe8;
   --lab-bg-color: #b8732e; --lab-bg: url(/worlds/desert.png);
@@ -35,7 +35,7 @@ html[data-world="desert"] {
   --a-title-sh: #fbefcc; --a-cta-ink: #fffbe8; --a-inset: #3a2210; --a-chip: #f4e3b8; --a-chip2: #f6e8c4; --a-pill: #35200f; --a-pill-ink: #ffe39a; --a-kbd1: #8f6a35; --a-kbd2: #5e3a1c;
   --a-hl: rgba(255, 255, 255, .3); --a-lo: rgba(120, 70, 10, .3); --a-drop: rgba(60, 30, 8, .6); --a-btn-sh: rgba(255, 255, 255, .5); --a-btn-ink: #35200f; --a-key-ink: #fff0cf; --a-glow: transparent;
 }
-html[data-world="ruins"] {
+html[data-world="ruins"], [data-world-preview="ruins"] {
   --a-cb1: #b0f8da; --a-cb2: #5fd0a0; --a-cb3: #2f8a6a; --a-cb-ink: #06231b;
   --a-line: rgba(127, 196, 180, .35); --a-bar1: #e0fff2; --a-bar2: #5fd0a0; --a-bar3: #2f8a6a; --a-lv1: #c8b8ff; --a-lv2: #8a6ae0; --a-lv3: #5a3cb0; --a-lv-ink: #0c0618;
   --lab-bg-color: #0c1a1c; --lab-bg: url(/worlds/ruins.png);
@@ -268,3 +268,27 @@ html {
 .wiz-head { color: var(--a-hi); }
 .wiz-box { overflow: hidden; }
 .wiz-box .k-btn[data-v="ghost"] { color: var(--a-onwood); }
+
+/* ═══ arcade cabinet ═══ */
+.arc-bezel { background: linear-gradient(180deg, rgba(255, 255, 255, .08), transparent 30px), var(--i-wood); background-size: auto, 96px 96px; border: 0; box-shadow: 0 0 0 3px var(--a-edge), 0 0 0 6px var(--a-trim), 0 0 0 8px var(--a-edge), 0 6px 0 8px var(--a-drop); padding: 10px; margin: 8px; image-rendering: pixelated; }
+.arc-screen { border: 3px solid var(--a-edge); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .08); }
+.arc-info { background: linear-gradient(180deg, var(--a-hl), transparent 30px), var(--i-paper-dk); background-size: auto, 96px 96px; border: 0; box-shadow: 0 0 0 3px var(--a-edge), 0 0 0 5px var(--a-trim), 0 4px 0 5px var(--a-drop); image-rendering: pixelated; margin: 6px; }
+.arc-info > * { image-rendering: auto; }
+.arc-info__t, .arc-tag, .arc-esc { color: var(--a-muted); }
+.arc-score, .arc-how { color: var(--a-ink); }
+.arc-tag { color: var(--a-body); }
+.arc-over__card { margin: 6px; }
+.arc-over__t { color: var(--a-ink); } .arc-over__s { color: var(--a-body); }
+
+/* ═══ world select: chrome drawn with the focused world's art ═══ */
+.ws-root .ws-ribbon { background: none; box-shadow: none; border: 0 solid transparent; border-width: 0 60px; border-image: var(--i-ribbon) 0 60 fill stretch; image-rendering: pixelated; height: 60px; display: inline-flex; align-items: center; padding: 0 !important; color: var(--a-onwood); text-shadow: 0 2px 0 var(--a-edge); font-size: clamp(8px, 1.3vw, 12px); }
+.ws-root .ws-ribbon span { color: var(--a-hi); }
+.ws-root .ws-close, .ws-root .ws-arrow { background: none; box-shadow: none; border: 10px solid transparent; border-image: var(--i-btn-red) 10 fill stretch; image-rendering: pixelated; width: 52px; height: 52px; filter: drop-shadow(0 4px 0 var(--a-edge)); color: #fff; }
+.ws-root .ws-arrow { border-image-source: var(--i-btn-cream); color: var(--a-ink); height: 60px; }
+.ws-root .ws-card-in { background: linear-gradient(180deg, var(--a-hl), transparent 40px), var(--i-paper); background-size: auto, 96px 96px; border: 18px solid transparent; border-image: var(--i-frame-sm) 18 stretch; box-shadow: none; padding: 0 0 4px; color: var(--a-ink); image-rendering: pixelated; }
+.ws-root .ws-card-in > * { image-rendering: auto; }
+.ws-root .ws-card[data-focus="true"] .ws-card-in { box-shadow: none; filter: drop-shadow(0 0 14px var(--c)); }
+.ws-root .ws-tag { color: var(--a-body); } .ws-root .ws-num, .ws-root .ws-prog-txt { color: var(--a-muted); } .ws-root .ws-prog-txt b { color: var(--a-ink); }
+.ws-root .ws-cta { border: 10px solid transparent; border-image: var(--i-btn-gold) 10 fill stretch; background: none; box-shadow: none; filter: drop-shadow(0 4px 0 var(--a-edge)); image-rendering: pixelated; color: var(--a-cta-ink); height: 56px; }
+.ws-root .ws-cta[data-soon="true"] { filter: grayscale(.8) drop-shadow(0 4px 0 var(--a-edge)); }
+.ws-root .ws-facts li { background: var(--a-chip); color: var(--a-ink); border-color: var(--a-edge); }
