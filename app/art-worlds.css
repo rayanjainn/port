@@ -97,3 +97,8 @@ html[data-world] .lab .k-ribbon::before, html[data-world] .lab .k-ribbon::after 
 html[data-world="city"] .lab .toast-kick { background: #ff4fa3; color: #190619; box-shadow: 0 0 0 2px #05040f, 0 0 12px #ff4fa3; text-shadow: none; }
 html[data-world="desert"] .lab .toast-kick { background: linear-gradient(180deg, #d8683a, #a8381a); }
 html[data-world="ruins"] .lab .toast-kick { background: linear-gradient(180deg, #8a6ae0, #5a3cb0); color: #f4eeff; box-shadow: 0 0 0 2px #050c0e, 0 0 12px #9a7be0; }
+
+html[data-world="village"] .lab, html:not([data-world]) .lab {
+  --a-line: rgba(138, 90, 24, .45); --a-bar1: #fff2b0; --a-bar2: #f5b93a; --a-bar3: #c98a22; --a-lv1: #fff2b0; --a-lv2: #f5b93a; --a-lv3: #c98a22; --a-lv-ink: #3a1d08;
+  --a-cb1: #ffe9a0; --a-cb2: #f5bf45; --a-cb3: #c98a22; --a-cb-ink: #3a1d08;
+}
