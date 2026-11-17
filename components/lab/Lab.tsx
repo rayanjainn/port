@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation"
 import { Panel, Button, IconButton, Ribbon, Chip, Pill, Bar, Kbd, Rule } from "@/components/ui/kit"
 import { AboutSheet, ProjectsInventory, QuestLog, Ico } from "./Sheets"
 import { useContent } from "@/lib/content"
+import { PixelFilter } from "@/components/ui/ProjectCover"
 import { Map as MapIcon, Music, Volume2, Globe, X } from "lucide-react"
 
 function Inner() {
@@ -13,7 +14,7 @@ function Inner() {
   useEffect(() => { document.documentElement.dataset.world = world }, [world])
   return (
     <div className="lab" data-lab={world}>
-      <div className="lab-in">
+      <div className="lab-in"><PixelFilter />
         <h1 className="lab-title">UI LAB · {world.toUpperCase()}</h1>
 
         <div className="lab-row">

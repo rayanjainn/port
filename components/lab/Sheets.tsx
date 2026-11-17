@@ -5,8 +5,8 @@ import { useContent, type Project } from "@/lib/content"
 import { Button, Chip, Bar } from "@/components/ui/kit"
 import { MapPin, Mail, Globe, FileText } from "lucide-react"
 import { Github, Linkedin, XLogo } from "@/components/icons"
-import { hashStr, motifFor, rng, MOTIF_LABEL } from "@/lib/quick/motif"
-import { MOTIF_ICON, skillIcon } from "@/lib/itemIcons"
+import { skillIcon } from "@/lib/itemIcons"
+import ProjectCover from "@/components/ui/ProjectCover"
 
 const icon = (n: string) => `/ui/icons/${n}.png`
 export function Ico({ n, size = 3 }: { n: string; size?: number }) {
@@ -101,24 +101,6 @@ export function AboutSheet({ world = "village" }: { world?: string }) {
 
 const RARITY = [{ n: "LEGENDARY", c: "#f0b400" }, { n: "EPIC", c: "#a98bff" }, { n: "RARE", c: "#4aa3e8" }, { n: "COMMON", c: "#9aa68a" }]
 
-/** a distinct cover per project: its motif's item icon, seeded layout and its own accent */
-function InvCover({ p }: { p: Project }) {
-  const h = hashStr(p.id), r = rng(h)
-  const motif = motifFor(p)
-  const bars = Array.from({ length: 6 }, () => 10 + Math.floor(r() * 44))
-  const dots = Array.from({ length: 7 }, () => ({ x: Math.floor(r() * 92), y: Math.floor(r() * 80) }))
-  const left = h % 2 === 0
-  return (
-    <div className="pc inv-pc" style={{ ["--a" as string]: p.accent || "#ffd76a", background: `radial-gradient(120% 90% at ${left ? 15 : 85}% 10%, color-mix(in srgb, ${p.accent} 45%, transparent) 0%, transparent 58%), linear-gradient(${120 + (h % 80)}deg, #1b1230, #0d0818)` } as CSSProperties}>
-      <div className="pc-grid" style={{ backgroundSize: `${10 + (h % 6) * 2}px ${10 + (h % 6) * 2}px` }} />
-      {dots.map((d, i) => <i key={i} className="inv-dot" style={{ left: `${d.x}%`, top: `${d.y}%`, opacity: 0.25 + (i % 3) * 0.2 }} />)}
-      <div className="pc-stairs" style={{ [left ? "right" : "left"]: 0 } as CSSProperties}>{bars.map((b, i) => <div key={i} style={{ width: 12, height: b, background: p.accent, opacity: 0.16 + i * 0.1 }} />)}</div>
-      <span className="pc-cat">{MOTIF_LABEL[motif].toUpperCase()}</span>
-      <span className="inv-item" style={{ [left ? "left" : "right"]: 24 } as CSSProperties}><Ico n={MOTIF_ICON[motif]} size={4} /></span>
-    </div>
-  )
-}
-
 export function ProjectsInventory() {
   const { projects } = useContent()
   const list = projects.slice(0, 6)
@@ -130,7 +112,7 @@ export function ProjectsInventory() {
           const r = i < 2 && pj.featured ? RARITY[0] : RARITY[1 + (i % 3)]
           return (
             <article key={pj.id} className="inv-card" style={{ ["--r" as string]: r.c } as CSSProperties} data-rare={r.n.toLowerCase()}>
-              <div className="inv-cover"><InvCover p={pj} /><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>
+              <div className="inv-cover"><ProjectCover project={pj} height={128} /><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>
               <div className="inv-body">
                 <div className="inv-t">{pj.title}</div>
                 <p>{pj.tagline}</p>

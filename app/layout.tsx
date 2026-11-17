@@ -8,6 +8,7 @@ import "./surfaces.css"
 import "./surfaces-screens.css"
 import "./surfaces-cards.css"
 import "./surfaces-arcade.css"
+import "./cover-art.css"
 import "./art.css"
 import "./art-worlds.css"
 

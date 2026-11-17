@@ -102,3 +102,12 @@ html[data-world="village"] .lab, html:not([data-world]) .lab {
   --a-line: rgba(138, 90, 24, .45); --a-bar1: #fff2b0; --a-bar2: #f5b93a; --a-bar3: #c98a22; --a-lv1: #fff2b0; --a-lv2: #f5b93a; --a-lv3: #c98a22; --a-lv-ink: #3a1d08;
   --a-cb1: #ffe9a0; --a-cb2: #f5bf45; --a-cb3: #c98a22; --a-cb-ink: #3a1d08;
 }
+
+/* project cover: generative art, pixelated */
+.pcv { position: relative; overflow: hidden; background: #0d0b13; }
+.pcv-art { position: absolute; inset: 0; filter: url(#px4) brightness(1.9) contrast(1.1) saturate(1.5); transform: scale(1.5); image-rendering: pixelated; }
+.pcv::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--a) 28%, transparent), transparent 60%); mix-blend-mode: screen; }
+.pcv-art .qa { height: 100%; }
+.pcv-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
+.pcv-badge { position: absolute; left: 8px; bottom: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(8, 6, 16, .72); box-shadow: 0 0 0 2px var(--a), 0 3px 0 2px rgba(0,0,0,.5); z-index: 2; }
+.pcv-badge img { width: 32px; height: 32px; image-rendering: pixelated; }
