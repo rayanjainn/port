@@ -2,6 +2,12 @@ import type { Metadata, Viewport } from "next"
 import { Press_Start_2P, Pixelify_Sans, VT323, Inter, JetBrains_Mono, Space_Grotesk, Geist, Geist_Mono } from "next/font/google"
 import content from "@/content/portfolio.json"
 import "./globals.css"
+import "./themes.css"
+import "./skins.css"
+import "./surfaces.css"
+import "./surfaces-screens.css"
+import "./surfaces-cards.css"
+import "./surfaces-arcade.css"
 
 const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--ff-pixel", display: "swap" })
 const pixelify = Pixelify_Sans({ subsets: ["latin"], variable: "--ff-pixelify", display: "swap" })
@@ -38,8 +44,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${pixel.variable} ${pixelify.variable} ${vt.variable} ${inter.variable} ${grotesk.variable} ${mono.variable} ${geist.variable} ${geistMono.variable}`}
     >
+      <head>
+        {/* apply the persisted world's skin before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var w=localStorage.getItem("rayan-world:world");if(w==="village"||w==="city"||w==="desert"||w==="ruins")document.documentElement.dataset.world=w}catch(e){}` }} />
+      </head>
       <body>{children}</body>
     </html>
   )

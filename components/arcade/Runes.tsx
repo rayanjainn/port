@@ -3,14 +3,32 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Howl } from "howler"
 import { useGameStore } from "@/lib/store"
 import { GAMES, Overlay, submitScore } from "./Arcade"
+import { useWorldTheme } from "@/lib/theme"
+import type { Material } from "@/lib/world/worlds"
 
-// four glowing rune orbs, each with its own tone
+// four pads, each with its own tone; the look of the pads (rune stones, neon pads, hieroglyph tiles, spirit orbs) comes from the world
 const RUNES = [
   { col: "#5ce1ff", glow: "92,225,255", rate: 0.8, key: "1", sym: "ᚠ" },
   { col: "#e6e1ff", glow: "220,215,255", rate: 1.0, key: "2", sym: "ᚱ" },
   { col: "#ff6a50", glow: "255,106,80", rate: 1.2, key: "3", sym: "ᛟ" },
   { col: "#ffbe55", glow: "255,190,85", rate: 1.45, key: "4", sym: "ᛉ" },
 ]
+const NEON = ["▲", "●", "■", "◆"]
+function Glyph({ i, mat, ink }: { i: number; mat: Material; ink: string }) {
+  if (mat === "neon") return <span style={{ fontSize: "clamp(22px, 3.4vw, 34px)", color: ink }}>{NEON[i]}</span>
+  if (mat === "sandstone") {
+    const common = { width: "62%", height: "62%", fill: "none", stroke: ink, strokeWidth: 3.2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const }
+    return (
+      <svg viewBox="0 0 40 40" {...common}>
+        {i === 0 && <><circle cx="20" cy="12" r="6" /><path d="M20 18v18M12 24h16" /></>}
+        {i === 1 && <><path d="M4 20c6-9 26-9 32 0-6 9-26 9-32 0z" /><circle cx="20" cy="20" r="4" fill={ink} /><path d="M20 30v6M14 33l-4 4" /></>}
+        {i === 2 && <><circle cx="20" cy="20" r="7" fill={ink} /><path d="M20 4v6M20 30v6M4 20h6M30 20h6M9 9l4 4M27 27l4 4M31 9l-4 4M13 27l-4 4" /></>}
+        {i === 3 && <path d="M3 14c4-6 7-6 10 0s6 6 10 0 6-6 9 0M3 26c4-6 7-6 10 0s6 6 10 0 6-6 9 0" />}
+      </svg>
+    )
+  }
+  return <span style={{ fontSize: "clamp(26px, 4vw, 40px)", color: ink }}>{RUNES[i].sym}</span>
+}
 let tone: Howl | null = null
 function chime(rate: number) {
   if (typeof window === "undefined" || !useGameStore.getState().sfxEnabled) return
@@ -27,6 +45,7 @@ export default function Runes() {
   const [record, setRecord] = useState(false)
   const timers = useRef<ReturnType<typeof setTimeout>[]>([])
   const color = GAMES.runes.color
+  const mat = useWorldTheme().material
 
   const clear = () => { timers.current.forEach(clearTimeout); timers.current = [] }
   const play = useCallback((s: number[]) => {
@@ -78,18 +97,14 @@ export default function Runes() {
 
   const round = Math.max(0, seq.length - (mode === "over" ? 1 : 0))
   return (
-    <div style={{ position: "relative", aspectRatio: "3 / 2", display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 50%, #3a2a4a, #1a120a 75%)" }}>
-      <div style={{ position: "absolute", top: 12, left: 14, fontFamily: "var(--font-pixel)", fontSize: 12, color: "#fff4dc", textShadow: "0 2px 0 #1d1006" }}>ROUND {round}</div>
-      <div style={{ position: "absolute", top: 12, right: 14, fontFamily: "var(--font-pixel)", fontSize: 9, color: mode === "input" ? "#9cff9c" : "rgba(255,255,255,.6)" }}>{mode === "input" ? "YOUR TURN" : mode === "show" ? "WATCH..." : ""}</div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, auto)", gap: "clamp(14px, 3vw, 28px)", transform: "rotate(45deg)" }}>
+    <div className="rn-board" data-m={mat}>
+      <div className="arc-hud arc-hud--l">ROUND {round}</div>
+      <div className="arc-hud arc-hud--r" style={{ color: mode === "input" ? "var(--arc-go, #9cff9c)" : undefined }}>{mode === "input" ? "YOUR TURN" : mode === "show" ? "WATCH..." : ""}</div>
+      <div className="rn-grid">
         {RUNES.map((r, i) => (
-          <button key={i} onClick={() => press(i)} aria-label={`Rune ${i + 1}`} style={{
-            width: "clamp(70px, 12vw, 110px)", height: "clamp(70px, 12vw, 110px)", borderRadius: 18, cursor: mode === "input" ? "pointer" : "default",
-            border: `3px solid ${r.col}`, transform: lit === i ? "scale(1.08)" : "none", transition: "transform .1s, box-shadow .1s, background .1s",
-            background: lit === i ? `radial-gradient(circle, #fff, ${r.col} 60%)` : `radial-gradient(circle, rgba(${r.glow},.25), rgba(${r.glow},.06) 70%)`,
-            boxShadow: lit === i ? `0 0 40px ${r.col}, 0 0 80px rgba(${r.glow},.6)` : `0 0 12px rgba(${r.glow},.3)`,
-          }}>
-            <span style={{ display: "block", transform: "rotate(-45deg)", fontSize: "clamp(26px, 4vw, 40px)", color: lit === i ? "#0b0718" : r.col, textShadow: lit === i ? "none" : `0 0 10px ${r.col}` }}>{r.sym}</span>
+          <button key={i} onClick={() => press(i)} aria-label={`Rune ${i + 1}`} className="rn-pad" data-lit={lit === i ? "" : undefined} data-live={mode === "input" ? "" : undefined}
+            style={{ ["--rc" as string]: r.col, ["--rg" as string]: r.glow }}>
+            <span className="rn-sym"><Glyph i={i} mat={mat} ink={lit === i ? "#0b0718" : mat === "sandstone" ? "#4a2c14" : r.col} /></span>
           </button>
         ))}
       </div>

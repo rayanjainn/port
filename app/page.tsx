@@ -4,6 +4,7 @@ import { useEffect } from "react"
 import { loadPreviewDraft } from "@/lib/content"
 import PreviewBadge from "@/components/ui/PreviewBadge"
 import Loader from "@/components/ui/Loader"
+import "@/lib/theme"
 
 const Game = dynamic(() => import("@/components/game/GameCanvas"), {
   ssr: false,

@@ -7,17 +7,14 @@ import { BUILDINGS, doorOf } from "@/lib/world/village"
 import { TS, type SceneSign } from "@/lib/world/core"
 import { overlay } from "./bus"
 
-const PX = "var(--font-pixel)"
 const base: React.CSSProperties = { position: "absolute", left: 0, top: 0, willChange: "transform", display: "none", pointerEvents: "none" }
 
 function Sign({ b, el }: { b: SceneSign; el: (e: HTMLDivElement | null) => void }) {
   return (
     <div ref={el} style={base}>
-      <div data-box style={{ position: "relative", height: 34, padding: "0 13px", display: "inline-grid", background: "#8a5a2c", boxShadow: "0 0 0 2px #2a1606, 3px 5px 0 rgba(10,6,2,.35)", whiteSpace: "nowrap", textAlign: "center" }}>
-        <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 3, background: "#a8743c" }} />
-        <div style={{ position: "absolute", left: 0, right: 0, bottom: 3, height: 10, background: b.accent ?? "#c8463b", boxShadow: "inset 0 1px 0 rgba(255,255,255,.25)" }} />
-        <div style={{ gridArea: "1/1", fontFamily: PX, fontSize: 10, lineHeight: "12px", paddingTop: 5, color: "#fff4dc", textShadow: "1px 1px 0 #2a1606", position: "relative" }}>{b.label}</div>
-        <div style={{ gridArea: "1/1", fontFamily: PX, fontSize: 7, lineHeight: "8px", paddingTop: 23, color: "#fff", position: "relative" }}>{b.sub}</div>
+      <div data-box className="o3-sign" style={{ ["--ac" as string]: b.accent ?? "#c8463b" } as React.CSSProperties}>
+        <div className="o3-sign__t">{b.label}</div>
+        <div className="o3-sign__s">{b.sub}</div>
       </div>
     </div>
   )
@@ -26,9 +23,9 @@ function Sign({ b, el }: { b: SceneSign; el: (e: HTMLDivElement | null) => void 
 function Tri({ el }: { el: (e: HTMLDivElement | null) => void }) {
   return (
     <div ref={el} style={base}>
-      <svg width="24" height="18" viewBox="-12 -14 24 18" style={{ position: "absolute", left: -12, top: -14, overflow: "visible" }}>
-        <polygon points="-9,-12 9,-12 0,2" fill="#1d1006" />
-        <polygon data-fill points="-7,-10 7,-10 0,-1" fill="#fff4dc" />
+      <svg className="o3-tri" width="24" height="18" viewBox="-12 -14 24 18" style={{ position: "absolute", left: -12, top: -14, overflow: "visible" }}>
+        <polygon className="o3-tri__edge" points="-9,-12 9,-12 0,2" />
+        <polygon data-fill className="o3-tri__fill" points="-7,-10 7,-10 0,-1" />
       </svg>
     </div>
   )
@@ -37,8 +34,8 @@ function Tri({ el }: { el: (e: HTMLDivElement | null) => void }) {
 function Bang({ el }: { el: (e: HTMLDivElement | null) => void }) {
   return (
     <div ref={el} style={base}>
-      <div style={{ position: "absolute", left: -8, top: -15, width: 16, height: 17, background: "#1d1006", padding: 2, boxSizing: "border-box" }}>
-        <div data-fill style={{ width: 12, height: 13, background: "#fff4dc", color: "#c8463b", fontFamily: PX, fontSize: 10, lineHeight: "12px", textAlign: "center", textIndent: 1 }}>!</div>
+      <div className="o3-bang">
+        <div data-fill className="o3-bang__in">!</div>
       </div>
     </div>
   )
@@ -47,11 +44,9 @@ function Bang({ el }: { el: (e: HTMLDivElement | null) => void }) {
 function Bubble({ el }: { el: (e: HTMLDivElement | null) => void }) {
   return (
     <div ref={el} style={{ ...base, transform: "translate(-999px,-999px)" }}>
-      <div data-box style={{ position: "absolute", left: 0, bottom: 0, transform: "translateX(-50%)", width: "max-content", maxWidth: 210, boxSizing: "border-box", padding: "6px 10px", background: "#fff", boxShadow: "0 0 0 2px #1d1006", fontFamily: "var(--ff-pixelify), sans-serif", fontSize: 15, lineHeight: "18px", color: "#2a1a10" }}>
+      <div data-box className="o3-bub">
         <span data-text />
-        <i style={{ position: "absolute", left: "50%", bottom: -6, marginLeft: -1, width: 4, height: 4, background: "#fff" }} />
-        <i style={{ position: "absolute", left: "50%", bottom: -8, marginLeft: -2, width: 6, height: 2, background: "#1d1006", zIndex: -1 }} />
-        <i style={{ position: "absolute", left: "50%", bottom: -9, marginLeft: 0, width: 3, height: 3, background: "#1d1006" }} />
+        <i className="o3-bub__tail" />
       </div>
     </div>
   )
@@ -101,7 +96,7 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
         const active = !!b.hotspot && S.near?.id === b.hotspot
         el.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy) - (active ? 6 : 0)}px) translate(-50%,-100%)`
         const box = el.firstElementChild as HTMLElement
-        box.style.outline = active ? "2px solid #ffe39a" : "none"
+        box.style.outline = active ? "2px solid var(--cv-sign-on)" : "none"
         box.style.outlineOffset = "5px"
       })
       marks.forEach((m, i) => {
@@ -112,7 +107,7 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
         vis(el, on)
         if (!on) return
         el.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy + Math.sin(now * 4 + m.markerX!) * 4)}px)`
-        el.querySelector("[data-fill]")?.setAttribute("fill", S.near === m ? "#ffd76a" : "#fff4dc")
+        ;(el.querySelector("[data-fill]") as SVGElement | null)?.style.setProperty("fill", S.near === m ? "var(--cv-mark-on)" : "var(--cv-mark)")
       })
       for (let i = 0; i < npcs.length; i++) {
         const a = npcs[i]
@@ -135,7 +130,7 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
           vis(bang, on)
           if (on) {
             bang.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy + Math.sin(now * 4 + a.x) * 3)}px)`
-            ;(bang.querySelector("[data-fill]") as HTMLElement).style.background = S.nearNpc === a ? "#ffd76a" : "#fff4dc"
+            ;(bang.querySelector("[data-fill]") as HTMLElement).style.background = S.nearNpc === a ? "var(--cv-mark-on)" : "var(--cv-mark)"
           }
         } else vis(bang, false)
       }
@@ -166,11 +161,10 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
         </span>
       ))}
       <div ref={promptEl} style={base}>
-        <div style={{ position: "relative", height: 30, padding: "0 12px 0 6px", display: "flex", alignItems: "center", gap: 8, boxSizing: "content-box", background: "#fbf1d6", boxShadow: "0 0 0 2px #1d1006, 3px 5px 0 rgba(10,6,2,.35), inset 0 -3px 0 #e3cf9c", whiteSpace: "nowrap" }}>
-          <div ref={keyEl} style={{ width: 22, height: 20, background: "#c8463b", boxShadow: "0 0 0 1px #1d1006, inset 0 2px 0 #e86a5c", color: "#fff4dc", fontFamily: PX, fontSize: 9, lineHeight: "20px", textAlign: "center" }}>E</div>
-          <span ref={labelEl} style={{ fontFamily: PX, fontSize: 9, color: "#3a2412" }} />
-          <i style={{ position: "absolute", left: "50%", bottom: -5, marginLeft: -5, width: 10, height: 3, background: "#1d1006" }} />
-          <i style={{ position: "absolute", left: "50%", bottom: -3, marginLeft: -3, width: 6, height: 3, background: "#fbf1d6" }} />
+        <div className="o3-prompt">
+          <div ref={keyEl} className="o3-prompt__key">E</div>
+          <span ref={labelEl} className="o3-prompt__lab" />
+          <i className="o3-prompt__tail" />
         </div>
       </div>
     </div>
