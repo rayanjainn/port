@@ -932,8 +932,8 @@ function people(w: World) {
     ["Welcome to Sunscar Oasis, traveller!", "Rayan Jain builds Rust and TypeScript things out of Mumbai. This town is his portfolio, in sand.", "Caravanserai for his story, Hall of Relics for projects, Teahouse for experience.", "Sand Forge holds his skills, the Observatory his studies, and the Falcon Post will carry your message."],
     { type: "section", id: "townhall" })
   npc("bashir", "OldMan2", "Bashir the Tea Master", 26, 24, 12,
-    ["Ferrite predicts what a task needs, then dry-runs the plan. I do that with tea.", "Independent Engineer since 2024. Strong tea, stronger commits."],
-    ["Ahh, sit! Sit! The tea is hot and the stories hotter.", "Rayan has run raycode.tech since 2024, shipping a Rust agent browser, a firewall and a Kubernetes platform.", "He also builds tooling for the CSI student chapter. A busy man, and he still finds time for tea."],
+    ["Ferrite predicts what a task needs, then dry-runs the plan. I do that with tea.", "Interned at Barclays this summer. Strong tea, stronger commits."],
+    ["Ahh, sit! Sit! The tea is hot and the stories hotter.", "Rayan studies computer engineering at SPIT and ships a Rust agent browser, a system monitor and a Kubernetes platform on the side.", "He also led the tech side of the CSI-SPIT student chapter. A busy man, and he still finds time for tea."],
     { type: "section", id: "tavern" })
   npc("zuleika", "SorcererOrange", "Zuleika the Stargazer", 63, 17, 10,
     ["Nebula reads the stars of malware: 95.4% accuracy, 0.989 AUC.", "Pull Shark twice over. A fine constellation."],
@@ -954,8 +954,8 @@ function people(w: World) {
   npc("layla", "OldWoman", "Madame Layla", 30, 40, 20, ["Poker with a Rust backend, in real time. I still lose.", "DevHub: Postman, DevTools and Burp in one. I sell rugs, not requests."])
   npc("rafi", "LionBoy", "Rafi the Caravan Driver", 12, 37, 12, ["Next stop: wherever the portfolio goes next.", "Ship fast. Break things. Fix faster. Also: water the camels."])
   npc("amon", "Monk2", "Brother Amon", 12, 11, 6,
-    ["Amazon ML Challenge 2026. A long climb, like this one.", "Breathe. The view is the point."],
-    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "HackFusion, HackRx, the Google GDG Solution Challenge, CSI Hackathon 2025... all shipped under time pressure."])
+    ["First place at Ignisa '26. A long climb, like this one.", "Breathe. The view is the point."],
+    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "CreditIQ won Ignisa '26; NeuroCred was built at the Airavat Hackathon. All shipped under time pressure."])
   npc("tomas", "Caveman", "Old Tomas the Digger", 14, 51, 14, ["Found a fossil of a bug that nobody could reproduce.", "Vendex turns a product video into a ranked supplier list. I turn dirt into bones."])
   const animal = (id: string, n: string, c: number, r: number, wander = 30) => w.actors.push({ id, kind: "animal", sheet: animalSheet(n), x: c * TS + 8, y: r * TS + 12, wander, speed: 14 })
   animal("camel1", "cow", 11, 39, 20); animal("camel2", "cow", 13, 41, 20); animal("camel3", "cow", 6, 41, 16); animal("camel4", "cow", 36, 38, 30)

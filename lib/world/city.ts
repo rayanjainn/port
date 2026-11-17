@@ -70,7 +70,7 @@ function micro(ctx: CanvasRenderingContext2D, s: string, x: number, y: number, c
 }
 /** two short lines of pitch per project, set in the micro font (15 characters a line) */
 const PITCH: Record<string, [string, string]> = {
-  "ferrite-browser": ["AGENTS CAN'T BE", "TALKED INTO IT"], sentinel: ["A FIREWALL THAT", "EXPLAINS ITSELF"], duckops: ["PICK A STACK.", "SHIP TO K8S."],
+  "ferrite-browser": ["AGENTS CAN'T BE", "TALKED INTO IT"], sentinel: ["A MONITOR THAT", "EXPLAINS ITSELF"], duckops: ["PICK A STACK.", "SHIP TO K8S."],
   devhub: ["POSTMAN + BURP", "IN ONE TAB"], neurocred: ["A LIVE TWIN FOR", "SMALL BUSINESS"], nebula: ["MALWARE CAUGHT", "BY TRANSFORMERS"],
   vendex: ["REEL TO REAL", "RANKED SUPPLY"], dapdap: ["STOP SPORTS", "PIRACY. FAST."], ctrlfixit: ["LIVE CODING", "FOR EVENTS"],
   boomsuite: ["4X LOUDER", "ON YOUR MAC"], skrgrep: ["GREP IN RUST.", "MULTI-THREADED"], poker: ["REAL-TIME POKER", "RUST BACKEND"],
@@ -1064,8 +1064,8 @@ export function buildCity(content?: Portfolio): Scene {
   ])
   npc("nora", "girl_b", "Nora", 10, 28, 18, ["The flat whites here power half the commits in town."], [
     "The Rooftop Cafe's flat white powers half this city's commits.",
-    "Rayan's experience is on the board up there: raycode.tech since 2024, the CSI Student Chapter web and tech team, and a pile of hackathons.",
-    "Amazon ML Challenge 2026, HackFusion, HackRx... the man does not sleep.",
+    "Rayan's experience is on the board up there: a Barclays internship, LazerBelieve, and a year as Technical Head of CSI-SPIT.",
+    "Plus a first place at Ignisa '26 with CreditIQ. The man does not sleep.",
   ])
   npc("gus", "elder", "Gus", 38, 8, 20, ["Back in my day we debugged with printf.", "Rust? Fine. But the compile times, young man."])
   npc("bo", "worker", "Bo", 78, 44, 14, ["Break things, fix faster. Not on MY site, though.", "No hard hat, no entry."])

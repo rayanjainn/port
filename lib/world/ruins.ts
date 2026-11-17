@@ -666,7 +666,7 @@ export function buildRuins(): Scene {
     bark: ["Ship fast... break things... la la la..."],
   })
   npc("marrow", RUINS_CHARS.innkeeper, "Granny Marrow", Math.floor(id0.x / TS) + 2, Math.floor(id0.y / TS) + 2, {
-    lines: ["Welcome to the Last Lantern. The tea is cold, the stories are warm.", "Rayan builds at raycode.tech, hackathon after hackathon, and ran the web side of the CSI student chapter.", "Take the board by the door. It lists every quest."],
+    lines: ["Welcome to the Last Lantern. The tea is cold, the stories are warm.", "Rayan interned at Barclays and LazerBelieve, and led the tech side of the CSI-SPIT student chapter.", "Take the board by the door. It lists every quest."],
     action: { type: "section", id: "tavern" },
   })
   npc("quill", RUINS_CHARS.courier, "Quill the Courier", Math.floor(wd.x / TS) + 3, Math.floor(wd.y / TS) + 1, {
@@ -674,7 +674,7 @@ export function buildRuins(): Scene {
     action: { type: "section", id: "wizard" },
   })
   npc("hex", RUINS_CHARS.apprentice, "Apprentice Hex", Math.floor(ld.x / TS) + 3, Math.floor(ld.y / TS) + 2, {
-    lines: ["The Library keeps Rayan's honours: Amazon ML Challenge 2026, Pull Shark twice, Quickdraw and YOLO.", "He also published a Homebrew package, skrgrep. I tried to borrow it. It is a CLI, apparently."],
+    lines: ["The Library keeps Rayan's honours: first place at Ignisa '26 with CreditIQ, Pull Shark twice, Quickdraw and YOLO.", "He also ships skrgrep through his own Homebrew tap. I tried to borrow it. It is a CLI, apparently."],
     bark: ["Shh. Books are sleeping."],
   })
   for (const [id, c, r] of [["owl1", 12, 15], ["owl2", 54, 20], ["owl3", 74, 30]] as [string, number, number][])

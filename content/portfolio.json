@@ -1,7 +1,7 @@
 {
   "meta": {
-    "siteTitle": "Rayan Jain — Full-stack & Systems Engineer",
-    "description": "Explore Rayan Jain's portfolio as a living pixel-art world. Rust, TypeScript, browsers, infra and dev tools.",
+    "siteTitle": "Rayan Jain | Full-stack & DevOps Developer",
+    "description": "Rayan Jain is a computer science engineering student at SPIT, Mumbai, and a former Barclays technology developer intern. Full-stack, DevOps and systems work, shown as a pixel-art world or a quick view.",
     "githubUsername": "rayanjainn",
     "contentRepo": "rayanjainn/port",
     "contentBranch": "main",
@@ -10,80 +10,108 @@
   "profile": {
     "name": "Rayan Jain",
     "handle": "@rayanjainn",
-    "title": "Full-stack & Systems Engineer",
-    "tagline": "Building a browser AI agents can't be tricked by.",
-    "bio": "I build things that sit close to the metal and things that sit close to people: a Rust browser that shrugs off prompt injection, an internal developer platform that goes from \"pick a stack\" to a monitored Kubernetes deploy, and dev tools that fold Postman, DevTools and Burp Suite into one workspace.",
+    "title": "Full-stack & DevOps developer",
+    "tagline": "CS engineering student at SPIT. Ex-Barclays intern. Ex-Tech Head at CSI-SPIT.",
+    "bio": "I'm a computer science engineering student at SPIT in Mumbai, a former technology developer intern at Barclays and, until July 2026, Technical Head of CSI-SPIT. I build full-stack products and the infrastructure under them: a Rust browser that shrugs off prompt injection, a developer platform that goes from \"pick a stack\" to a monitored Kubernetes deploy, and native Mac tools. I also do competitive programming.",
     "location": "Mumbai, India",
     "avatar": "/images/avatar.jpg",
     "available": true,
     "availability": "Open to collabs & interesting problems",
-    "now": "Building Ferrite: a Rust browser for AI agents that can't be prompt-injected.",
+    "now": "Shipping AIO, a native macOS launcher, Dock and notch suite, and EveryDaily, a tracker for daily puzzle games.",
     "motto": "ship fast. break things. fix faster.",
-    "interests": ["rust", "browsers", "infra", "dev-tools"],
+    "interests": [
+      "rust",
+      "full-stack",
+      "devops",
+      "competitive-programming"
+    ],
     "resumeUrl": ""
   },
   "socials": {
     "email": "rayansjain@gmail.com",
     "github": "https://github.com/rayanjainn",
-    "linkedin": "https://linkedin.com/in/rayanjainn",
+    "linkedin": "https://www.linkedin.com/in/rayanjain",
     "twitter": "https://twitter.com/rayanjainn",
-    "website": "https://app.raycode.tech"
+    "website": "https://raycode.tech"
   },
   "projects": [
     {
       "id": "ferrite-browser",
-      "repo": "ferrite-browser",
+      "repo": "Ferrite-Browser",
       "title": "Ferrite",
       "tagline": "A browser for AI agents that can't be talked into things.",
-      "description": "A Rust browser built on the Servo engine. Instead of trying to spot malicious text, Ferrite predicts what a task legitimately needs, dry-runs the agent's plan in a sandbox on fake data, compares the two, and asks the user before anything off-plan runs. Every security-relevant event lands in a SHA-256 hash-chained audit log.",
+      "description": "A browser written in Rust on the Servo engine, so an AI agent can browse without being steered by what it reads. Ferrite does not try to spot malicious text. It predicts what a task legitimately needs, dry-runs the agent's plan in a sandbox on fake data, compares the two, and asks the user before anything off-plan runs. Security events go into a SHA-256 hash-chained audit log.",
       "highlights": [
-        "Predict → dry-run → compare → consent pipeline",
-        "Sandboxed dry-runs with no real network access",
-        "Tamper-evident, hash-chained audit log"
+        "Predict, dry-run, compare, consent-gate pipeline",
+        "Sandboxed dry-runs on fake data with no real network",
+        "Live run with gemma4:31b: attacks that ran fell from 2.0% to 0.4% of 1,542 measurable runs",
+        "938-case red-team corpus plus 1,046 imported AgentDojo cases"
       ],
-      "tech": ["Rust", "Servo", "Sandboxing", "LLM agents"],
+      "tech": [
+        "Rust",
+        "Servo",
+        "Sandboxing",
+        "LLM agents",
+        "Ollama"
+      ],
       "language": "Rust",
       "category": "Systems",
       "year": "2026",
-      "githubUrl": "https://github.com/rayanjainn/ferrite-browser",
-      "liveUrl": "",
+      "githubUrl": "https://github.com/rayanjainn/Ferrite-Browser",
+      "liveUrl": "https://ferrite.raycode.tech/",
       "image": "",
       "accent": "#f97316",
-      "featured": true
+      "featured": true,
+      "started": "2026-09"
     },
     {
-      "id": "sentinel",
-      "repo": "sentinel",
-      "title": "Sentinel",
-      "tagline": "A system monitor & firewall that explains itself.",
-      "description": "Cross-platform system monitor and firewall that explains every process and network connection in plain English. Native Rust core with a Tauri + React interface, running on macOS, Linux and Windows.",
+      "id": "aio",
+      "repo": "aio",
+      "title": "AIO",
+      "tagline": "A macOS launcher, Dock and notch suite in one native app.",
+      "description": "A native macOS launcher, Dock, notch island and desktop-widget suite. SwiftUI and AppKit draw everything you see, and a Rust engine, cortexd, handles search and memory over a local JSON-RPC socket. A shortcut acts on any selection with Ollama or any OpenAI-compatible server. Everything stays on the Mac, and screen memory is off until you turn it on.",
       "highlights": [
-        "Per-process network visibility with plain-English explanations",
-        "Native Rust core, Tauri + React shell",
-        "macOS · Linux · Windows"
+        "Command palette over apps, files, clipboard, git, browser tabs and system commands",
+        "Dock with live window previews and widget tiles",
+        "Notch island with now playing and synced lyrics, a focus timer and a file shelf",
+        "Swift app plus Rust engine; CI builds and tests on every push"
       ],
-      "tech": ["Rust", "Tauri", "React", "Networking"],
-      "language": "Rust",
-      "category": "Systems",
+      "tech": [
+        "Swift",
+        "SwiftUI",
+        "AppKit",
+        "Rust",
+        "JSON-RPC"
+      ],
+      "language": "Swift",
+      "category": "Apps",
       "year": "2026",
-      "githubUrl": "https://github.com/rayanjainn/sentinel",
-      "liveUrl": "",
+      "githubUrl": "https://github.com/rayanjainn/aio",
+      "liveUrl": "http://cortex.raycode.tech/",
       "image": "",
-      "accent": "#22d3ee",
-      "featured": true
+      "accent": "#2dd4bf",
+      "featured": true,
+      "started": "2026-10"
     },
     {
       "id": "duckops",
       "repo": "duckops",
       "title": "DuckOps",
       "tagline": "Pick a stack. Get a repo, a k8s deploy, CI/CD and monitoring.",
-      "description": "A self-hosted Internal Developer Platform. Choose a language, framework, database and ORM in a wizard and DuckOps scaffolds the code, creates the GitHub repo, builds and pushes the image, provisions a Kubernetes namespace with Terraform, deploys with Ansible, wires a Jenkins pipeline and health-checks the app, streaming every stage live over Socket.io.",
+      "description": "A self-hosted internal developer platform. Choose a language, framework, database and ORM in a wizard and DuckOps scaffolds the code, creates the GitHub repo, builds and pushes the image, provisions a Kubernetes namespace with Terraform, deploys with Ansible, wires a Jenkins pipeline and health-checks the app, streaming every stage live over Socket.io.",
       "highlights": [
         "8-stage automated provisioning pipeline",
-        "Terraform + Ansible + Jenkins on k3d",
+        "Terraform, Ansible and Jenkins on a local k3d cluster",
         "Live stage streaming over Socket.io, BullMQ job queue"
       ],
-      "tech": ["TypeScript", "Next.js", "Kubernetes", "Terraform", "Ansible", "Jenkins"],
+      "tech": [
+        "TypeScript",
+        "Next.js",
+        "Kubernetes",
+        "Terraform",
+        "Ansible",
+        "Jenkins"
+      ],
       "language": "TypeScript",
       "category": "Platform",
       "year": "2026",
@@ -91,41 +119,82 @@
       "liveUrl": "https://app.raycode.tech",
       "image": "",
       "accent": "#facc15",
-      "featured": true
+      "featured": true,
+      "started": "2026-03"
+    },
+    {
+      "id": "sentinel",
+      "repo": "sentinel",
+      "title": "Sentinel",
+      "tagline": "See everything running on your machine, and act on it in plain English.",
+      "description": "A desktop app for macOS, Windows and Linux that shows live processes, ports and connections, CPU, memory and disk. Its agent reads the real state of the system, then lays out each step for approval before anything runs. A storage treemap, firewall rules and an activity log sit alongside. Rust core with a Tauri and React interface.",
+      "highlights": [
+        "Every listening port and connection matched to its process",
+        "An AI agent proposes each step; nothing runs without approval",
+        "Storage treemap and firewall rules in the same app"
+      ],
+      "tech": [
+        "Rust",
+        "Tauri",
+        "React",
+        "Networking"
+      ],
+      "language": "Rust",
+      "category": "Systems",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/sentinel",
+      "liveUrl": "https://sentinel.raycode.tech/",
+      "image": "",
+      "accent": "#22d3ee",
+      "featured": true,
+      "started": "2026-09"
     },
     {
       "id": "devhub",
       "repo": "devhub",
       "title": "DevHub",
-      "tagline": "Postman + DevTools + Burp Suite in one workspace.",
-      "description": "A unified developer workspace: HTTP/WebSocket/GraphQL client, live network inspector, MITM interceptor with repeater and intruder, decoder, sequencer, a route scanner that reads your repo's AST, and a workspace-aware AI assistant. Ships as a web app and an Electron desktop app.",
+      "tagline": "Postman, DevTools and Burp Suite in one workspace.",
+      "description": "A unified developer workspace in place of Postman, Chrome DevTools and Burp Suite: an HTTP, WebSocket and GraphQL client, a live network inspector, an intercepting proxy with repeater and intruder, decoder, comparer and sequencer, and a route scanner that reads a repo's AST. It ships as a web app, an Electron desktop app and a Chrome MV3 extension, with a workspace-aware Claude assistant.",
       "highlights": [
         "Intercept, edit and replay in-flight requests",
-        "4-mode fuzzer with response clustering",
-        "AST-based API route discovery from GitHub/GitLab"
+        "Intruder with 4 attack modes and response clustering",
+        "AST-based API route discovery from GitHub and GitLab repos"
       ],
-      "tech": ["TypeScript", "Electron", "Next.js", "CDP", "Chrome MV3"],
+      "tech": [
+        "TypeScript",
+        "Electron",
+        "Next.js",
+        "Bun",
+        "CDP",
+        "Chrome MV3"
+      ],
       "language": "TypeScript",
       "category": "Dev Tools",
       "year": "2026",
       "githubUrl": "https://github.com/rayanjainn/devhub",
-      "liveUrl": "https://devhub-api-beta.vercel.app",
+      "liveUrl": "",
       "image": "",
       "accent": "#a78bfa",
-      "featured": true
+      "featured": true,
+      "started": "2026-03"
     },
     {
       "id": "neurocred",
       "repo": "neurocred",
       "title": "NeuroCred",
-      "tagline": "A live digital twin and credit engine for small businesses.",
-      "description": "Models a small business as a live digital twin and scores credit risk in real time: Monte Carlo risk simulation, LLM reasoning over the results and streaming anomaly detection on Redis Streams.",
+      "tagline": "A live digital twin and credit engine for Indian MSMEs.",
+      "description": "Builds a live, versioned digital twin of a small business from UPI, bank, SMS and EMI signals, then runs a credit engine on top of it: Monte Carlo risk simulation, anomaly and fraud detection on Redis Streams, and plain-language reasoning from a local LLM. Built at the Airavat Hackathon with Team Pookies.",
       "highlights": [
-        "Monte Carlo risk simulation",
-        "Real-time anomaly detection on Redis Streams",
-        "LLM-generated credit reasoning"
+        "Ten-tier async pipeline from ingestion to audit export",
+        "Monte Carlo risk projections and stress tests",
+        "Event-sourced twin that can be replayed to any point in time"
       ],
-      "tech": ["Python", "Redis Streams", "LLMs", "Next.js"],
+      "tech": [
+        "Python",
+        "Redis Streams",
+        "LLMs",
+        "Next.js"
+      ],
       "language": "Python",
       "category": "ML",
       "year": "2026",
@@ -133,20 +202,144 @@
       "liveUrl": "",
       "image": "",
       "accent": "#f472b6",
-      "featured": true
+      "featured": true,
+      "started": "2026-04"
+    },
+    {
+      "id": "creatorai",
+      "repo": "CreatorAi",
+      "title": "CreatorAi",
+      "tagline": "A local-first workspace for solo video creators.",
+      "description": "Plan an idea, write a script with AI, upload raw footage, and the app transcribes and indexes it, matches the script to the footage, cuts short clips and finishes them on an editable timeline before export. It runs on your own machine as a FastAPI API and a Next.js app over SQLite, with the AI provider of your choice (Gemini, Groq or Ollama). Anything that is not a real model result is labelled in the UI.",
+      "highlights": [
+        "Hybrid semantic search over speech and visuals",
+        "Script-to-footage matching with a coverage report",
+        "Timeline editor with exports for Shorts, Reels and TikTok",
+        "No Docker, Redis or Postgres: SQLite and an in-process job runner"
+      ],
+      "tech": [
+        "Python",
+        "FastAPI",
+        "Next.js",
+        "SQLite",
+        "FFmpeg",
+        "LLMs"
+      ],
+      "language": "Python",
+      "category": "Product",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/CreatorAi",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#818cf8",
+      "featured": false,
+      "started": "2026-10"
+    },
+    {
+      "id": "daily-games",
+      "repo": "daily-games",
+      "title": "EveryDaily",
+      "tagline": "Follow, play and track daily puzzle games in one place.",
+      "description": "A tracker for daily puzzle games with stats, streaks, reminders, friends and communities. A Next.js app on Vercel, a Cloudflare Worker for cron, queues and realtime rooms, and a shared package for the schema, validators and game registry. Sign-in uses passkeys, with Vitest unit tests and Playwright end-to-end tests.",
+      "highlights": [
+        "Stats, streaks, reminders, friends and communities",
+        "Cloudflare Worker for cron, queues and realtime rooms",
+        "pnpm monorepo with a shared schema and game registry"
+      ],
+      "tech": [
+        "Next.js",
+        "TypeScript",
+        "Cloudflare Workers",
+        "PostgreSQL",
+        "Redis",
+        "Playwright"
+      ],
+      "language": "TypeScript",
+      "category": "Product",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/daily-games",
+      "liveUrl": "https://everydaily.raycode.tech",
+      "image": "",
+      "accent": "#a3e635",
+      "featured": false,
+      "started": "2026-10"
+    },
+    {
+      "id": "creditiq",
+      "repo": "CreditIQ",
+      "title": "CreditIQ",
+      "tagline": "MSME credit scoring from GST, UPI and e-way bill signals.",
+      "description": "A credit scoring engine for Indian MSMEs built with a team. It fuses GST invoices, UPI transactions and e-way bills into a 300 to 900 score, finds circular-trading fraud rings with graph analysis, explains each score with SHAP attributions and plain-language LLM reasons, and presents it all in a React dashboard.",
+      "highlights": [
+        "Winners, 1st Place @ Ignisa '26 MITWPU (team Brawn GP 1251)",
+        "46 engineered features over three Redis streams",
+        "Fraud rings found with strongly connected components and cycle enumeration",
+        "XGBoost scoring with SHAP explanations"
+      ],
+      "tech": [
+        "Python",
+        "XGBoost",
+        "SHAP",
+        "Redis Streams",
+        "NetworkX",
+        "Next.js"
+      ],
+      "language": "TypeScript",
+      "category": "ML",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/CreditIQ",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#c4b5fd",
+      "featured": false,
+      "started": "2026-04"
+    },
+    {
+      "id": "classroom-mcp",
+      "repo": "classroom-mcp",
+      "title": "ClassroomPilot",
+      "tagline": "An MCP server that connects a student's own AI assistant to Google Classroom.",
+      "description": "A remote MCP server that reads a student's assignments, rubrics, announcements and attached files, prepares documents in LaTeX or Google Docs, fills the student's own template copy only after a preview-and-approve step, and hands over to the student for Turn In. It runs as a Cloudflare Worker with OAuth, plus a small file-picker page.",
+      "highlights": [
+        "25 tools across Classroom, files, documents and hand-off",
+        "Preview and approve before any edit; the student does the Turn In",
+        "Figures in documents are marked captured or illustrative"
+      ],
+      "tech": [
+        "TypeScript",
+        "MCP",
+        "Cloudflare Workers",
+        "OAuth"
+      ],
+      "language": "TypeScript",
+      "category": "AI Tools",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/classroom-mcp",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#38bdf8",
+      "featured": false,
+      "started": "2026-10"
     },
     {
       "id": "nebula",
       "repo": "nebula",
       "title": "Nebula",
       "tagline": "Dynamic malware analysis with transformer networks.",
-      "description": "A full-stack platform that detects and explains malicious Windows software. Executables run under emulation, their API-call traces are tokenized and fed to a chunked transformer, explainable-AI attributions show what the model saw, and an LLM layer writes the threat-intel summary.",
+      "description": "A full-stack platform that detects and explains malicious Windows software. Executables run under emulation, their API-call traces are tokenized and fed to a chunked transformer, explainable-AI attributions show what the model saw, and an LLM layer writes the threat-intel summary. A FastAPI backend serves a Next.js dashboard.",
       "highlights": [
-        "95.4% accuracy, 0.989 AUC-ROC on held-out data",
-        "Chunked transformer over Windows API-call traces",
-        "Explainable attributions + LLM threat summaries"
+        "95.4% accuracy and 0.989 AUC-ROC on a 3,181-sample validation set",
+        "Chunked transformer over emulated Windows API-call traces",
+        "Explainable attributions and LLM threat summaries"
       ],
-      "tech": ["Python", "PyTorch", "Transformers", "XAI", "TypeScript"],
+      "tech": [
+        "Python",
+        "PyTorch",
+        "Transformers",
+        "XAI",
+        "FastAPI",
+        "Next.js"
+      ],
       "language": "Python",
       "category": "Security · ML",
       "year": "2026",
@@ -154,28 +347,64 @@
       "liveUrl": "",
       "image": "",
       "accent": "#60a5fa",
-      "featured": false
+      "featured": false,
+      "started": "2026-05"
+    },
+    {
+      "id": "financial-research-automation",
+      "repo": "Financial-Research-Automation",
+      "title": "Financial Research Automation",
+      "tagline": "SEC filings in, investor report out.",
+      "description": "An end-to-end pipeline that drives a live Chromium browser through real SEC EDGAR filings, extracts and normalizes the quarterly statements, computes ratios and peer benchmarks, and renders an investor-grade PowerPoint report. FastAPI serves the data, Streamlit shows it and Celery runs the slow jobs. There is no seeded or mocked financial data: a failed scrape fails loudly.",
+      "highlights": [
+        "Playwright scrapes real 10-Q and 10-K filings from sec.gov",
+        "YoY, QoQ, margins, ROE and peer percentile from normalized line items",
+        "Fails loudly instead of substituting fake figures"
+      ],
+      "tech": [
+        "Python",
+        "FastAPI",
+        "Playwright",
+        "Streamlit",
+        "Celery",
+        "PostgreSQL"
+      ],
+      "language": "Python",
+      "category": "Data",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/Financial-Research-Automation",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#94a3b8",
+      "featured": false,
+      "started": "2026-09"
     },
     {
       "id": "vendex",
       "repo": "vendex",
       "title": "Vendex",
-      "tagline": "Reel to real: product video → ranked supplier list.",
-      "description": "Paste an Instagram or TikTok reel (or an Alibaba link). Vendex downloads the video, picks the sharpest frame, runs a visual search on Alibaba and returns a ranked supplier shortlist with prices, MOQs, trust badges and one-click chat. Includes a Chrome extension.",
+      "tagline": "Reel to real: product video to ranked supplier list.",
+      "description": "Paste an Instagram or TikTok reel, or an Alibaba link. Vendex downloads the video, picks the sharpest frame, runs a visual search on Alibaba and returns a ranked supplier shortlist with prices, MOQs, trust badges and one-click chat. Includes a Chrome extension.",
       "highlights": [
         "Sharpest-frame extraction from short-form video",
         "Visual supplier search with stealth Playwright",
         "Chrome MV3 extension"
       ],
-      "tech": ["Next.js", "FastAPI", "Playwright", "Python"],
+      "tech": [
+        "Next.js",
+        "FastAPI",
+        "Playwright",
+        "Python"
+      ],
       "language": "TypeScript",
       "category": "Product",
       "year": "2026",
       "githubUrl": "https://github.com/rayanjainn/vendex",
-      "liveUrl": "https://vendex-dun.vercel.app",
+      "liveUrl": "",
       "image": "",
       "accent": "#34d399",
-      "featured": false
+      "featured": false,
+      "started": "2026-04"
     },
     {
       "id": "dapdap",
@@ -184,11 +413,16 @@
       "tagline": "Digital asset protection against sports piracy.",
       "description": "A rights-management prototype for sports media: perceptual fingerprints and invisible CNN watermarks on ingest, scraping and Hamming-distance matching to find infringing copies, an enforcement priority score, and Gemini-drafted, jurisdiction-aware takedown notices.",
       "highlights": [
-        "pHash + dHash fingerprints, HiDDeN CNN watermarking",
-        "Enforcement Priority Score (0–100)",
-        "Auto-drafted DMCA / EU DSM / IT Act notices"
+        "pHash and dHash fingerprints, HiDDeN CNN watermarking",
+        "Enforcement Priority Score from 0 to 100",
+        "Auto-drafted DMCA, EU DSM and IT Act notices"
       ],
-      "tech": ["Next.js", "FastAPI", "MongoDB", "Gemini"],
+      "tech": [
+        "Next.js",
+        "FastAPI",
+        "MongoDB",
+        "Gemini"
+      ],
       "language": "Python",
       "category": "Product",
       "year": "2026",
@@ -196,20 +430,27 @@
       "liveUrl": "https://gdg-delta.vercel.app",
       "image": "",
       "accent": "#fb7185",
-      "featured": false
+      "featured": false,
+      "started": "2026-04"
     },
     {
       "id": "ctrlfixit",
       "repo": "ctrlfixit",
       "title": "CtrlFixIt",
-      "tagline": "Real-time competitive coding for live events.",
-      "description": "A competitive coding game platform built for live events, with live scoreboards over WebSockets, Docker-sandboxed code execution via Piston, single-session enforcement and server-authoritative timing. Tuned to run 150+ concurrent jobs on a single host.",
+      "tagline": "A real-time competitive coding game for live events.",
+      "description": "A competitive coding game platform built for live events, with live scoreboards over WebSockets, Docker-sandboxed code execution through Piston, single-session enforcement and server-authoritative timing. Next.js frontend, Node and Express backend on PostgreSQL, Redis and Prisma. Built during my year as CSI-SPIT Technical Head.",
       "highlights": [
-        "120+ simultaneous players at live events",
-        "Sandboxed execution via Piston",
-        "Vertically scaled to 150+ concurrent jobs"
+        "Built for 120+ simultaneous users at live events",
+        "Code runs in network-less Docker sandboxes via Piston",
+        "Piston configured for 150 concurrent jobs on a single host"
       ],
-      "tech": ["Next.js", "Node.js", "PostgreSQL", "Redis", "Docker"],
+      "tech": [
+        "Next.js",
+        "Node.js",
+        "PostgreSQL",
+        "Redis",
+        "Docker"
+      ],
       "language": "TypeScript",
       "category": "Platform",
       "year": "2026",
@@ -217,20 +458,53 @@
       "liveUrl": "https://ctrlfixit-frontend.vercel.app",
       "image": "",
       "accent": "#4ade80",
-      "featured": false
+      "featured": false,
+      "started": "2026-02"
+    },
+    {
+      "id": "glitch",
+      "repo": "glitch",
+      "title": "BUG//REPORT",
+      "tagline": "A 3D systemic puzzle game where you play the bug.",
+      "description": "A 3D systemic puzzle game in which you play the bug inside someone else's video game, built in Unity 6 with C# and URP. The repo carries a layered architecture with an entity and capability model, a glitch system design, milestones and a plain-language playtest guide. The core rules compile and test without the Unity editor.",
+      "highlights": [
+        "Core rules tested headless with NUnit on the .NET 8 SDK",
+        "Unity assemblies type-checked against API stubs by a script",
+        "CC0 art fetched by script and verified by checksum"
+      ],
+      "tech": [
+        "C#",
+        "Unity",
+        "URP",
+        "NUnit"
+      ],
+      "language": "C#",
+      "category": "Games",
+      "year": "2026",
+      "githubUrl": "https://github.com/rayanjainn/glitch",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#84cc16",
+      "featured": false,
+      "started": "2026-10"
     },
     {
       "id": "boomsuite",
       "repo": "boomsuite",
       "title": "BoomSuite",
-      "tagline": "Break Apple's volume ceiling, up to 4× louder.",
-      "description": "Two native apps: BoomPlayer for iOS (local music player with a 4× gain stage, EQ presets and lock-screen controls) and BoomMac for macOS (system-wide audio booster for any app via CoreAudio).",
+      "tagline": "Break Apple's volume ceiling, up to 4x louder.",
+      "description": "Two native apps: BoomPlayer for iOS, a local music player with a 4x gain stage, EQ presets and lock-screen controls, and BoomMac for macOS, a system-wide audio booster for any app that routes sound through a CoreAudio HAL pipeline with BlackHole.",
       "highlights": [
         "AVAudioEngine gain stage with EQ presets",
-        "System-wide boost via CoreAudio HAL",
-        "iOS + macOS"
+        "System-wide boost through CoreAudio HAL",
+        "iOS and macOS"
       ],
-      "tech": ["Swift", "SwiftUI", "AVAudioEngine", "CoreAudio"],
+      "tech": [
+        "Swift",
+        "SwiftUI",
+        "AVAudioEngine",
+        "CoreAudio"
+      ],
       "language": "Swift",
       "category": "Apps",
       "year": "2026",
@@ -238,19 +512,25 @@
       "liveUrl": "",
       "image": "",
       "accent": "#fb923c",
-      "featured": false
+      "featured": false,
+      "started": "2026-03"
     },
     {
       "id": "skrgrep",
       "repo": "skrgrep",
       "title": "skrgrep",
       "tagline": "A fast, multi-threaded grep, in Rust.",
-      "description": "A line-oriented search tool with a work-stealing thread pool, fast recursive traversal that skips .git, node_modules and target, and highlighted matches. Installable via Homebrew.",
+      "description": "A line-oriented search tool with a work-stealing thread pool, recursive traversal that skips .git, node_modules and target, and highlighted matches. Published through my own Homebrew tap with pre-built bottles for Apple Silicon and Intel.",
       "highlights": [
         "Work-stealing parallel file search",
-        "brew install skrgrep"
+        "brew install skrgrep",
+        "Pre-built bottles for Apple Silicon and Intel"
       ],
-      "tech": ["Rust", "CLI", "Homebrew"],
+      "tech": [
+        "Rust",
+        "CLI",
+        "Homebrew"
+      ],
       "language": "Rust",
       "category": "CLI",
       "year": "2026",
@@ -258,19 +538,25 @@
       "liveUrl": "",
       "image": "",
       "accent": "#e879f9",
-      "featured": false
+      "featured": false,
+      "started": "2026-03"
     },
     {
       "id": "poker",
       "repo": "poker",
       "title": "Poker",
       "tagline": "Real-time multiplayer poker with a Rust backend.",
-      "description": "An online poker platform with a real-time Rust backend (Axum, Tokio, SQLx) and a Next.js 15 frontend, synchronising game state over WebSockets.",
+      "description": "An online poker platform with a real-time Rust backend (Axum, Tokio, SQLx on PostgreSQL) and a Next.js 15 frontend, synchronising game state over WebSockets.",
       "highlights": [
-        "Axum + Tokio real-time game server",
+        "Axum and Tokio real-time game server",
         "WebSocket state sync"
       ],
-      "tech": ["Rust", "Axum", "PostgreSQL", "Next.js"],
+      "tech": [
+        "Rust",
+        "Axum",
+        "PostgreSQL",
+        "Next.js"
+      ],
       "language": "TypeScript",
       "category": "Games",
       "year": "2026",
@@ -278,101 +564,311 @@
       "liveUrl": "https://pokerray.vercel.app",
       "image": "",
       "accent": "#ef4444",
-      "featured": false
+      "featured": false,
+      "started": "2026-03"
     }
   ],
   "experience": [
     {
-      "id": "raycode",
-      "role": "Independent Engineer",
-      "org": "raycode.tech",
-      "url": "https://app.raycode.tech",
-      "start": "2024",
-      "end": "Present",
-      "location": "Mumbai",
-      "description": "Designing and shipping my own products end to end: from a Rust agent browser and a cross-platform firewall to an internal developer platform running on Kubernetes.",
-      "highlights": ["Ferrite, Sentinel, DuckOps, DevHub", "Rust, TypeScript, Kubernetes, Terraform"],
-      "tech": ["Rust", "TypeScript", "Kubernetes", "Terraform"]
+      "id": "barclays",
+      "role": "Technology Developer Intern",
+      "org": "Barclays",
+      "url": "",
+      "start": "Jun 2026",
+      "end": "Aug 2026",
+      "location": "Pune",
+      "description": "",
+      "highlights": [],
+      "tech": [],
+      "kind": "internship"
     },
     {
-      "id": "hackathons",
-      "role": "Hackathon Builder",
-      "org": "Hackathons & challenges",
+      "id": "csi-spit",
+      "role": "Technical Head",
+      "org": "CSI-SPIT",
       "url": "",
-      "start": "2024",
-      "end": "Present",
-      "location": "India",
-      "description": "Regular at hackathons and engineering challenges, shipping working prototypes under time pressure.",
-      "highlights": ["Amazon ML Challenge 2026", "HackFusion (ExamShield)", "HackRx", "Google GDG Solution Challenge (DAP)", "CSI Hackathon 2025"],
-      "tech": ["Next.js", "FastAPI", "Python"]
+      "start": "Aug 2025",
+      "end": "Jul 2026",
+      "location": "Mumbai",
+      "description": "Led the technical side of the CSI-SPIT student chapter. Event tooling from the year includes CtrlFixIt, a competitive coding game built for 120+ simultaneous users, and the contributors board for the Git & GitHub workshop.",
+      "highlights": [
+        "CtrlFixIt: built for 120+ simultaneous users at live events",
+        "Git & GitHub workshop contributors board"
+      ],
+      "tech": [
+        "Next.js",
+        "Node.js",
+        "PostgreSQL",
+        "Redis",
+        "Docker"
+      ],
+      "kind": "leadership",
+      "shipped": [
+        {
+          "label": "CtrlFixIt",
+          "projectId": "ctrlfixit"
+        },
+        {
+          "label": "Git & GitHub workshop board",
+          "url": "https://git.csispit.site/"
+        },
+        {
+          "label": "TechWeek 2026 registration",
+          "url": "https://techweek-reg-2026.vercel.app"
+        },
+        {
+          "label": "Chapter website"
+        },
+        {
+          "label": "Admin dashboard"
+        },
+        {
+          "label": "App backend"
+        }
+      ]
     },
     {
-      "id": "csi",
-      "role": "Web & Tech Team",
-      "org": "CSI Student Chapter",
+      "id": "lazerbelieve",
+      "role": "Software Engineer Intern",
+      "org": "LazerBelieve",
       "url": "",
-      "start": "2025",
-      "end": "Present",
+      "start": "Mar 2026",
+      "end": "Jun 2026",
       "location": "Mumbai",
-      "description": "Built the chapter's web presence and event tooling: the main site, TechWeek registrations, an admin dashboard and CtrlFixIt, a real-time coding arena for live events.",
-      "highlights": ["CtrlFixIt: 120+ concurrent players", "TechWeek 2026 registration platform"],
-      "tech": ["Next.js", "Node.js", "PostgreSQL"]
+      "description": "",
+      "highlights": [],
+      "tech": [],
+      "kind": "internship"
     }
   ],
   "education": [
     {
-      "id": "edu-1",
-      "school": "Engineering College, Mumbai",
-      "degree": "B.E. / B.Tech",
-      "field": "Computer Engineering",
+      "id": "edu-spit",
+      "school": "Sardar Patel Institute of Technology (Bharatiya Vidya Bhavan's SPIT)",
+      "degree": "BTech",
+      "field": "Computer Science & Engineering",
+      "start": "Aug 2023",
+      "end": "2027",
+      "note": "",
+      "kind": "university",
+      "place": "Andheri, Mumbai"
+    },
+    {
+      "id": "edu-spjimr",
+      "school": "SPJIMR (SP Jain Institute of Management & Research)",
+      "degree": "Management programme",
+      "field": "",
+      "start": "Jan 2025",
+      "end": "Jul 2027",
+      "note": "Runs alongside the BTech.",
+      "kind": "programme",
+      "place": ""
+    },
+    {
+      "id": "edu-pace",
+      "school": "Pace Junior Science College",
+      "degree": "HSC",
+      "field": "",
+      "start": "Apr 2021",
+      "end": "Jun 2023",
+      "note": "",
+      "kind": "school",
+      "place": ""
+    },
+    {
+      "id": "edu-sxba",
+      "school": "St. Xavier's Boys' Academy",
+      "degree": "SSC (10th)",
+      "field": "",
       "start": "",
-      "end": "",
-      "note": ""
+      "end": "2021",
+      "note": "",
+      "kind": "school",
+      "place": ""
     }
   ],
   "achievements": [
-    { "id": "ach-1", "title": "Pull Shark ×2", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
-    { "id": "ach-2", "title": "Quickdraw", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
-    { "id": "ach-3", "title": "YOLO", "issuer": "GitHub", "date": "", "url": "https://github.com/rayanjainn?tab=achievements" },
-    { "id": "ach-4", "title": "Amazon ML Challenge 2026", "issuer": "Amazon", "date": "2026", "url": "" },
-    { "id": "ach-5", "title": "Homebrew package author (skrgrep)", "issuer": "Homebrew", "date": "2026", "url": "https://github.com/rayanjainn/homebrew-skrgrep" }
+    {
+      "id": "ach-ignisa",
+      "title": "1st Place, Ignisa '26",
+      "issuer": "MITWPU",
+      "date": "2026",
+      "url": "https://github.com/rayanjainn/CreditIQ",
+      "kind": "hackathon",
+      "note": "Winners with team Brawn GP 1251 for CreditIQ.",
+      "projectId": "creditiq"
+    },
+    {
+      "id": "ach-airavat",
+      "title": "Airavat Hackathon",
+      "issuer": "Airavat",
+      "date": "2026",
+      "url": "https://github.com/rayanjainn/neurocred",
+      "kind": "hackathon",
+      "note": "Built NeuroCred there with Team Pookies.",
+      "projectId": "neurocred"
+    },
+    {
+      "id": "ach-brew",
+      "title": "skrgrep on Homebrew",
+      "issuer": "Own Homebrew tap",
+      "date": "2026",
+      "url": "https://github.com/rayanjainn/homebrew-skrgrep",
+      "kind": "package",
+      "note": "Pre-built bottles for Apple Silicon and Intel.",
+      "projectId": "skrgrep"
+    },
+    {
+      "id": "ach-1",
+      "title": "Pull Shark ×2",
+      "issuer": "GitHub",
+      "date": "",
+      "url": "https://github.com/rayanjainn?tab=achievements",
+      "kind": "badge"
+    },
+    {
+      "id": "ach-2",
+      "title": "Quickdraw",
+      "issuer": "GitHub",
+      "date": "",
+      "url": "https://github.com/rayanjainn?tab=achievements",
+      "kind": "badge"
+    },
+    {
+      "id": "ach-3",
+      "title": "YOLO",
+      "issuer": "GitHub",
+      "date": "",
+      "url": "https://github.com/rayanjainn?tab=achievements",
+      "kind": "badge"
+    }
   ],
   "skills": [
     {
       "group": "Languages",
       "items": [
-        { "name": "TypeScript", "level": 92 },
-        { "name": "Rust", "level": 84 },
-        { "name": "Python", "level": 82 },
-        { "name": "Go", "level": 64 },
-        { "name": "Swift", "level": 62 },
-        { "name": "Java", "level": 66 },
-        { "name": "C++", "level": 60 },
-        { "name": "Lua", "level": 55 }
+        {
+          "name": "TypeScript",
+          "level": 92
+        },
+        {
+          "name": "Python",
+          "level": 84
+        },
+        {
+          "name": "Rust",
+          "level": 82
+        },
+        {
+          "name": "JavaScript",
+          "level": 80
+        },
+        {
+          "name": "Swift",
+          "level": 72
+        },
+        {
+          "name": "Java",
+          "level": 60
+        },
+        {
+          "name": "C#",
+          "level": 56
+        },
+        {
+          "name": "C++",
+          "level": 52
+        },
+        {
+          "name": "Go",
+          "level": 45
+        },
+        {
+          "name": "Lua",
+          "level": 40
+        }
       ]
     },
     {
       "group": "Frameworks",
       "items": [
-        { "name": "Next.js / React", "level": 93 },
-        { "name": "Node.js / Bun", "level": 88 },
-        { "name": "Tailwind CSS", "level": 90 },
-        { "name": "FastAPI", "level": 78 },
-        { "name": "Tauri", "level": 74 },
-        { "name": "Electron", "level": 76 }
+        {
+          "name": "Next.js / React",
+          "level": 94
+        },
+        {
+          "name": "Node.js / Bun",
+          "level": 86
+        },
+        {
+          "name": "Tailwind CSS",
+          "level": 88
+        },
+        {
+          "name": "FastAPI",
+          "level": 80
+        },
+        {
+          "name": "Playwright",
+          "level": 74
+        },
+        {
+          "name": "SwiftUI",
+          "level": 70
+        },
+        {
+          "name": "Electron",
+          "level": 68
+        },
+        {
+          "name": "Tauri",
+          "level": 66
+        },
+        {
+          "name": "PyTorch",
+          "level": 64
+        }
       ]
     },
     {
       "group": "Data & Infra",
       "items": [
-        { "name": "PostgreSQL", "level": 84 },
-        { "name": "Redis", "level": 80 },
-        { "name": "MongoDB / Prisma", "level": 78 },
-        { "name": "Docker", "level": 86 },
-        { "name": "Kubernetes", "level": 72 },
-        { "name": "Terraform / Ansible", "level": 70 },
-        { "name": "Jenkins / GH Actions", "level": 74 },
-        { "name": "Linux", "level": 84 }
+        {
+          "name": "Docker",
+          "level": 86
+        },
+        {
+          "name": "PostgreSQL",
+          "level": 84
+        },
+        {
+          "name": "Redis",
+          "level": 82
+        },
+        {
+          "name": "MongoDB / Prisma",
+          "level": 76
+        },
+        {
+          "name": "Linux",
+          "level": 78
+        },
+        {
+          "name": "Jenkins / GH Actions",
+          "level": 72
+        },
+        {
+          "name": "Kubernetes",
+          "level": 70
+        },
+        {
+          "name": "Terraform / Ansible",
+          "level": 66
+        },
+        {
+          "name": "Cloudflare Workers",
+          "level": 64
+        }
       ]
     }
   ]

@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { PUBLISHED, DRAFT_KEY, LANG_COLORS, type Portfolio, type Project, type Experience, type Education, type Achievement } from "@/lib/content"
+import { PUBLISHED, DRAFT_KEY, LANG_COLORS, type Portfolio, type Project, type Experience, type Education, type Achievement, type ShippedItem } from "@/lib/content"
 import { fetchRepos, projectFromRepo, publishContent, type Repo } from "@/lib/github"
 import { Field, Text, Area, Tags, Lines, Toggle, ColorPick, Card, Btn, LinkBtn, inputCls } from "./fields"
 import {
@@ -322,11 +322,24 @@ function ProjectForm({ p, onChange }: { p: Project; onChange: (p: Project) => vo
       <Field label="Live URL"><Text value={p.liveUrl} onChange={(v) => up({ liveUrl: v })} placeholder="https://" /></Field>
       <Field label="Source URL"><Text value={p.githubUrl} onChange={(v) => up({ githubUrl: v })} placeholder="https://github.com/…" /></Field>
       <Field label="Year"><Text value={p.year} onChange={(v) => up({ year: v })} /></Field>
+      <Field label="Started" hint="YYYY-MM, orders the build log"><Text value={p.started ?? ""} onChange={(v) => up({ started: v || undefined })} placeholder="2026-03" /></Field>
       <Field label="Cover image URL" hint="optional, else generated"><Text value={p.image} onChange={(v) => up({ image: v })} placeholder="https://…/cover.png" /></Field>
       <Field label="Accent colour" span={2}><ColorPick value={p.accent} onChange={(v) => up({ accent: v })} /></Field>
       <div className="sm:col-span-2"><Toggle checked={p.featured} onChange={(v) => up({ featured: v })} label="Featured" /></div>
     </div>
   )
+}
+
+// "label | project id or URL" <-> ShippedItem
+function formatShipped(i: ShippedItem) {
+  const t = i.projectId ?? i.url ?? ""
+  return t ? `${i.label} | ${t}` : i.label
+}
+function parseShipped(line: string): ShippedItem {
+  const [label, ...rest] = line.split("|")
+  const target = rest.join("|").trim()
+  if (!target) return { label: label.trim() }
+  return /^https?:\/\//i.test(target) ? { label: label.trim(), url: target } : { label: label.trim(), projectId: target }
 }
 
 // ── Generic list editor for experience / education / honours ────
@@ -382,7 +395,15 @@ function ExperienceTab({ data, set }: { data: Portfolio; set: SetFn }) {
           <Field label="End"><Text value={e.end} onChange={(v) => up({ end: v })} placeholder="Present" /></Field>
           <Field label="Location"><Text value={e.location} onChange={(v) => up({ location: v })} /></Field>
           <Field label="Link"><Text value={e.url} onChange={(v) => up({ url: v })} placeholder="https://" /></Field>
+          <Field label="Kind" hint="internship or leadership, optional">
+            <select className={inputCls} value={e.kind ?? ""} onChange={(ev) => up({ kind: (ev.target.value || undefined) as Experience["kind"] })}>
+              <option value="">None</option><option value="internship">Internship</option><option value="leadership">Leadership</option>
+            </select>
+          </Field>
           <Field label="Description" span={2}><Area value={e.description} onChange={(v) => up({ description: v })} rows={3} /></Field>
+          <Field label="Shipped" hint="one per line: label | project id or URL" span={2}>
+            <Lines value={(e.shipped ?? []).map(formatShipped)} onChange={(v) => up({ shipped: v.length ? v.map(parseShipped) : undefined })} rows={3} placeholder="CtrlFixIt | ctrlfixit" />
+          </Field>
           <Field label="Highlights" hint="one per line" span={2}><Lines value={e.highlights} onChange={(v) => up({ highlights: v })} /></Field>
           <Field label="Tech" hint="comma separated" span={2}><Tags value={e.tech} onChange={(v) => up({ tech: v })} /></Field>
         </>
@@ -405,6 +426,12 @@ function EducationTab({ data, set }: { data: Portfolio; set: SetFn }) {
           <Field label="Field"><Text value={e.field} onChange={(v) => up({ field: v })} /></Field>
           <Field label="Start"><Text value={e.start} onChange={(v) => up({ start: v })} /></Field>
           <Field label="End"><Text value={e.end} onChange={(v) => up({ end: v })} /></Field>
+          <Field label="Kind" hint="how prominent it is on the Quick View">
+            <select className={inputCls} value={e.kind ?? ""} onChange={(ev) => up({ kind: (ev.target.value || undefined) as Education["kind"] })}>
+              <option value="">University (default)</option><option value="university">University</option><option value="programme">Programme</option><option value="school">School</option>
+            </select>
+          </Field>
+          <Field label="Place"><Text value={e.place ?? ""} onChange={(v) => up({ place: v || undefined })} /></Field>
           <Field label="Note" hint="GPA, honours…" span={2}><Text value={e.note} onChange={(v) => up({ note: v })} /></Field>
         </>
       )}
@@ -425,6 +452,13 @@ function AchievementsTab({ data, set }: { data: Portfolio; set: SetFn }) {
           <Field label="Issuer"><Text value={a.issuer} onChange={(v) => up({ issuer: v })} /></Field>
           <Field label="Date"><Text value={a.date} onChange={(v) => up({ date: v })} /></Field>
           <Field label="Link" span={2}><Text value={a.url} onChange={(v) => up({ url: v })} placeholder="https://" /></Field>
+          <Field label="Kind" hint="where it sits on the shelf">
+            <select className={inputCls} value={a.kind ?? ""} onChange={(ev) => up({ kind: (ev.target.value || undefined) as Achievement["kind"] })}>
+              <option value="">Badge (default)</option><option value="hackathon">Hackathon</option><option value="package">Package</option><option value="badge">Badge</option>
+            </select>
+          </Field>
+          <Field label="Project id" hint="optional, links to a case study"><Text value={a.projectId ?? ""} onChange={(v) => up({ projectId: v || undefined })} /></Field>
+          <Field label="Note" hint="one plain line" span={2}><Text value={a.note ?? ""} onChange={(v) => up({ note: v || undefined })} /></Field>
         </>
       )}
     />

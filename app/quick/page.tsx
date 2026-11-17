@@ -1,15 +1,7 @@
-"use client"
-import { useEffect } from "react"
-import QuickView from "@/components/quick/QuickView"
-import PreviewBadge from "@/components/ui/PreviewBadge"
-import { loadPreviewDraft } from "@/lib/content"
+import QuickEntry from "@/components/quick/QuickEntry"
+import { buildStats } from "@/lib/quick/github"
 
+// Server component: the GitHub numbers and their relative dates are computed once, at build time.
 export default function QuickPage() {
-  useEffect(() => { loadPreviewDraft() }, [])
-  return (
-    <>
-      <QuickView />
-      <PreviewBadge />
-    </>
-  )
+  return <QuickEntry stats={buildStats()} />
 }
