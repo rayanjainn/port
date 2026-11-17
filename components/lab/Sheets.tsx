@@ -32,7 +32,7 @@ export function AboutSheet({ world = "village" }: { world?: string }) {
     <section className="cs">
       <div className="cs-top">
         <div className="cs-medal">
-          <div className="cs-face">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={`/ui/portrait-${world}.png`} alt={p.name} style={{ imageRendering: "pixelated" }} /></div>
+          <span className="cs-flame cs-flame-l" aria-hidden /><span className="cs-flame cs-flame-r" aria-hidden /><div className="cs-face">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={`/ui/portrait-${world}.png`} alt={p.name} style={{ imageRendering: "pixelated" }} /></div>
           <span className="cs-lv">LV {new Date().getFullYear() - 2021}</span>
         </div>
         <div className="cs-id">
@@ -127,7 +127,7 @@ export function ProjectsInventory() {
       <div className="inv-head"><Ico n="chest-big" size={2} /> <b>INVENTORY</b> <span>{projects.length} items collected</span></div>
       <div className="inv-grid">
         {list.map((pj, i) => {
-          const r = pj.featured ? RARITY[0] : RARITY[1 + (i % 3)]
+          const r = i < 2 && pj.featured ? RARITY[0] : RARITY[1 + (i % 3)]
           return (
             <article key={pj.id} className="inv-card" style={{ ["--r" as string]: r.c } as CSSProperties} data-rare={r.n.toLowerCase()}>
               <div className="inv-cover"><InvCover p={pj} /><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>

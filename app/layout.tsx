@@ -8,7 +8,8 @@ import "./surfaces.css"
 import "./surfaces-screens.css"
 import "./surfaces-cards.css"
 import "./surfaces-arcade.css"
-import "./art-village.css"
+import "./art.css"
+import "./art-worlds.css"
 
 const pixel = Press_Start_2P({ weight: "400", subsets: ["latin"], variable: "--ff-pixel", display: "swap" })
 const pixelify = Pixelify_Sans({ subsets: ["latin"], variable: "--ff-pixelify", display: "swap" })
