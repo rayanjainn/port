@@ -1,7 +1,8 @@
 // Walkable interiors for every building, plus the mine dungeon.
 import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalSheet, type Rect } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
-import { TS, G, sheet, img, blit, hash, mulberry, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
+import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
+import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
 const WALL_OFF: Record<WallVariant, [number, number]> = { beige: [0, 0], orange: [5, 0], brown: [0, 6], green: [5, 6] }
@@ -77,48 +78,11 @@ function room(id: string, title: string, o: RoomOpts) {
     spawn: { x: doorC * TS + 8, y: (h - 2) * TS + 10, facing: "up" }, dark: 0.15, music: "chill", scale: 4, bg: "#0d0b14", world: "village",
     ...extra,
   })
-  return { g, put, spot, sprites, hotspots, actors, lights, blocked, finish, doorC }
+  return { g, put, spot, sprites, hotspots, actors, lights, blocked, tiles, finish, doorC }
 }
 
 function npc(name: string, x: number, y: number, extra: Partial<ActorDef>): ActorDef {
   return { id: name, kind: "npc", sheet: charSheet(name), face: charFace(name), name, x, y, wander: 0, facing: "down", ...extra }
-}
-
-// ── generated "paintings" for each project ─────────────────────
-function painting(seed: string, accent: string, w = 20, h = 16) {
-  const { c, ctx } = canvas(w + 4, h + 4)
-  const rnd = mulberry([...seed].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7))
-  // gilded frame
-  ctx.fillStyle = "#3a2210"; ctx.fillRect(0, 0, w + 4, h + 4)
-  ctx.fillStyle = "#d9a441"; ctx.fillRect(1, 1, w + 2, h + 2)
-  ctx.fillStyle = "#8a5a1c"; ctx.fillRect(2, 2, w, h)
-  // canvas: sky gradient tinted with the accent
-  const hex = accent.replace("#", "")
-  const ar = parseInt(hex.slice(0, 2), 16), ag = parseInt(hex.slice(2, 4), 16), ab = parseInt(hex.slice(4, 6), 16)
-  for (let y = 0; y < h; y++) {
-    const k = y / h
-    ctx.fillStyle = `rgb(${Math.round(20 + ar * k * 0.9)},${Math.round(18 + ag * k * 0.7)},${Math.round(40 + ab * k * 0.6)})`
-    ctx.fillRect(2, 2 + y, w, 1)
-  }
-  const motif = Math.floor(rnd() * 3)
-  ctx.fillStyle = accent
-  if (motif === 0) {
-    // sun + mountains
-    ctx.fillRect(2 + w - 7, 4, 4, 4)
-    for (let x = 0; x < w; x++) { const mh = Math.floor(3 + Math.abs(Math.sin(x * 0.5 + rnd() * 3)) * 6); ctx.fillStyle = `rgba(15,10,25,0.85)`; ctx.fillRect(2 + x, 2 + h - mh, 1, mh) }
-  } else if (motif === 1) {
-    // abstract blocks
-    for (let k = 0; k < 6; k++) { ctx.globalAlpha = 0.5 + rnd() * 0.5; ctx.fillRect(2 + Math.floor(rnd() * (w - 5)), 2 + Math.floor(rnd() * (h - 5)), 3 + Math.floor(rnd() * 4), 3 + Math.floor(rnd() * 4)) }
-    ctx.globalAlpha = 1
-  } else {
-    // stars / circuit
-    for (let k = 0; k < 10; k++) { ctx.fillStyle = k % 3 ? "#fff8dc" : accent; ctx.fillRect(2 + Math.floor(rnd() * w), 2 + Math.floor(rnd() * h), 1, 1) }
-    ctx.fillStyle = accent; ctx.fillRect(2 + w / 2 - 3, 2 + h / 2 - 3, 6, 6)
-    ctx.fillStyle = "#fff8dc"; ctx.fillRect(2 + w / 2 - 1, 2 + h / 2 - 1, 2, 2)
-  }
-  // shine
-  ctx.fillStyle = "rgba(255,255,255,0.25)"; ctx.fillRect(3, 3, w - 2, 1)
-  return c
 }
 
 export function buildInteriors(content: Portfolio): Record<string, Scene> {
@@ -145,37 +109,164 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
     out.townhall = R.finish({})
   }
 
-  // ── GALLERY ─────────────────────────────────────────────────
+  // ── GALLERY: a museum hall ──────────────────────────────────
+  // Back wall: the masterpieces (featured work). Below it, free-standing hanging walls in rows, two per row, with a
+  // central aisle to the door. The hall grows a row for every six more projects.
   {
-    const projects = content.projects
-    const wallSlots = Math.min(projects.length, 6)
-    const easelRows = Math.ceil(Math.max(0, projects.length - wallSlots) / 4)
-    const h = 9 + easelRows * 3
-    const R = room("gallery", "Gallery", { w: 17, h, wall: "orange", floor: "yellow" })
-    projects.forEach((p, i) => {
-      const art = painting(p.id, p.accent || "#ffd76a")
-      let x: number, y: number, baseY: number
-      if (i < wallSlots) {
-        x = (2 + i * 2.4) * TS + 4; y = TS - 6; baseY = TS
-      } else {
-        const k = i - wallSlots
-        const row = Math.floor(k / 4), col = k % 4
-        x = (2.5 + col * 3.4) * TS; y = (4.2 + row * 3) * TS; baseY = y + 26
-        // easel legs
-        R.sprites.push({ kind: "sprite", src: easel(), rect: [0, 0, 24, 30], x: x - 2, y: y - 2, baseY, solid: { x: x + 2, y: y + 18, w: 16, h: 8 } })
-      }
-      R.sprites.push({ kind: "sprite", src: art, rect: [0, 0, art.width, art.height], x, y, baseY: baseY + 1 })
-      R.spot(`art-${p.id}`, x + 12, i < wallSlots ? 2 * TS + 4 : y + 34, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, x + 12, y - 8)
+    const list = ordered(content.projects)
+    const nTop = Math.min(6, list.length)
+    const rest = list.slice(nTop)
+    const rows = Math.ceil(rest.length / 6)
+    const GW = 40, NW = 7                       // hall width, back-wall height (tiles)
+    const T0 = NW + 6                           // first hanging wall's top row
+    const PITCH = 9                              // rows between hanging walls
+    const h = rows ? T0 + rows * PITCH + 3 : NW + 9
+    const R = room("gallery", "Gallery", { w: GW, h, wall: "orange", floor: "yellow" })
+    const g = R.g
+    const W = GW * TS
+    // parquet: darker herringbone feel, runner and rug
+    for (let r = NW; r < h - 1; r++) for (let c = 1; c < GW - 1; c++) {
+      g.fillStyle = (c + r) % 2 ? "rgba(70,30,10,.10)" : "rgba(255,230,170,.06)"; g.fillRect(c * TS, r * TS, TS, TS)
+    }
+    const carpet = (x: number, y: number, w2: number, h2: number) => {
+      g.fillStyle = "#2a0d14"; g.fillRect(x - 2, y - 2, w2 + 4, h2 + 4)
+      g.fillStyle = "#8e1f2f"; g.fillRect(x, y, w2, h2)
+      g.fillStyle = "#c9a14a"; g.fillRect(x + 3, y + 3, w2 - 6, 1); g.fillRect(x + 3, y + h2 - 4, w2 - 6, 1); g.fillRect(x + 3, y + 3, 1, h2 - 6); g.fillRect(x + w2 - 4, y + 3, 1, h2 - 6)
+      g.fillStyle = "rgba(255,255,255,.06)"; for (let k = 8; k < h2 - 4; k += 8) g.fillRect(x + 6, y + k, w2 - 12, 1)
+    }
+    const midX = (GW / 2) * TS
+    carpet(midX - 24, NW * TS + 8, 48, (h - 1 - NW) * TS - 8)
+    carpet(midX - 112, NW * TS + 10, 224, 78)
+    // brass medallion in the masterpiece rug
+    g.fillStyle = "#c9a14a"; g.beginPath(); g.arc(midX, NW * TS + 49, 15, 0, Math.PI * 2); g.fill()
+    g.fillStyle = "#8e1f2f"; g.beginPath(); g.arc(midX, NW * TS + 49, 12, 0, Math.PI * 2); g.fill()
+    g.fillStyle = "#f4c430"; g.beginPath(); g.arc(midX, NW * TS + 49, 7, 0, Math.PI * 2); g.fill()
+
+    const paper = (ctx: CanvasRenderingContext2D, w2: number, h2: number, wain: number) => {
+      ctx.fillStyle = "#5b2036"; ctx.fillRect(0, 0, w2, h2)
+      for (let x = 0; x < w2; x += 12) { ctx.fillStyle = "rgba(255,255,255,.045)"; ctx.fillRect(x, 0, 6, h2) }
+      for (let y = 12; y < h2 - wain - 4; y += 16) for (let x = 6 + ((y / 16) % 2) * 6; x < w2; x += 12) { ctx.fillStyle = "rgba(255,205,140,.13)"; ctx.fillRect(x, y, 1, 3); ctx.fillRect(x - 1, y + 1, 3, 1) }
+      ctx.fillStyle = "#2b180c"; ctx.fillRect(0, 0, w2, 5); ctx.fillStyle = "#c9a14a"; ctx.fillRect(0, 5, w2, 1); ctx.fillStyle = "#8a6420"; ctx.fillRect(0, 6, w2, 1)
+      ctx.fillStyle = "#c9a14a"; ctx.fillRect(0, 0, w2, 1)
+      const wy = h2 - wain
+      ctx.fillStyle = "#c9a14a"; ctx.fillRect(0, wy, w2, 1); ctx.fillStyle = "#3a2010"; ctx.fillRect(0, wy + 1, w2, wain - 1)
+      for (let x = 3; x < w2 - 8; x += 24) { ctx.fillStyle = "#5a3a1e"; ctx.fillRect(x, wy + 3, 20, wain - 6); ctx.fillStyle = "#7a5230"; ctx.fillRect(x, wy + 3, 20, 1) }
+      ctx.fillStyle = "#1c0f06"; ctx.fillRect(0, h2 - 2, w2, 2)
+    }
+    const cone = (ctx: CanvasRenderingContext2D, cx: number, top: number, bottom: number, spread: number, big: boolean) => {
+      ctx.fillStyle = "#c9a14a"; ctx.fillRect(cx - 3, top, 6, 3); ctx.fillStyle = "#fff0b0"; ctx.fillRect(cx - 1, top + 3, 2, 1)
+      ctx.fillStyle = big ? "rgba(255,236,170,.17)" : "rgba(255,236,170,.11)"
+      ctx.beginPath(); ctx.moveTo(cx - 2, top + 4); ctx.lineTo(cx + 2, top + 4); ctx.lineTo(cx + spread, bottom); ctx.lineTo(cx - spread, bottom); ctx.closePath(); ctx.fill()
+    }
+    // the artwork on a wall canvas: frame, plaque, spotlight. Returns the hotspot centre (x) and frame top.
+    const hang = (ctx: CanvasRenderingContext2D, p: ExProject, cx: number, top: number, big: boolean) => {
+      const art = exhibitArt(p)
+      const inner = big ? matted(art, 6, "#3a0f1c") : art
+      const fr = frameAround(inner, "gold", big)
+      const x = Math.round(cx - fr.width / 2)
+      cone(ctx, cx, 6, top + fr.height + 22, Math.round(fr.width / 2) + 10, big)
+      ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(x + 3, top + 3, fr.width, fr.height)
+      ctx.drawImage(fr, x, top)
+      const pl = plaque(p, big ? 72 : 56)
+      ctx.drawImage(pl, Math.round(cx - pl.width / 2), top + fr.height + 3)
+      // a ribbon bow on masterpieces
+      if (big) { ctx.fillStyle = "#f4c430"; ctx.fillRect(Math.round(cx) - 2, top - 3, 4, 4); ctx.fillStyle = "#b07d14"; ctx.fillRect(Math.round(cx) - 1, top, 2, 2) }
+      return fr
+    }
+    // north wall painted into the ground
+    paper(g, W, NW * TS, 12)
+    // keep the side walls: restore the corners
+    const topPlan = list.slice(0, nTop)
+    const usable = W - 2 * TS
+    const tp = usable / Math.max(1, nTop)
+    topPlan.forEach((p, k) => {
+      const cx = TS + tp * (k + 0.5)
+      const fr = hang(g, p, cx, 12, !!p.featured)
+      const spotY = NW * TS + 8
+      g.fillStyle = "rgba(255,236,170,.1)"; g.beginPath(); g.ellipse(cx, NW * TS + 30, 46, 11, 0, 0, Math.PI * 2); g.fill()
+      R.lights.push({ x: cx, y: 12 + fr.height + 12, r: 78, color: "255,226,170" })
+      R.spot(`art-${p.id}`, cx, spotY + 36, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, 12 + fr.height + 34)
     })
-    R.put("bannerPurple", 1, 1); R.put("bannerYellow", 15, 1)
-    R.put("pottedPlant", 1, h - 3); R.put("pottedPlant", 15, h - 3)
-    R.actors.push(npc(CHARS.curator, 13 * TS + 8, (h - 3) * TS + 8, {
+    for (let c = 0; c < GW; c++) for (let r = 0; r < NW; r++) { R.blocked[r * GW + c] = 1 }
+    // pedestals with sculptures of the first featured projects, rope between posts
+    const pedX = [6, 13, 27, 34]
+    list.filter((p) => p.featured).slice(0, 4).forEach((p, i) => {
+      const sc = sculpture(p, i % 2 ? "bronze" : "marble")
+      const fx = pedX[i] * TS + 8, fy = (NW + 4) * TS + 6
+      R.sprites.push({ kind: "sprite", src: sc, rect: [0, 0, sc.width, sc.height], x: fx - sc.width / 2, y: fy - sc.height, baseY: fy, solid: { x: fx - 11, y: fy - 9, w: 22, h: 8 } })
+      R.lights.push({ x: fx, y: fy - 30, r: 52, color: "255,230,180" })
+      g.fillStyle = "rgba(255,236,170,.1)"; g.beginPath(); g.ellipse(fx, fy, 24, 8, 0, 0, Math.PI * 2); g.fill()
+    })
+    const stanchion = (len: number) => {
+      const { c: sc, ctx: sx } = canvas(len, 20)
+      const post = (x: number) => { sx.fillStyle = "#3a2210"; sx.fillRect(x - 1, 3, 4, 15); sx.fillStyle = "#e6b84a"; sx.fillRect(x, 4, 2, 13); sx.fillStyle = "#fff0b0"; sx.fillRect(x, 4, 1, 12); sx.fillStyle = "#3a2210"; sx.fillRect(x - 2, 17, 6, 2); sx.fillStyle = "#e6b84a"; sx.fillRect(x - 1, 17, 4, 1); sx.fillStyle = "#3a2210"; sx.fillRect(x - 1, 1, 4, 3); sx.fillStyle = "#e6b84a"; sx.fillRect(x, 2, 2, 1) }
+      for (let x = 3; x < len - 3; x++) { const t = (x - 3) / (len - 6), sag = Math.round(Math.sin(t * Math.PI) * 4); sx.fillStyle = "#3a0a12"; sx.fillRect(x, 6 + sag, 1, 3); sx.fillStyle = "#b8283c"; sx.fillRect(x, 6 + sag, 1, 2) }
+      post(3); post(len - 5)
+      return sc
+    }
+    // ropes across the masterpiece zone, with a gap at the central aisle and in front of each pedestal's hotspot lane
+    const rope = (x: number, y: number, len: number) => {
+      const s = stanchion(len)
+      R.sprites.push({ kind: "sprite", src: s, rect: [0, 0, len, 20], x, y: y - 20, baseY: y, solid: { x: x + 1, y: y - 6, w: 4, h: 5 } })
+      R.sprites.push({ kind: "sprite", src: img("/na/tiles/TilesetFloor.png"), rect: [0, 0, 0, 0], x: x + len - 6, y: y - 6, baseY: y, solid: { x: x + len - 6, y: y - 6, w: 4, h: 5 } })
+    }
+    for (const [x0, x1] of [[2, 14], [26, 38]]) {
+      const len = (x1 - x0) * TS
+      rope(x0 * TS, (NW + 7) * TS, len)
+    }
+    // benches and ropes on the partitions
+    const bench = (cx: number, y: number) => {
+      const { c: bc, ctx: bx } = canvas(44, 18)
+      bx.fillStyle = "rgba(0,0,0,.3)"; bx.fillRect(2, 15, 40, 3)
+      bx.fillStyle = "#2b180c"; bx.fillRect(3, 9, 3, 7); bx.fillRect(38, 9, 3, 7)
+      bx.fillStyle = "#1c0a10"; bx.fillRect(1, 3, 42, 9); bx.fillStyle = "#9a2638"; bx.fillRect(2, 4, 40, 6); bx.fillStyle = "#c8485a"; bx.fillRect(2, 4, 40, 1); bx.fillStyle = "#c9a14a"; bx.fillRect(2, 10, 40, 1)
+      R.sprites.push({ kind: "sprite", src: bc, rect: [0, 0, 44, 18], x: Math.round(cx - 22), y: y - 18, baseY: y, solid: { x: Math.round(cx - 21), y: y - 8, w: 42, h: 7 } })
+    }
+    // partitions
+    const pieceRows: { p: ExProject; cx: number }[][] = []
+    for (let r = 0; r < rows; r++) {
+      const T = (T0 + r * PITCH) * TS
+      const base = T + 96
+      const chunk = rest.slice(r * 6, r * 6 + 6)
+      ;[chunk.slice(0, 3), chunk.slice(3, 6)].forEach((part, side) => {
+        if (!part.length) return
+        const pw = part.length * 91 + 14
+        const x0 = side === 0 ? 19 * TS - pw : 22 * TS
+        const { c: wc, ctx: wx } = canvas(pw, 96)
+        paper(wx, pw, 96, 10)
+        wx.fillStyle = "#1c0f06"; wx.fillRect(0, 0, 2, 96); wx.fillRect(pw - 2, 0, 2, 96)
+        wx.fillStyle = "#c9a14a"; wx.fillRect(2, 0, 1, 96); wx.fillRect(pw - 3, 0, 1, 96)
+        const cxs: number[] = []
+        part.forEach((p, k) => {
+          const cx = 7 + 91 * (k + 0.5)
+          hang(wx, p, cx, 9, false)
+          cxs.push(x0 + cx)
+          g.fillStyle = "rgba(255,236,170,.12)"; g.beginPath(); g.ellipse(x0 + cx, base + 12, 44, 12, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = "rgba(255,236,170,.1)"; g.beginPath(); g.ellipse(x0 + cx, base + 12, 28, 7, 0, 0, Math.PI * 2); g.fill()
+          R.lights.push({ x: x0 + cx, y: T + 72, r: 66, color: "255,226,170" })
+          R.spot(`art-${p.id}`, x0 + cx, base + 12, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, x0 + cx, T + 4)
+        })
+        R.sprites.push({ kind: "sprite", src: wc, rect: [0, 0, pw, 96], x: x0, y: T, baseY: base, solid: { x: x0, y: base - 14, w: pw, h: 12 } })
+        // blocked tiles beneath the wall so the 3D view raises it
+        for (let c = Math.floor(x0 / TS); c < Math.ceil((x0 + pw) / TS); c++) for (let rr = Math.floor((base - 14) / TS); rr <= Math.floor((base - 1) / TS); rr++) R.blocked[rr * GW + c] = 1
+        // benches in the gaps between pieces
+        for (let k = 0; k < part.length - 1; k++) bench(x0 + 7 + 91 * (k + 1), base + 26)
+        // a brass floor strip in front of the wall
+        g.fillStyle = "rgba(0,0,0,.18)"; g.fillRect(x0, base, pw, 3)
+      })
+      pieceRows.push([])
+    }
+    void pieceRows
+    R.put("bannerPurple", 1, 1); R.put("bannerYellow", GW - 2, 1)
+    R.put("pottedPlant", 1, h - 3); R.put("pottedPlant", GW - 2, h - 3); R.put("pottedPlant", 1, NW + 1); R.put("pottedPlant", GW - 2, NW + 1)
+    R.actors.push(npc(CHARS.curator, 24 * TS + 8, (NW + 3) * TS + 8, {
       id: "curator", name: "Curator Mei", facing: "left",
-      lines: [`Welcome to the Gallery!`, `Every painting here is one of ${first}'s projects.`, `Walk up to one and press E to learn more, or browse them all.`],
+      lines: [`Welcome to the Gallery!`, `Every piece here is one of ${first}'s projects, ${content.projects.length} in all.`, `The masterpieces hang on the back wall. Walk up to any frame and press E.`],
       action: { type: "section", id: "gallery" },
     }))
-    R.lights.push({ x: 8 * TS, y: TS + 8, r: 120, color: "255,220,160" })
-    out.gallery = R.finish({ dark: 0.1 })
+    R.lights.push({ x: midX, y: (NW + 3) * TS, r: 150, color: "255,215,160" })
+    for (let r = 0; r < rows; r++) R.lights.push({ x: midX, y: (T0 + r * PITCH + 7) * TS, r: 70, color: "255,205,140" })
+    for (let i = 0; i < GW * h; i++) if (R.blocked[i]) R.tiles[i] = G.Void
+    out.gallery = R.finish({ dark: 0.5 })
   }
 
   // ── TAVERN ──────────────────────────────────────────────────
@@ -313,21 +404,8 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
   return out
 }
 
-let easelCanvas: HTMLCanvasElement | null = null
-function easel() {
-  if (easelCanvas) return easelCanvas
-  const { c, ctx } = canvas(24, 30)
-  ctx.fillStyle = "#3a2210"
-  ctx.fillRect(4, 8, 3, 22); ctx.fillRect(17, 8, 3, 22); ctx.fillRect(10, 4, 3, 26)
-  ctx.fillStyle = "#a8692f"
-  ctx.fillRect(5, 9, 1, 20); ctx.fillRect(18, 9, 1, 20); ctx.fillRect(11, 5, 1, 24)
-  ctx.fillStyle = "#3a2210"; ctx.fillRect(2, 20, 20, 3)
-  ctx.fillStyle = "#c98a45"; ctx.fillRect(3, 21, 18, 1)
-  easelCanvas = c
-  return c
-}
-
 export const INTERIOR_PRELOAD = [
+  ...FRAME_PRELOAD,
   charSheet(CHARS.mayor), charFace(CHARS.mayor), charSheet(CHARS.curator), charFace(CHARS.curator),
   charSheet(CHARS.barkeep), charFace(CHARS.barkeep), charSheet(CHARS.smith), charFace(CHARS.smith),
   charSheet(CHARS.teacher), charFace(CHARS.teacher), charSheet(CHARS.postmaster), charFace(CHARS.postmaster),

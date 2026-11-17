@@ -5,6 +5,7 @@ import {
   CARS, PEOPLE, STATUES, personSheet, personFace, type RoofSet, type WallSet,
 } from "@/lib/kenney"
 import { runtime } from "@/lib/runtime"
+import { ordered, billboard, type ExProject } from "./exhibits"
 import type { Portfolio } from "@/lib/content"
 import { TS, img, sheet, blit, hash, mulberry, canvas, type Scene, type SceneSign, type Landmark, type Sprite, type Hotspot, type ActorDef, type Light, type Box } from "./core"
 
@@ -615,7 +616,6 @@ export function buildCity(content?: Portfolio): Scene {
   }
   const warm = "255,214,150"
   const emitters: { cv: HTMLCanvasElement; x: number; y: number; rgb: string; blur?: number }[] = []
-  let screenTick: ((t: number) => void) | null = null
   const neon = (text: string, cx: number, y: number, col: string, rgb: string, baseY: number) => {
     const w = textW(text) + 8, h = 13
     const cv = mk(w, h, (s) => {
@@ -1082,7 +1082,8 @@ export function buildCity(content?: Portfolio): Scene {
   // polish: districts, signage and the night look
   // ───────────────────────────────────────────────────────────
   const glowSprite = (cv: HTMLCanvasElement, x: number, y: number, rgb: string, blur = 10) => emitters.push({ cv, x: Math.round(x), y: Math.round(y), rgb, blur })
-  const projects = (content?.projects ?? []).length ? content!.projects : Object.keys(PITCH).map((id) => ({ id, title: id.toUpperCase(), tagline: "", accent: "#ff4fa3" }))
+  const stubs: ExProject[] = Object.keys(PITCH).map((id) => ({ id, title: id.toUpperCase(), tagline: "", accent: "#ff4fa3", year: "", featured: false, category: "", tech: [], description: "", highlights: [] }))
+  const projects: ExProject[] = ordered((content?.projects ?? []).length ? content!.projects : stubs)
   const ptitle = (p: { title: string }) => p.title.toUpperCase().slice(0, 11)
   const hexRgb = (h: string) => { const n = parseInt(h.slice(1), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}` }
   const mix = (h: string, k: number, to = 0) => { const n = parseInt(h.slice(1), 16); const f = (v: number) => Math.round(v + (to - v) * k); return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})` }
@@ -1105,38 +1106,73 @@ export function buildCity(content?: Portfolio): Scene {
     if (h > 31 && !flat) { s.fillStyle = p.accent; s.fillRect(6, h - 6, w - 12, 1); micro(s, "NOW SHIPPING", Math.round((w - 48) / 2), h - 11, "rgba(255,255,255,.55)") }
     s.fillStyle = "rgba(255,255,255,.2)"; s.fillRect(2, 2, w - 4, 1)
   })
-  const ground = (p: Parameters<typeof board>[0], fx: number, fy: number) => {
-    const w = 68, h = 34
-    const cv = mk(w + 4, h + 18, (s) => {
-      s.fillStyle = "#2b2f36"; s.fillRect(10, h, 4, 18); s.fillRect(w - 10, h, 4, 18)
-      s.fillStyle = "#5c636c"; s.fillRect(10, h, 1, 18); s.fillRect(w - 10, h, 1, 18)
-      s.fillStyle = "#15131c"; s.fillRect(0, 0, w + 4, h + 4)
-      s.drawImage(board(p, w, h), 2, 2)
-      s.fillStyle = "#8a9099"; s.fillRect(0, 0, w + 4, 1); s.fillRect(0, h + 3, w + 4, 1)
-      for (let x = 6; x < w; x += 16) { s.fillStyle = "#ffe9a8"; s.fillRect(x, -2, 3, 2) }
+  const focusSpot = (id: string, p: ExProject, x: number, y: number, w = 40, marker = true, my?: number) =>
+    hotspots.push({ id, label: `VIEW ${p.title.toUpperCase()}`, box: { x: x - w / 2, y, w, h: 18 }, action: { type: "section", id: "gallery", focus: p.id }, marker, markerX: x, markerY: my ?? y - 70 })
+  const pitchFor = (p: ExProject) => PITCH[p.id] as string[] | undefined
+  /** a lit billboard on two posts at street level: the art, the title and a pitch line */
+  const ground = (p: ExProject, fx: number, fy: number) => {
+    const bb = billboard(p, { pitch: true, lines: pitchFor(p) })
+    const w = bb.width, h = bb.height, legs = 10
+    const cv = mk(w, h + legs, (s) => {
+      s.fillStyle = "#2b2f36"; s.fillRect(10, h, 4, legs); s.fillRect(w - 14, h, 4, legs)
+      s.fillStyle = "#5c636c"; s.fillRect(10, h, 1, legs); s.fillRect(w - 14, h, 1, legs)
+      s.drawImage(bb, 0, 0)
     })
-    spr(cv, fx - (w + 4) / 2, fy - (h + 18), fy, { solid: { x: fx - (w - 14) / 2 - 2, y: fy - 4, w: w - 14, h: 4 } })
-    glowSprite(cv, fx - (w + 4) / 2, fy - (h + 18), hexRgb(p.accent), 8)
-    lights.push({ x: fx, y: fy - 30, r: 40, color: hexRgb(p.accent) })
-    markOcc(Math.floor((fx - 36) / TS), Math.floor((fy - 8) / TS), Math.floor((fx + 36) / TS) + 1, Math.floor(fy / TS) + 1)
+    spr(cv, fx - w / 2, fy - (h + legs), fy, { solid: { x: fx - (w - 20) / 2, y: fy - 4, w: w - 20, h: 4 } })
+    glowSprite(bb, fx - w / 2, fy - (h + legs), hexRgb(p.accent), 8)
+    lights.push({ x: fx, y: fy - 36, r: 50, color: hexRgb(p.accent) })
+    markOcc(Math.floor((fx - 38) / TS), Math.floor((fy - 8) / TS), Math.floor((fx + 38) / TS) + 1, Math.floor(fy / TS) + 1)
+    focusSpot(`ad-${p.id}-${Math.round(fx)}`, p, fx, fy - 20, 44, true, fy - h - legs - 6)
   }
   /** billboard standing on a roof line: drawn just over its building */
   const roofBoard = (bid: string, pi: number) => {
     const b = BUILDINGS.find((q) => q.id === bid)!
     const p = projects[pi % projects.length]
-    const w = 68, h = 30
+    const bb = billboard(p)
+    const w = bb.width, h = bb.height
     const cx = (b.c + b.w / 2) * TS, top = (b.bottom - b.rr - b.fr) * TS
-    const cv = mk(w + 4, h + 12, (s) => {
-      s.fillStyle = "#2b2f36"; s.fillRect(8, h, 3, 12); s.fillRect(w - 6, h, 3, 12); s.fillRect(8, h + 6, w - 14, 2)
-      s.fillStyle = "#15131c"; s.fillRect(0, 0, w + 4, h + 4)
-      s.drawImage(board(p, w, h, true), 2, 2)
-      s.fillStyle = "#8a9099"; s.fillRect(0, 0, w + 4, 1)
+    const cv = mk(w, h + 10, (s) => {
+      s.fillStyle = "#2b2f36"; s.fillRect(8, h, 3, 10); s.fillRect(w - 11, h, 3, 10); s.fillRect(8, h + 4, w - 19, 2)
+      s.drawImage(bb, 0, 0)
     })
-    const x = Math.round(cx - (w + 4) / 2), y = top + 10 - (h + 12)
+    const x = Math.round(cx - w / 2), y = top + 12 - (h + 10)
     spr(cv, x, y, b.bottom * TS + 1)
-    glowSprite(cv, x, y, hexRgb(p.accent), 8)
-    lights.push({ x: cx, y: y + 14, r: 44, color: hexRgb(p.accent) })
+    glowSprite(bb, x, y, hexRgb(p.accent), 8)
+    lights.push({ x: cx, y: y + 20, r: 52, color: hexRgb(p.accent) })
   }
+  /** an LED wall: cycles through projects, pixel-grid overlay, glows at night */
+  const ledScreens: ((t: number) => void)[] = []
+  const ledScreen = (x: number, y: number, baseY: number, picks: number[], period = 3.2, pole = true) => {
+    const ps = picks.map((i) => projects[i % projects.length])
+    const first = billboard(ps[0])
+    const w = first.width, h = first.height
+    const cv = mk(w, h, () => undefined)
+    const cx = cv.getContext("2d")!
+    if (pole) spr(mk(8, 16, (s) => { s.fillStyle = "#4a525c"; s.fillRect(3, 0, 2, 16) }), x + w / 2 - 4, y + h, baseY, { solid: { x: x + w / 2 - 3, y: baseY - 4, w: 6, h: 4 } })
+    spr(cv, x, y, baseY + 1, { dynamic: true })
+    const em = { cv, x, y, rgb: "255,110,190", blur: 12 }
+    emitters.push(em)
+    const cache = new Map<string, HTMLCanvasElement>()
+    let last = -1
+    const draw = (t: number) => {
+      const i = Math.floor(t / period) % ps.length, k = (t % period) / period
+      const p = ps[i]
+      let bbk = cache.get(p.id)
+      if (!bbk) { bbk = billboard(p); cache.set(p.id, bbk) }
+      cx.clearRect(0, 0, w, h)
+      cx.drawImage(bbk, 0, 0)
+      // wipe-in from the left, then LED pixel grid
+      if (k < 0.12) { const wipe = Math.floor((k / 0.12) * w); cx.fillStyle = "#0d0b16"; cx.fillRect(wipe, 0, w - wipe, h); cx.fillStyle = "#ffffff"; cx.fillRect(wipe, 0, 2, h) }
+      cx.fillStyle = "rgba(0,0,0,.22)"
+      for (let yy = 4; yy < h - 4; yy += 2) cx.fillRect(4, yy, w - 8, 1)
+      for (let xx = 5; xx < w - 4; xx += 2) cx.fillRect(xx, 4, 1, h - 8)
+      if (i !== last) { last = i; em.rgb = rgbOf(p.accent) }
+    }
+    ledScreens.push(draw)
+    draw(0)
+    lights.push({ x: x + w / 2, y: y + h / 2, r: 54, color: "255,120,190", flicker: 0.3 })
+  }
+  const rgbOf = (hex: string) => hexRgb(hex)
 
   // ── planters, trees and bus stops along the avenues ──
   const planter = (c: number, r: number) => {
@@ -1189,7 +1225,7 @@ export function buildCity(content?: Portfolio): Scene {
     lights.push({ x: c * TS + 20, y: fy - 22, r: 30, color: "170,215,255" })
     markOcc(c, r, c + 3, r + 1)
   }
-  busStop(12, 16, 4, "n"); busStop(66, 16, 6, "n"); busStop(40, 34, 8, "s"); busStop(46, 50, 9, "s"); busStop(20, 15 + 19, 1, "s")
+  busStop(12, 16, 10, "n"); busStop(66, 16, 11, "n"); busStop(40, 34, 12, "s"); busStop(46, 50, 13, "s"); busStop(20, 15 + 19, 14, "s")
 
   const bikeRack = (c: number, r: number) => {
     if (!free(c, r) || !free(c + 1, r)) return
@@ -1325,30 +1361,66 @@ export function buildCity(content?: Portfolio): Scene {
   ground(projects[1 % projects.length], 70 * TS, 16 * TS + 15)
   ground(projects[2 % projects.length], 20 * TS, 35 * TS + 14)
   ground(projects[3 % projects.length], 68 * TS, 35 * TS + 14)
-  roofBoard("ot3", 5); roofBoard("t3", 4); roofBoard("h-r", 6); roofBoard("r2", 9); roofBoard("harbour", 7); roofBoard("h-l", 10)
+  roofBoard("w2", 4); roofBoard("post", 6); roofBoard("harbour", 8); roofBoard("r3", 9); roofBoard("h-r", 10)
+  const b3 = BUILDINGS.find((q) => q.id === "h-l")!, b2 = BUILDINGS.find((q) => q.id === "t4")!
+  ledScreen(Math.round((b3.c + b3.w / 2) * TS - 36), (b3.bottom - b3.rr - b3.fr) * TS + 12 - 58, b3.bottom * TS + 1, [5, 0, 2], 3.4, false)
+  ledScreen(Math.round((b2.c + b2.w / 2) * TS - 36), (b2.bottom - b2.rr - b2.fr) * TS + 12 - 58, b2.bottom * TS + 1, [7, 1, 3], 3.8, false)
 
-  // a live ticker over the court: cycles through the portfolio
+  // ── Project Studio: glass storefront with the featured work boxed up on shelves ──
   {
-    const w = 84, h = 38
-    const cv = mk(w, h, () => undefined)
-    const fx = 83 * TS + 8, fy = 16 * TS + 4
-    spr(mk(8, 16, (s) => { s.fillStyle = "#4a525c"; s.fillRect(3, 0, 2, 16) }), fx - 4, fy - 16, fy, { solid: { x: fx - 3, y: fy - 4, w: 6, h: 4 } })
-    spr(cv, fx - w / 2, fy - 16 - h, fy + 1, { dynamic: true })
-    emitters.push({ cv, x: fx - w / 2, y: fy - 16 - h, rgb: "255,90,170", blur: 12 })
-    lights.push({ x: fx, y: fy - 30, r: 46, color: "255,110,190", flicker: 0.4 })
-    const cx = cv.getContext("2d")!
-    let idxShown = -1
-    screenTick = (t: number) => {
-      const i = Math.floor(t / 4) % projects.length
-      const k = (t % 4) / 4
-      if (i === idxShown && k > 0.1) { /* scroll only */ }
-      idxShown = i
-      const p = projects[i]
-      cx.drawImage(board(p, w - 4, h - 4), 2, 2)
-      cx.fillStyle = "#15131c"; cx.fillRect(0, 0, w, 2); cx.fillRect(0, h - 2, w, 2); cx.fillRect(0, 0, 2, h); cx.fillRect(w - 2, 0, 2, h)
-      if (k < 0.12) { cx.fillStyle = "rgba(255,255,255,.55)"; cx.fillRect(2, 2 + Math.floor(k * 300) % (h - 4), w - 4, 2) }
+    const st = BUILDINGS.find((q) => q.id === "studio")!
+    const feat = projects.slice(0, Math.min(6, projects.length))
+    const wh = 44
+    const y0 = st.bottom * TS - 2 - wh
+    const box = (p: ExProject, bw: number, bh: number) => mk(bw, bh, (s) => {
+      const body = mix(p.accent, 0.1), lid = mix(p.accent, 0.45, 255), dk = mix(p.accent, 0.45)
+      s.fillStyle = "#120f1c"; s.fillRect(0, 0, bw, bh)
+      s.fillStyle = body; s.fillRect(1, 1, bw - 2, bh - 2)
+      s.fillStyle = lid; s.fillRect(1, 1, bw - 2, 2)
+      s.fillStyle = dk; s.fillRect(bw - 4, 3, 3, bh - 4)
+      s.fillStyle = "#f4c430"; s.fillRect(Math.floor((bw - 4) / 2), 1, 2, bh - 2)
+      const ch = (p.title[0] ?? "?").toUpperCase()
+      if (bw >= 14) drawText(s, ch, Math.floor((bw - 4 - 5) / 2) + 1, Math.floor((bh - 7) / 2) + 2, "#ffffff", "rgba(0,0,0,.5)")
+      else micro(s, ch, Math.floor((bw - 3) / 2), Math.floor((bh - 5) / 2) + 1, "#ffffff")
+    })
+    for (let side = 0; side < 2; side++) {
+      const big = feat.slice(side * 3, side * 3 + 3)
+      if (!big.length) continue
+      const wx = (st.c + (side ? 6 : 1)) * TS, ww = 48
+      const tint = big[0].accent
+      const cv = mk(ww, wh, (s) => {
+        const gr = s.createLinearGradient(0, 0, 0, wh); gr.addColorStop(0, mix(tint, 0.78)); gr.addColorStop(1, "#150f26")
+        s.fillStyle = gr; s.fillRect(0, 0, ww, wh)
+        s.fillStyle = "rgba(255,255,255,.07)"; for (let x = 0; x < ww; x += 6) s.fillRect(x, 0, 1, wh)
+        // top shelf and floor
+        s.fillStyle = "#120f1c"; s.fillRect(0, 22, ww, 2); s.fillStyle = "#cfd4d9"; s.fillRect(0, 22, ww, 1)
+        s.fillStyle = "#120f1c"; s.fillRect(0, wh - 3, ww, 3); s.fillStyle = "#8a9099"; s.fillRect(0, wh - 3, ww, 1)
+        for (let k = 0; k < 3; k++) {
+          const q = feat[(side * 3 + k + 1) % feat.length]
+          s.drawImage(box(q, 13, 11), 3 + k * 15, 10)
+          const bp = big[k]
+          if (bp) s.drawImage(box(bp, 14, 17), 2 + k * 16, wh - 3 - 17)
+        }
+        micro(s, "NEW DROPS", 6, 3, "#ffe9a8")
+      })
+      // glass: a pale reflection streak and a dark mullion frame
+      const gl = mk(ww, wh, (s) => {
+        s.fillStyle = "rgba(255,255,255,.14)"; for (let k = 0; k < 10; k++) s.fillRect(10 + k + 18, 0, 1, wh)
+        s.fillStyle = "rgba(255,255,255,.09)"; for (let k = 0; k < 6; k++) s.fillRect(3 + k, 0, 1, wh)
+        s.fillStyle = "#1a2230"; s.fillRect(0, 0, ww, 1); s.fillRect(0, wh - 1, ww, 1); s.fillRect(0, 0, 1, wh); s.fillRect(ww - 1, 0, 1, wh)
+      })
+      const full = mk(ww, wh, (s) => { s.drawImage(cv, 0, 0); s.drawImage(gl, 0, 0) })
+      spr(full, wx, y0, st.bottom * TS + 3)
+      glowSprite(cv, wx, y0, "255,226,190", 6)
+      lights.push({ x: wx + ww / 2, y: y0 + 22, r: 44, color: "255,232,200" })
+      big.forEach((bp, k) => hotspots.push({ id: `shop-${bp.id}`, label: `VIEW ${bp.title.toUpperCase()}`, box: { x: wx + 2 + k * 16 - 1, y: st.bottom * TS - 2, w: 18, h: 20 }, action: { type: "section", id: "gallery", focus: bp.id } }))
     }
-    screenTick(0)
+  }
+
+  // a live ticker over the court: cycles through the whole portfolio
+  {
+    const fx = 83 * TS + 8, fy = 16 * TS + 4
+    ledScreen(fx - 36, fy - 16 - 48, fy, projects.map((_, i) => i), 4)
   }
 
   // ── more neon, in more colours ──
@@ -1423,7 +1495,7 @@ export function buildCity(content?: Portfolio): Scene {
         c.head.x = hv.x + hv.dx * 18; c.head.y = hv.y + hv.dy * 18
       }
     }
-    screenTick?.(t)
+    for (const l of ledScreens) l(t)
     // fountain spray
     if (sprayRef.cv) {
       const x = sprayRef.cv.getContext("2d")!
