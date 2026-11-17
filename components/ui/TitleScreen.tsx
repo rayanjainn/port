@@ -1,6 +1,5 @@
 "use client"
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { useGameStore, webgl2Supported } from "@/lib/store"
 import { playSound } from "@/lib/audio"
 import { useContent } from "@/lib/content"
@@ -8,6 +7,8 @@ import { charSheet, CHARS } from "@/lib/na"
 import { ArrowRight, Play, Globe } from "lucide-react"
 import { worldById } from "@/lib/world/worlds"
 import { Github } from "@/components/icons"
+import { Panel, Button, Kbd, Ribbon, IconButton } from "@/components/ui/kit"
+import { VOCAB } from "@/lib/theme"
 
 function useTypewriter(lines: string[]) {
   const [text, setText] = useState("")
@@ -32,12 +33,6 @@ function useTypewriter(lines: string[]) {
     return () => clearTimeout(id)
   }, [lines])
   return text
-}
-
-const panel: React.CSSProperties = {
-  background: "linear-gradient(180deg, #fff8e4 0%, #f1e0b4 100%)",
-  border: "4px solid #1d1006",
-  boxShadow: "inset 0 0 0 3px #e9c98a, inset 0 0 0 6px #8a5a2c, 0 10px 0 #1d1006, 0 30px 80px rgba(20,10,0,.55)",
 }
 
 export default function TitleScreen() {
@@ -70,109 +65,65 @@ export default function TitleScreen() {
     return () => window.removeEventListener("keydown", onKey)
   })
 
+  const vocab = VOCAB[world.id] ?? VOCAB.village
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, overflow: "hidden", background: "#4d7a2e" }}>
-      {/* the actual village, drifting slowly underneath */}
+    <div className="title-root" style={{ position: "fixed", inset: 0, zIndex: 100, overflow: "hidden" }}>
+      {/* the actual world, drifting slowly underneath */}
       <div className="title-map" aria-hidden style={{
         backgroundImage: `url(${pv?.start === "night" ? pv.night : pv?.day ?? "/village-map.png"})`, width: (pv?.w ?? 1344) * 3, height: (pv?.h ?? 1024) * 3,
         ["--p0" as string]: `translate(calc(50vw - ${pans[0][0]}px), calc(50vh - ${pans[0][1]}px))`,
         ["--p1" as string]: `translate(calc(50vw - ${pans[1][0]}px), calc(50vh - ${pans[1][1]}px))`,
         ["--p2" as string]: `translate(calc(50vw - ${pans[2][0]}px), calc(50vh - ${pans[2][1]}px))`,
       }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(255,190,110,.18) 0%, rgba(40,20,10,.15) 45%, rgba(20,10,4,.65) 100%)" }} />
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(18,9,2,.6) 100%)" }} />
-      {/* drifting petals */}
-      <div aria-hidden className="petals">{Array.from({ length: 14 }).map((_, i) => <span key={i} style={{ left: `${(i * 7.3) % 100}%`, animationDelay: `${-i * 1.7}s`, animationDuration: `${11 + (i % 5) * 2}s` }} />)}</div>
+      <div aria-hidden className="title-tint" />
+      <div aria-hidden className="title-vig" />
+      {/* drifting petals / rain / sand / motes */}
+      <div aria-hidden className="petals title-fx">{Array.from({ length: 14 }).map((_, i) => <span key={i} style={{ left: `${(i * 7.3) % 100}%`, animationDelay: `${-i * 1.7}s`, animationDuration: `${11 + (i % 5) * 2}s` }} />)}</div>
 
       {/* top bar */}
-      <div className="fade-in" style={{ position: "absolute", top: 0, left: 0, right: 0, padding: "16px clamp(14px, 3vw, 28px)", display: "flex", justifyContent: "space-between", alignItems: "center", zIndex: 3 }}>
-        <div style={{ ...panel, boxShadow: "inset 0 0 0 2px #e9c98a, 0 4px 0 #1d1006", border: "3px solid #1d1006", padding: "8px 12px", fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 2, color: "#3a2412" }}>
-          {c.profile.name.split(" ")[0].toUpperCase()}.WORLD
-        </div>
-        <a href={c.socials.github} target="_blank" rel="noreferrer" aria-label="GitHub" className="parch-btn" style={{ ...panel, border: "3px solid #1d1006", boxShadow: "inset 0 0 0 2px #e9c98a, 0 4px 0 #1d1006", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", color: "#3a2412" }}>
-          <Github size={17} />
-        </a>
+      <div className="fade-in title-top">
+        <Panel v="tile" className="title-brand">{c.profile.name.split(" ")[0].toUpperCase()}.WORLD</Panel>
+        <IconButton title="GitHub" href={c.socials.github}><Github size={17} /></IconButton>
       </div>
 
-      {/* parchment title card */}
-      <div style={{
-        position: "absolute", inset: 0, zIndex: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "70px 14px 40px",
-        transition: "opacity .6s ease, transform .6s ease", opacity: leaving || selecting ? 0 : 1, transform: leaving ? "scale(1.05)" : "none",
-      }}>
-        <div className="title-card" style={{ ...panel, position: "relative", width: "min(640px, 100%)", padding: "54px clamp(20px, 5vw, 48px) 34px", textAlign: "center" }}>
-          {/* ribbon */}
-          <div style={{ position: "absolute", top: -22, left: 0, right: 0, display: "flex", justifyContent: "center" }}>
-            <div style={{ padding: "11px 22px", background: "linear-gradient(180deg, #d9574b, #a8382f)", border: "3px solid #1d1006", boxShadow: "inset 0 0 0 2px #f08a7c, 0 4px 0 #1d1006", fontFamily: "var(--font-pixel)", fontSize: "clamp(7px, 1.4vw, 9px)", letterSpacing: 3, color: "#fff4dc", whiteSpace: "nowrap" }}>
-              ◆ A PLAYABLE PORTFOLIO ◆
-            </div>
-          </div>
-          {/* hero + portrait */}
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "flex-end", gap: 18, marginBottom: 18 }}>
+      {/* title card */}
+      <div className="title-stage" style={{ opacity: leaving || selecting ? 0 : 1, transform: leaving ? "scale(1.05)" : "none" }}>
+        <Panel v="title" fx className="title-card">
+          <div className="title-ribbon-wrap"><Ribbon className="title-ribbon">◆ {world.id === "village" ? vocab.hero : world.name.toUpperCase()} ◆</Ribbon></div>
+          <div className="title-hero">
             <div className="hero-walk" style={{ backgroundImage: `url(${charSheet(CHARS.hero)})` }} />
           </div>
-          <h1 style={{ margin: 0, fontFamily: "var(--font-pixel)", fontWeight: 400, fontSize: "clamp(26px, 6vw, 54px)", lineHeight: 1.15, color: "#3a2412", textShadow: "0 4px 0 #e2c48a", letterSpacing: "0.02em" }}>
-            {c.profile.name.toUpperCase()}
-          </h1>
-          <div style={{ marginTop: 18, minHeight: 28, fontFamily: "var(--font-body)", fontSize: "clamp(17px, 2.2vw, 22px)", color: "#8a5a2c" }}>
-            <span style={{ color: "#c8463b" }}>❯ </span><span className="caret">{typed}</span>
+          <h1 className="title-name">{c.profile.name.toUpperCase()}</h1>
+          <div className="title-typed"><span className="title-prompt">❯ </span><span className="caret">{typed}</span></div>
+          <div className="title-actions">
+            <Button variant="cta" onClick={start} onMouseEnter={() => playSound("click")}><Play size={13} fill="currentColor" /> START ADVENTURE</Button>
+            <Button variant="accent" accent={world.accent} aria-label="Choose a world" onClick={() => { playSound("open"); useGameStore.getState().openWorldSelect("title") }} onMouseEnter={() => playSound("click")}><Globe size={14} /> WORLDS</Button>
+            <Button href="/quick" onClick={() => playSound("click")}>QUICK VIEW <ArrowRight size={13} /></Button>
           </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 28, flexWrap: "wrap", justifyContent: "center" }}>
-            <button onClick={start} onMouseEnter={() => playSound("click")} className="parch-btn" style={{
-              display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer",
-              fontFamily: "var(--font-pixel)", fontSize: "clamp(9px, 1.2vw, 11px)", letterSpacing: 2, color: "#3a1d08", padding: "16px 22px",
-              background: "linear-gradient(180deg, #fff1b8 0%, #ffd76a 45%, #f5a623 100%)", border: "3px solid #1d1006",
-              boxShadow: "inset 0 -4px 0 rgba(160,80,0,.35), inset 0 3px 0 rgba(255,255,255,.6), 0 5px 0 #1d1006",
-            }}>
-              <Play size={13} fill="currentColor" /> START ADVENTURE
-            </button>
-            <button onClick={() => { playSound("open"); useGameStore.getState().openWorldSelect("title") }} onMouseEnter={() => playSound("click")} className="parch-btn" aria-label="Choose a world" style={{
-              display: "inline-flex", alignItems: "center", gap: 10, cursor: "pointer",
-              fontFamily: "var(--font-pixel)", fontSize: "clamp(9px, 1.2vw, 11px)", letterSpacing: 2, color: "#fff4dc", padding: "16px 20px",
-              background: `linear-gradient(180deg, color-mix(in srgb, ${world.accent} 70%, #fff), ${world.accent} 60%, color-mix(in srgb, ${world.accent} 70%, #000))`, border: "3px solid #1d1006",
-              boxShadow: "inset 0 3px 0 rgba(255,255,255,.4), inset 0 -4px 0 rgba(0,0,0,.2), 0 5px 0 #1d1006", textShadow: "0 2px 0 rgba(0,0,0,.45)",
-            }}>
-              <Globe size={14} /> WORLDS
-            </button>
-            <Link href="/quick" onClick={() => playSound("click")} className="parch-btn" style={{
-              display: "inline-flex", alignItems: "center", gap: 10, textDecoration: "none",
-              fontFamily: "var(--font-pixel)", fontSize: "clamp(9px, 1.2vw, 11px)", letterSpacing: 2, color: "#3a2412", padding: "16px 20px",
-              background: "#f4e6c0", border: "3px solid #1d1006", boxShadow: "inset 0 0 0 2px #fff8e2, 0 5px 0 #1d1006",
-            }}>
-              QUICK VIEW <ArrowRight size={13} />
-            </Link>
-          </div>
-          <div style={{ marginTop: 16, fontFamily: "var(--font-pixel)", fontSize: 7, letterSpacing: 2, color: "#8a5a2c" }}>NOW ENTERING · <span style={{ color: "#3a2412" }}>{world.name.toUpperCase()}</span></div>
-          <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 2, color: "#8a5a2c" }}>VIEW:</span>
-            <div style={{ display: "inline-flex", border: "3px solid #1d1006", boxShadow: "0 3px 0 #1d1006" }}>
+          <div className="title-entering">NOW ENTERING · <b>{world.name.toUpperCase()}</b></div>
+          <div className="title-view">
+            <span>VIEW:</span>
+            <div className="title-seg">
               {(["2d", "3d"] as const).map((v) => {
                 const on = view === v, off = v === "3d" && !gl
-                return (
-                  <button key={v} disabled={off} onClick={() => { setView(v); playSound("click") }} className="parch-btn" aria-pressed={on} style={{
-                    fontFamily: "var(--font-pixel)", fontSize: 9, letterSpacing: 2, padding: "9px 14px", cursor: off ? "not-allowed" : "pointer", border: 0,
-                    background: on ? "linear-gradient(180deg, #fff1b8, #ffd76a 50%, #f5a623)" : "#f4e6c0", color: on ? "#3a1d08" : "#8f7246", opacity: off ? 0.5 : 1,
-                    boxShadow: on ? "inset 0 -3px 0 rgba(160,80,0,.35)" : "inset 0 0 0 2px #fff8e2",
-                  }}>{v.toUpperCase()}</button>
-                )
+                return <button key={v} disabled={off} onClick={() => { setView(v); playSound("click") }} aria-pressed={on} data-on={on ? "" : undefined}>{v.toUpperCase()}</button>
               })}
             </div>
-            {!gl && <span style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#8f6a3a" }}>3D needs WebGL2, not available here.</span>}
+            {!gl && <span className="title-gl">3D needs WebGL2, not available here.</span>}
           </div>
-        </div>
+        </Panel>
 
-        <div className="kb-only fade-in" style={{ marginTop: 28, display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center", fontFamily: "var(--font-pixel)", fontSize: 7, color: "#fff4dc", letterSpacing: 1, textShadow: "0 2px 0 #1d1006" }}>
-          <span style={hint}><span className="kbd">W</span><span className="kbd">A</span><span className="kbd">S</span><span className="kbd">D</span> MOVE</span>
-          <span style={hint}><span className="kbd" style={{ minWidth: 44 }}>CLICK</span> WALK</span>
-          <span style={hint}><span className="kbd">E</span> TALK</span>
-          <span style={hint}><span className="kbd">M</span> MAP</span>
-          <span style={hint}><span className="kbd">N</span> NIGHT</span>
+        <div className="kb-only fade-in title-keys">
+          <span><Kbd>W</Kbd><Kbd>A</Kbd><Kbd>S</Kbd><Kbd>D</Kbd> MOVE</span>
+          <span><Kbd wide>CLICK</Kbd> WALK</span>
+          <span><Kbd>E</Kbd> TALK</span>
+          <span><Kbd>M</Kbd> MAP</span>
+          <span><Kbd>N</Kbd> NIGHT</span>
         </div>
-        <div className="kb-only blink" style={{ marginTop: 18, fontFamily: "var(--font-pixel)", fontSize: 8, letterSpacing: 3, color: "#fff4dc", textShadow: "0 2px 0 #1d1006" }}>PRESS ENTER</div>
+        <div className="kb-only blink title-enter">PRESS ENTER</div>
       </div>
 
       <div style={{ position: "absolute", inset: 0, zIndex: 5, pointerEvents: "none", background: "#07060d", clipPath: leaving ? "circle(150% at 50% 50%)" : "circle(0% at 50% 50%)", transition: "clip-path .65s cubic-bezier(.7,0,.3,1)" }} />
     </div>
   )
 }
-
-const hint: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6 }

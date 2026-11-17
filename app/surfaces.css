@@ -1,0 +1,80 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   Surface skins: HUD, map, title, loader, dialogue, toast, touch controls,
+   building modals, arcade. Layout lives in the base rules, the material of each
+   world in the `html[data-world=…]` blocks (CSS nesting).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.k-backdrop { background: var(--u-scrim); backdrop-filter: blur(3px); }
+
+/* ═══ HUD · profile card ═══ */
+.hud-card .hud-top { display: flex; gap: 12px; align-items: center; position: relative; }
+.hud-face { width: 52px; height: 52px; flex: none; overflow: hidden; position: relative; background: radial-gradient(circle at 50% 35%, #4b3a6e, #1e1630); }
+.hud-face img { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+.hud-id { min-width: 0; flex: 1; }
+.hud-pass { display: none; font-family: var(--font-head); font-size: 6px; letter-spacing: 2px; margin-bottom: 5px; color: var(--u-link); white-space: nowrap; }
+.hud-name { font-family: var(--font-head); font-size: 10px; letter-spacing: 1px; color: var(--u-ink); }
+.hud-title { font-family: var(--font-body); font-size: 14px; color: var(--u-muted); margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hud-prog { margin-top: 7px; display: flex; align-items: center; gap: 6px; }
+.hud-prog .k-bar { flex: 1; }
+.hud-prog span { font-family: var(--font-head); font-size: 7px; color: var(--u-ink); }
+.hud-quest { margin-top: 10px; padding-top: 10px; display: flex; align-items: center; gap: 10px; border-top: 2px dashed var(--u-line-dk); }
+.hud-dot { width: 30px; height: 30px; flex: none; border-radius: 50%; background: color-mix(in srgb, var(--c) 82%, #000); border: 3px solid var(--u-border); display: flex; align-items: center; justify-content: center; color: #fff; }
+.hud-qtxt { min-width: 0; flex: 1; }
+.hud-qkick { font-family: var(--font-head); font-size: 7px; letter-spacing: 1px; color: var(--u-link); }
+.hud-qbody { font-family: var(--font-body); font-size: 14px; line-height: 1.2; margin-top: 3px; color: var(--u-ink); }
+.hud-done { color: var(--u-ok); margin: 0; }
+.hud-go { min-height: 40px; min-width: 40px; padding: 0 10px; font-size: 7px; }
+.hud-checks { margin-top: 9px; display: flex; gap: 4px; flex-wrap: wrap; }
+.hud-checks span { flex: 1; min-width: 30px; text-align: center; font-family: var(--font-head); font-size: 6px; padding: 4px 0; background: var(--u-inset); color: var(--u-muted); border: 2px solid var(--u-border); }
+.hud-checks span[data-on] { background: color-mix(in srgb, var(--c) 72%, #000); color: #fff; }
+.hud-trophy { height: 42px; padding: 0 12px; display: inline-flex; align-items: center; gap: 7px; font-family: var(--font-head); font-size: 9px; color: var(--u-ink); }
+.hud-trophy svg { color: var(--u-accent2); flex: none; }
+.hud-hints { position: fixed; bottom: 16px; left: 16px; z-index: 40; display: flex; gap: 14px; flex-wrap: wrap; max-width: 60vw; font-family: var(--font-head); font-size: 7px; letter-spacing: 1px; color: var(--u-hero-ink); text-shadow: 0 2px 0 var(--u-hero-shadow); }
+.hud-hints > span { display: inline-flex; align-items: center; gap: 5px; }
+
+/* mini-map */
+.hud-mini { cursor: pointer; background: none; border: 0; padding: 0; text-align: left; transition: transform .1s ease, filter .15s ease; }
+.hud-mini:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.hud-mini__frame { padding: 6px; display: block; }
+.hud-mini__cv { display: block; width: 210px; height: 140px; border: 2px solid var(--u-border); position: relative; }
+.hud-mini__fx { position: absolute; left: 8px; top: 8px; right: 8px; bottom: 8px; pointer-events: none; z-index: 1; }
+.hud-mini__tab { position: absolute; top: -12px; left: 10px; z-index: 2; font-family: var(--font-head); font-size: 7px; letter-spacing: 1px; padding: 4px 8px; white-space: nowrap; color: var(--u-on-accent); background: var(--u-accent); border: 2px solid var(--u-border); }
+
+/* world map */
+.map-panel .map-scroll { max-height: calc(94vh - 30px); overflow: auto; position: relative; z-index: 1; }
+.map-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; gap: 10px; }
+.map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; }
+.map-frame { position: relative; line-height: 0; border: 3px solid var(--u-border); }
+.map-fx { position: absolute; inset: 0; pointer-events: none; }
+.map-pin { position: absolute; transform: translate(-50%, -100%); min-height: 28px; padding: 6px 8px; font-size: 8px; line-height: 1; letter-spacing: 1px; transition: transform .12s ease; }
+.map-pin:hover, .map-pin[data-hot] { transform: translate(-50%, -100%) scale(1.12); filter: none; }
+.map-list { display: flex; flex-direction: column; gap: 8px; }
+.map-note { font-family: var(--font-body); font-size: 15px; color: var(--u-body); margin-bottom: 2px; }
+.map-row { justify-content: flex-start; text-align: left; padding: 9px 10px; min-height: 48px; font-size: 8px; white-space: normal; width: 100%; }
+.map-row[data-hot] { filter: brightness(1.12); }
+.map-row__sw { width: 14px; height: 14px; flex: none; background: var(--c); border: 2px solid var(--u-border); }
+.map-row__txt { flex: 1; min-width: 0; }
+.map-row__name { display: block; font-family: var(--font-head); font-size: 8px; color: var(--u-ink); }
+.map-row__sub { display: block; font-family: var(--font-body); font-size: 14px; color: var(--u-muted); margin-top: 3px; letter-spacing: 0; }
+.map-row__ok { color: var(--u-ok); font-family: var(--font-head); font-size: 10px; }
+
+@media (max-width: 760px) {
+  .hud-card { width: auto !important; right: 14px; top: 64px !important; padding: 9px !important; }
+  .hud-hints, .hud-mini { display: none !important; }
+  .hud-btns { gap: 4px !important; }
+  .hud-btns .k-ibtn { width: 40px; height: 40px; }
+  .map-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) { .hud-trophy { display: none; } }
+
+/* ── village ── */
+
+
+/* ── neon harbor: the profile card is a transit / ID pass ── */
+
+
+/* ── sunscar oasis: carved tablet, cartouche name, caravan chart ── */
+
+
+/* ── hollow reach: slate pane, spirit ledger, tattered ghost chart ── */
+

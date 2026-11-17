@@ -1,0 +1,191 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   World themes: design tokens.
+   `html[data-world]` always holds the current world; the world-select screen
+   carries `data-world-preview` and re-scopes the same tokens for its subtree.
+   Skins for the shared primitives live in skins.css; the canvas / 3D overlay
+   read the --cv-* tokens through lib/theme.ts, so this file is the single
+   source of truth for colour.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Hearthvale · parchment (default) ───────────────────────────────────── */
+:root,
+[data-world="village"], [data-world-preview="village"] {
+  --u-material: parchment;
+  --u-surface: linear-gradient(180deg, #fbf1d6 0%, #efdeb2 100%);
+  --u-surface-flat: #f4e6c0;
+  --u-card: #f7eccd;
+  --u-card-alt: #efdfb4;
+  --u-inset: #e4cf9a;
+  --u-ink: #3a2412;
+  --u-body: #5c4022;
+  --u-muted: #7a5f34;
+  --u-line: #d1b47a;
+  --u-line-dk: #a07c45;
+  --u-border: #1d1006;
+  --u-accent: #c8463b;
+  --u-accent-hi: #e86a5c;
+  --u-accent-lo: #8f2f28;
+  --u-accent2: #ffd76a;
+  --u-link: #8a3026;
+  --u-danger: #c8463b;
+  --u-ok: #2f6b2a;
+  --u-ok-bg: #d8ecc0;
+  --u-on-accent: #fff4dc;
+  --u-dark: #3a2412;
+  --u-dark-2: #4a2c14;
+  --u-dark-ink: #fff1d6;
+  --u-dark-muted: #d9c39a;
+  --u-hero-ink: #fff4dc;
+  --u-hero-shadow: #1d1006;
+  --u-glow: transparent;
+  --u-scrim: radial-gradient(ellipse at center, rgba(30, 16, 6, .55), rgba(8, 4, 2, .85));
+  --u-cta-ink: #3a1d08;
+  --u-cta: linear-gradient(180deg, #fff1b8 0%, #ffd76a 45%, #f5a623 100%);
+  --u-btn: #f4e6c0;
+  --font-body: var(--ff-pixelify), system-ui, sans-serif;
+  --font-head: var(--ff-pixel), monospace;
+  --u-radius: 0px;
+  --u-sec-townhall: #3a6ea5; --u-sec-gallery: #7c5cba; --u-sec-tavern: #b06d1a;
+  --u-sec-forge: #c2531d; --u-sec-academy: #2a8a80; --u-sec-wizard: #6b46c1;
+  /* canvas + 3D overlay */
+  --cv-sign-bg: #8a5a2c; --cv-sign-edge: #2a1606; --cv-sign-hi: #a8743c; --cv-sign-ink: #fff4dc; --cv-sign-sub: #ffffff; --cv-sign-on: #ffe39a;
+  --cv-prompt-bg: #fbf1d6; --cv-prompt-edge: #1d1006; --cv-prompt-ink: #3a2412; --cv-prompt-low: #e3cf9c; --cv-key-bg: #c8463b; --cv-key-hi: #e86a5c; --cv-key-ink: #fff4dc;
+  --cv-bub-bg: #ffffff; --cv-bub-edge: #1d1006; --cv-bub-ink: #2a1a10;
+  --cv-mark: #fff4dc; --cv-mark-on: #ffd76a; --cv-mark-edge: #1d1006; --cv-bang: #c8463b;
+  --cv-map-tint: rgba(160, 110, 40, .1);
+}
+
+/* ── Neon Harbor · neon ─────────────────────────────────────────────────── */
+[data-world="city"], [data-world-preview="city"] {
+  --u-material: neon;
+  --u-surface: linear-gradient(180deg, #181440 0%, #0d0b25 100%);
+  --u-surface-flat: #131030;
+  --u-card: #151235;
+  --u-card-alt: #1c1846;
+  --u-inset: #0a0820;
+  --u-ink: #f1f6ff;
+  --u-body: #c9d1f7;
+  --u-muted: #9da6dd;
+  --u-line: #2f2a68;
+  --u-line-dk: #4b43a0;
+  --u-border: #5de6ff;
+  --u-accent: #ff4fa3;
+  --u-accent-hi: #ff8cc8;
+  --u-accent-lo: #b01f6b;
+  --u-accent2: #5de6ff;
+  --u-link: #5de6ff;
+  --u-danger: #ff5d7a;
+  --u-ok: #7dffb0;
+  --u-ok-bg: #0f3a2e;
+  --u-on-accent: #ffffff;
+  --u-dark: #080618;
+  --u-dark-2: #120e30;
+  --u-dark-ink: #f1f6ff;
+  --u-dark-muted: #a9b3ec;
+  --u-hero-ink: #f1f6ff;
+  --u-hero-shadow: #07051a;
+  --u-glow: #5de6ff;
+  --u-scrim: radial-gradient(ellipse at center, rgba(8, 6, 28, .6), rgba(3, 2, 14, .9));
+  --u-cta-ink: #190619;
+  --u-cta: linear-gradient(180deg, #ff9ad0 0%, #ff4fa3 55%, #d92b83 100%);
+  --u-btn: #1c1846;
+  --font-body: var(--ff-geist), var(--ff-inter), system-ui, sans-serif;
+  --font-head: var(--ff-pixel), monospace;
+  --u-sec-townhall: #5de6ff; --u-sec-gallery: #ff4fa3; --u-sec-tavern: #ffb347;
+  --u-sec-forge: #ff6a3d; --u-sec-academy: #7dffb0; --u-sec-wizard: #b58cff;
+  --cv-sign-bg: #0b0920; --cv-sign-edge: #ff4fa3; --cv-sign-hi: #5de6ff; --cv-sign-ink: #f1f6ff; --cv-sign-sub: #9fb4ff; --cv-sign-on: #5de6ff;
+  --cv-prompt-bg: #0d0b25; --cv-prompt-edge: #5de6ff; --cv-prompt-ink: #f1f6ff; --cv-prompt-low: #1b1747; --cv-key-bg: #ff4fa3; --cv-key-hi: #ff8cc8; --cv-key-ink: #ffffff;
+  --cv-bub-bg: #0d0b25; --cv-bub-edge: #5de6ff; --cv-bub-ink: #e8f1ff;
+  --cv-mark: #5de6ff; --cv-mark-on: #ff4fa3; --cv-mark-edge: #07051a; --cv-bang: #ff4fa3;
+  --cv-map-tint: rgba(93, 230, 255, .06);
+}
+
+/* ── Sunscar Oasis · sandstone ──────────────────────────────────────────── */
+[data-world="desert"], [data-world-preview="desert"] {
+  --u-material: sandstone;
+  --u-surface: linear-gradient(180deg, #f1dcab 0%, #e0c48a 100%);
+  --u-surface-flat: #ecd5a0;
+  --u-card: #f4e3b8;
+  --u-card-alt: #e8cf98;
+  --u-inset: #d6b97e;
+  --u-ink: #35200f;
+  --u-body: #50341a;
+  --u-muted: #6f4d25;
+  --u-line: #c9a76a;
+  --u-line-dk: #8f6a35;
+  --u-border: #4a2c14;
+  --u-accent: #12857f;
+  --u-accent-hi: #2fc0b6;
+  --u-accent-lo: #0a5753;
+  --u-accent2: #e0a21f;
+  --u-link: #0a6d68;
+  --u-danger: #b8431f;
+  --u-ok: #1c6a3a;
+  --u-ok-bg: #cfe7bd;
+  --u-on-accent: #fff6dc;
+  --u-dark: #4a2c14;
+  --u-dark-2: #5e3a1c;
+  --u-dark-ink: #fff0cf;
+  --u-dark-muted: #e8cf98;
+  --u-hero-ink: #fff3d2;
+  --u-hero-shadow: #3b2010;
+  --u-glow: #e0a21f;
+  --u-scrim: radial-gradient(ellipse at center, rgba(60, 28, 6, .55), rgba(24, 10, 2, .88));
+  --u-cta-ink: #2c1a08;
+  --u-cta: linear-gradient(180deg, #ffe39a 0%, #f2b92c 50%, #d98a12 100%);
+  --u-btn: #e8cf98;
+  --font-body: var(--ff-pixelify), system-ui, sans-serif;
+  --font-head: var(--ff-pixel), monospace;
+  --u-sec-townhall: #12857f; --u-sec-gallery: #b8431f; --u-sec-tavern: #b06d1a;
+  --u-sec-forge: #c2531d; --u-sec-academy: #2d6bb0; --u-sec-wizard: #7a3fa8;
+  --cv-sign-bg: #d9b878; --cv-sign-edge: #4a2c14; --cv-sign-hi: #f2dca0; --cv-sign-ink: #35200f; --cv-sign-sub: #fff6dc; --cv-sign-on: #12857f;
+  --cv-prompt-bg: #f1dcab; --cv-prompt-edge: #4a2c14; --cv-prompt-ink: #35200f; --cv-prompt-low: #d6b97e; --cv-key-bg: #12857f; --cv-key-hi: #2fc0b6; --cv-key-ink: #fff6dc;
+  --cv-bub-bg: #f7e8c0; --cv-bub-edge: #4a2c14; --cv-bub-ink: #35200f;
+  --cv-mark: #f2dca0; --cv-mark-on: #2fc0b6; --cv-mark-edge: #4a2c14; --cv-bang: #b8431f;
+  --cv-map-tint: rgba(200, 120, 30, .1);
+}
+
+/* ── Hollow Reach · spectral ────────────────────────────────────────────── */
+[data-world="ruins"], [data-world-preview="ruins"] {
+  --u-material: spectral;
+  --u-surface: linear-gradient(180deg, #1c2a2e 0%, #111a1d 100%);
+  --u-surface-flat: #172226;
+  --u-card: #182529;
+  --u-card-alt: #1f3035;
+  --u-inset: #0e1619;
+  --u-ink: #e8f5f0;
+  --u-body: #c0d6cf;
+  --u-muted: #93aea7;
+  --u-line: #2c4146;
+  --u-line-dk: #46666a;
+  --u-border: #0a1214;
+  --u-accent: #5fd0a0;
+  --u-accent-hi: #9af0cc;
+  --u-accent-lo: #2f8a6a;
+  --u-accent2: #9a7be0;
+  --u-link: #b9a2ff;
+  --u-danger: #ff7a8a;
+  --u-ok: #9af0cc;
+  --u-ok-bg: #12342b;
+  --u-on-accent: #07201a;
+  --u-dark: #0a1214;
+  --u-dark-2: #132025;
+  --u-dark-ink: #e8f5f0;
+  --u-dark-muted: #9fb9b2;
+  --u-hero-ink: #e8f5f0;
+  --u-hero-shadow: #050c0e;
+  --u-glow: #5fd0a0;
+  --u-scrim: radial-gradient(ellipse at center, rgba(5, 14, 16, .62), rgba(2, 6, 8, .92));
+  --u-cta-ink: #06231b;
+  --u-cta: linear-gradient(180deg, #a8f5d4 0%, #5fd0a0 55%, #3aa07a 100%);
+  --u-btn: #1f3035;
+  --font-body: var(--ff-pixelify), system-ui, sans-serif;
+  --font-head: var(--ff-pixel), monospace;
+  --u-sec-townhall: #5fd0a0; --u-sec-gallery: #9a7be0; --u-sec-tavern: #e0a35a;
+  --u-sec-forge: #e0705a; --u-sec-academy: #5fb4d0; --u-sec-wizard: #c07be0;
+  --cv-sign-bg: #1b2a2e; --cv-sign-edge: #5fd0a0; --cv-sign-hi: #2f4a50; --cv-sign-ink: #e8f5f0; --cv-sign-sub: #9fb9b2; --cv-sign-on: #9af0cc;
+  --cv-prompt-bg: #14201f; --cv-prompt-edge: #5fd0a0; --cv-prompt-ink: #e8f5f0; --cv-prompt-low: #223a3a; --cv-key-bg: #9a7be0; --cv-key-hi: #c3adff; --cv-key-ink: #0c0618;
+  --cv-bub-bg: #14201f; --cv-bub-edge: #9a7be0; --cv-bub-ink: #e8f5f0;
+  --cv-mark: #9af0cc; --cv-mark-on: #c3adff; --cv-mark-edge: #050c0e; --cv-bang: #9a7be0;
+  --cv-map-tint: rgba(60, 120, 120, .08);
+}

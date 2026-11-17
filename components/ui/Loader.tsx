@@ -2,16 +2,14 @@
 import { useEffect, useRef, useState } from "react"
 import { useLoading } from "@/lib/loading"
 import { charSheet, CHARS } from "@/lib/na"
+import { useGameStore } from "@/lib/store"
 
-const STEPS = [
-  "Planting the forest",
-  "Filling the river",
-  "Raising the town hall",
-  "Stoking the forge",
-  "Hanging the paintings",
-  "Waking the villagers",
-  "Opening the gates",
-]
+const STEPS: Record<string, string[]> = {
+  village: ["Planting the forest", "Filling the river", "Raising the town hall", "Stoking the forge", "Hanging the paintings", "Waking the villagers", "Opening the gates"],
+  city: ["Pouring the concrete", "Wiring the grid", "Lighting the signs", "Filling the harbor", "Starting the metro", "Waking the traffic", "Opening the shutters"],
+  desert: ["Raking the dunes", "Filling the oasis", "Raising the palace", "Firing the kiln", "Unrolling the tents", "Waking the caravan", "Opening the gate"],
+  ruins: ["Raising the mist", "Lighting the lanterns", "Cracking the crypt", "Binding the souls", "Stirring the graves", "Waking the ghosts", "Opening the veil"],
+}
 
 /** Boot screen: the hero walks through a scrolling forest while the world's art streams in. */
 export default function Loader() {
@@ -20,6 +18,9 @@ export default function Loader() {
   const [shown, setShown] = useState(0)
   const [gone, setGone] = useState(false)
   const val = useRef(0)
+  // the persisted world is only known on the client; the CSS skin itself is keyed on <html data-world>
+  const [wid, setWid] = useState("village")
+  useEffect(() => { const id = setTimeout(() => setWid(useGameStore.getState().world), 0); return () => clearTimeout(id) }, [])
 
   // ease the bar toward the real progress, and creep while the engine code is still downloading
   useEffect(() => {
@@ -43,7 +44,8 @@ export default function Loader() {
 
   if (gone) return null
   const pct = Math.round(shown * 100)
-  const step = pct >= 100 ? "Ready" : STEPS[Math.min(STEPS.length - 1, Math.floor(shown * STEPS.length))]
+  const steps = STEPS[wid] ?? STEPS.village
+  const step = pct >= 100 ? "Ready" : steps[Math.min(steps.length - 1, Math.floor(shown * steps.length))]
 
   return (
     <div role="status" aria-live="polite" aria-label={`Loading world, ${pct}%`} className="loader-root" style={{ opacity: done ? 0 : 1, transform: done ? "scale(1.03)" : "none" }}>
@@ -56,6 +58,7 @@ export default function Loader() {
         <div className="loader-window">
           <div className="loader-sky" />
           <div className="loader-stars" aria-hidden />
+          <div className="loader-orb" aria-hidden />
           <div className="loader-trees loader-trees-far" />
           <div className="loader-trees" />
           <div className="loader-ground" />

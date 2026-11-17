@@ -7,7 +7,7 @@ import { playSound, playMusic } from "@/lib/audio"
 import { useContentStore } from "@/lib/content"
 import { runtime, toggleNight } from "@/lib/runtime"
 import { engine, type ActorRT, type SceneRT, type EngineState } from "@/lib/engine"
-import { fontFamily } from "@/lib/fonts"
+import { drawSign, drawMarker, drawPrompt, drawBubble } from "./canvasUi"
 import { CHARS, charSheet, DIR_COL, SHEETS } from "@/lib/na"
 import { TS, img, ready, loadAll, hash, canvas, SolidIndex, overlaps, type Scene, type Facing, type Hotspot, type Box, type Action } from "@/lib/world/core"
 import { BUILDINGS } from "@/lib/world/village"
@@ -842,91 +842,4 @@ function drawSlash(ctx: CanvasRenderingContext2D, x: number, y: number, f: Facin
   ctx.arc(4, 0, 10, -1.2 + p * 0.6, 1.2 + p * 0.6)
   ctx.stroke()
   ctx.restore()
-}
-
-function drawSign(ctx: CanvasRenderingContext2D, title: string, sub: string, accent: string, cx: number, bottom: number, active: boolean) {
-  const fp = fontFamily("--ff-pixel")
-  ctx.font = `10px ${fp}`
-  const tw = ctx.measureText(title).width
-  ctx.font = `7px ${fp}`
-  const sw2 = ctx.measureText(sub).width
-  const w = Math.round(Math.max(tw, sw2) + 26), h = 34
-  const x = Math.round(cx - w / 2), y = Math.round(bottom - h - (active ? 6 : 0))
-  ctx.fillStyle = "rgba(10,6,2,0.35)"; ctx.fillRect(x + 3, y + 5, w, h)
-  ctx.fillStyle = "#2a1606"; ctx.fillRect(x - 2, y - 2, w + 4, h + 4)
-  ctx.fillStyle = "#8a5a2c"; ctx.fillRect(x, y, w, h)
-  ctx.fillStyle = "#a8743c"; ctx.fillRect(x, y, w, 3)
-  ctx.fillStyle = accent; ctx.fillRect(x, y + h - 13, w, 10)
-  ctx.fillStyle = "rgba(255,255,255,.25)"; ctx.fillRect(x, y + h - 13, w, 1)
-  ctx.textAlign = "center"
-  ctx.font = `10px ${fp}`
-  ctx.fillStyle = "#2a1606"; ctx.fillText(title, cx + 1, y + 16)
-  ctx.fillStyle = "#fff4dc"; ctx.fillText(title, cx, y + 15)
-  ctx.font = `7px ${fp}`
-  ctx.fillStyle = "#fff"; ctx.fillText(sub, cx, y + h - 5)
-  ctx.textAlign = "left"
-  if (active) { ctx.strokeStyle = "#ffe39a"; ctx.lineWidth = 2; ctx.strokeRect(x - 4, y - 4, w + 8, h + 8) }
-}
-
-function drawMarker(ctx: CanvasRenderingContext2D, x: number, y: number, active: boolean, scale: number, glyph?: string) {
-  const s = Math.max(8, scale * 2.5)
-  ctx.save()
-  ctx.translate(Math.round(x), Math.round(y))
-  if (glyph) {
-    ctx.fillStyle = "#1d1006"; ctx.fillRect(-s * 0.6 - 2, -s * 1.3 - 2, s * 1.2 + 4, s * 1.3 + 4)
-    ctx.fillStyle = active ? "#ffd76a" : "#fff4dc"; ctx.fillRect(-s * 0.6, -s * 1.3, s * 1.2, s * 1.3)
-    ctx.fillStyle = "#c8463b"; ctx.font = `${Math.round(s)}px ${fontFamily("--ff-pixel")}`; ctx.textAlign = "center"
-    ctx.fillText(glyph, 1, -s * 0.2)
-    ctx.restore()
-    return
-  }
-  ctx.fillStyle = "#1d1006"
-  ctx.beginPath(); ctx.moveTo(-s * 0.7 - 2, -s - 2); ctx.lineTo(s * 0.7 + 2, -s - 2); ctx.lineTo(0, 2); ctx.closePath(); ctx.fill()
-  ctx.fillStyle = active ? "#ffd76a" : "#fff4dc"
-  ctx.beginPath(); ctx.moveTo(-s * 0.7, -s); ctx.lineTo(s * 0.7, -s); ctx.lineTo(0, -1); ctx.closePath(); ctx.fill()
-  ctx.restore()
-}
-
-function drawPrompt(ctx: CanvasRenderingContext2D, text: string, cx: number, y: number, now: number, touch: boolean) {
-  const bounce = Math.round(Math.sin(now * 6) * 2)
-  ctx.font = `9px ${fontFamily("--ff-pixel")}`
-  const tw = ctx.measureText(text).width
-  const key = touch ? "TAP" : "E"
-  const kw = touch ? 34 : 22
-  const w = Math.round(tw + kw + 26), h = 30
-  const x = Math.round(cx - w / 2), yy = Math.round(y - h + bounce)
-  ctx.fillStyle = "rgba(10, 6, 2, 0.35)"; ctx.fillRect(x + 3, yy + 5, w, h)
-  ctx.fillStyle = "#1d1006"; ctx.fillRect(x - 2, yy - 2, w + 4, h + 4)
-  ctx.fillStyle = "#fbf1d6"; ctx.fillRect(x, yy, w, h)
-  ctx.fillStyle = "#e3cf9c"; ctx.fillRect(x, yy + h - 3, w, 3)
-  ctx.fillStyle = "#1d1006"; ctx.fillRect(x + 6, yy + 5, kw, 20)
-  ctx.fillStyle = "#c8463b"; ctx.fillRect(x + 7, yy + 6, kw - 2, 16)
-  ctx.fillStyle = "#e86a5c"; ctx.fillRect(x + 7, yy + 6, kw - 2, 2)
-  ctx.textAlign = "center"
-  ctx.fillStyle = "#fff4dc"; ctx.fillText(key, x + 6 + kw / 2, yy + 19)
-  ctx.textAlign = "left"
-  ctx.fillStyle = "#3a2412"; ctx.fillText(text, x + kw + 14, yy + 19)
-  ctx.fillStyle = "#1d1006"; ctx.fillRect(Math.round(cx) - 5, yy + h + 2, 10, 3)
-  ctx.fillStyle = "#fbf1d6"; ctx.fillRect(Math.round(cx) - 3, yy + h, 6, 3)
-}
-
-function drawBubble(ctx: CanvasRenderingContext2D, text: string, cx: number, by: number, alpha: number) {
-  if (alpha <= 0) return
-  ctx.globalAlpha = alpha
-  ctx.font = `15px ${fontFamily("--ff-pixelify")}`
-  const words = text.split(" ")
-  const lines: string[] = []
-  let cur = ""
-  for (const w of words) { const t = cur ? cur + " " + w : w; if (ctx.measureText(t).width > 190 && cur) { lines.push(cur); cur = w } else cur = t }
-  if (cur) lines.push(cur)
-  const lw = Math.max(...lines.map((l) => ctx.measureText(l).width))
-  const w = Math.round(lw + 20), h = lines.length * 18 + 12
-  const x = Math.round(cx - w / 2), y = Math.round(by - h)
-  ctx.fillStyle = "#1d1006"; ctx.fillRect(x - 2, y - 2, w + 4, h + 4)
-  ctx.fillStyle = "#ffffff"; ctx.fillRect(x, y, w, h)
-  ctx.fillStyle = "#1d1006"; ctx.fillRect(Math.round(cx) - 2, y + h + 2, 6, 4); ctx.fillRect(Math.round(cx), y + h + 6, 3, 3)
-  ctx.fillStyle = "#ffffff"; ctx.fillRect(Math.round(cx) - 1, y + h, 4, 4)
-  ctx.fillStyle = "#2a1a10"
-  lines.forEach((l, i) => ctx.fillText(l, x + 10, y + 17 + i * 18))
-  ctx.globalAlpha = 1
 }

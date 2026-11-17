@@ -1,6 +1,6 @@
 // In-game achievements — unlocked by exploring the world
 export const gameAchievements = [
-  { id: "a1", title: "FIRST STEPS", description: "Entered the village", icon: "🗺️", unlockedBy: "game_start" },
+  { id: "a1", title: "FIRST STEPS", description: "Stepped into the world for the first time", icon: "🗺️", unlockedBy: "game_start" },
   { id: "a2", title: "HISTORIAN", description: "Read the chronicle in the Town Hall", icon: "🏛️", unlockedBy: "visit_townhall" },
   { id: "a3", title: "TAVERN REGULAR", description: "Heard tales of past quests", icon: "🍺", unlockedBy: "visit_tavern" },
   { id: "a4", title: "SCHOLAR", description: "Studied at the Academy", icon: "🎓", unlockedBy: "visit_academy" },

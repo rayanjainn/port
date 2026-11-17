@@ -1,9 +1,12 @@
 "use client"
 import { useEffect, useState } from "react"
 import { useGameStore } from "@/lib/store"
+import { worldById } from "@/lib/world/worlds"
+import { VOCAB } from "@/lib/theme"
+import { Panel } from "@/components/ui/kit"
 
 export default function AchievementToast() {
-  const { toastQueue, popToast, activeBuilding, mapOpen } = useGameStore()
+  const { toastQueue, popToast, activeBuilding, mapOpen, world: worldId } = useGameStore()
   const hold = !!activeBuilding || mapOpen
   const [exiting, setExiting] = useState(false)
 
@@ -21,55 +24,20 @@ export default function AchievementToast() {
 
   if (toastQueue.length === 0 || hold) return null
   const toast = toastQueue[0]
+  const world = worldById(worldId)
+  const vocab = VOCAB[worldId] ?? VOCAB.village
+  // the first-steps toast fires in whichever world the player enters first
+  const description = toast.id === "a1" ? `Entered ${world.name}` : toast.description
 
   return (
-    <div
-      className={`toast-pos ${exiting ? "toast-out" : "toast-in"}`}
-      style={{
-        position: "fixed", top: 72, right: 14, width: 300,
-        background: "linear-gradient(180deg, #ede0bd 0%, #d8c79a 100%)",
-        border: "4px solid #5e3a18",
-        boxShadow: "inset 0 0 0 2px #c79a5e, 0 5px 0 #4a2e12, 0 12px 24px rgba(0,0,0,0.35)",
-        padding: "14px 18px 14px 16px",
-        display: "flex", alignItems: "center", gap: 14,
-        zIndex: 200,
-      }}
-    >
-      {/* red banner */}
-      <div style={{
-        position: "absolute", top: -14, left: 12,
-        background: "linear-gradient(180deg, #c8463b 0%, #a8382f 100%)",
-        border: "2px solid #ede0bd",
-        padding: "3px 12px",
-        fontFamily: "var(--font-pixel)", fontSize: 7,
-        color: "#f6e8c8", letterSpacing: 2,
-        textShadow: "0 1px 0 #6e201b",
-      }}>
-        ◆ UNLOCKED ◆
+    <Panel v="toast" fx className={`toast-pos ${exiting ? "toast-out" : "toast-in"}`} style={{ position: "fixed", top: 72, right: 14, width: 300, padding: "16px 18px 14px 16px", zIndex: 200 }}>
+      <div className="toast-kick">{vocab.toast}</div>
+      <div className="toast-icon" aria-hidden>{toast.icon}</div>
+      <div className="toast-txt">
+        <div className="toast-note">{vocab.toastNote}</div>
+        <div className="toast-title">{toast.title}</div>
+        <div className="toast-desc">{description}</div>
       </div>
-      {/* metal corners */}
-      <div style={{ position: "absolute", top: 4, left: 4, width: 6, height: 6, background: "#8a5a2c" }} />
-      <div style={{ position: "absolute", top: 4, right: 4, width: 6, height: 6, background: "#8a5a2c" }} />
-      <div style={{ position: "absolute", bottom: 4, left: 4, width: 6, height: 6, background: "#8a5a2c" }} />
-      <div style={{ position: "absolute", bottom: 4, right: 4, width: 6, height: 6, background: "#8a5a2c" }} />
-      <div style={{
-        fontSize: 30, lineHeight: 1,
-        filter: "drop-shadow(0 2px 0 rgba(0,0,0,0.3))",
-      }}>{toast.icon}</div>
-      <div style={{ marginTop: 4 }}>
-        <div style={{
-          fontFamily: "var(--font-pixel)", fontSize: 7,
-          color: "#8a3026", marginBottom: 6, letterSpacing: 1,
-        }}>
-          ACHIEVEMENT
-        </div>
-        <div style={{ fontFamily: "var(--font-pixel)", fontSize: 9, color: "#3a2418" }}>
-          {toast.title}
-        </div>
-        <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "#7a5a32", marginTop: 5 }}>
-          {toast.description}
-        </div>
-      </div>
-    </div>
+    </Panel>
   )
 }

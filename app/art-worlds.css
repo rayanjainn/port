@@ -1,0 +1,118 @@
+/* Per-world character on top of the shared, token-driven art skin (art.css). */
+
+/* ═══ NEON HARBOR: smoked glass, neon tubing, LED type, holo shimmer ═══ */
+html[data-world="city"] {
+  .k-panel { filter: drop-shadow(0 0 9px rgba(93, 230, 255, .45)); box-shadow: none; }
+  .k-panel[data-v="modal"] { filter: drop-shadow(0 0 18px rgba(255, 79, 163, .45)) drop-shadow(0 0 6px rgba(93, 230, 255, .4)); box-shadow: none; }
+  .bm-body { position: relative; clip-path: polygon(0 22px, 22px 0, 100% 0, 100% calc(100% - 22px), calc(100% - 22px) 100%, 0 100%); }
+  .bm-body::after { content: ""; position: sticky; display: block; left: 0; bottom: 0; height: 0; }
+  .k-ribbon { text-shadow: 0 0 8px #5de6ff, 0 0 2px #fff; color: #e4fcff; > span { animation: k-led-on 1s steps(1) both; } }
+  .cs-face::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .22) 0 1px, transparent 1px 3px), linear-gradient(115deg, transparent 38%, rgba(93, 230, 255, .35) 50%, transparent 62%) 0 0 / 250% 100%; animation: a-holo 4.5s linear infinite; mix-blend-mode: screen; }
+  .cs-name { text-transform: uppercase; letter-spacing: 1px; text-shadow: 0 0 14px rgba(93, 230, 255, .6), 3px 0 0 rgba(255, 79, 163, .7), -3px 0 0 rgba(93, 230, 255, .6); }
+  .cs-class { color: #ff8cc8; text-shadow: 0 0 8px #ff4fa3; }
+  .cs-box, .inv-card, .ql-q { clip-path: polygon(0 14px, 14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); filter: none; }
+  .inv-card:hover, .inv-card[data-rare="legendary"] { filter: none; }
+  .inv-card:hover { box-shadow: 0 0 0 100vmax transparent; transform: translateY(-3px); }
+  .inv-card[data-rare="legendary"] { background-image: linear-gradient(180deg, rgba(255, 79, 163, .18), transparent 60px), var(--i-paper-dk); }
+  .inv-cover::after, .cs-quest::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .2) 0 1px, transparent 1px 3px); }
+  .cs-quest { position: relative; }
+  .cs-slot { border-radius: 2px; background: radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--c) 32%, var(--a-inset)), var(--a-inset) 72%); }
+  .cs-slot b { font-family: var(--ff-jb), monospace; font-size: 12px; letter-spacing: -.2px; }
+  .ql-seal { border-radius: 4px; background: var(--a-inset); box-shadow: 0 0 0 3px var(--a-edge), 0 0 0 5px #5de6ff, 0 0 18px #5de6ff; }
+  .ql-q[data-active] .ql-state { background: #ff4fa3; color: #190619; }
+  .ql-state { background: #0f6a4a; color: #d8ffe8; }
+  .ql-org, .ql-dates { font-family: var(--ff-jb), monospace; }
+  .ql-org { color: #5de6ff; }
+  .ql-chip { color: #190619; }
+  .inv-t, .ql-role { text-shadow: 0 0 10px rgba(93, 230, 255, .35); }
+  .hud-face, .dlg-face { box-shadow: 0 0 0 3px #5de6ff, 0 0 0 5px #05040f, 0 0 14px #5de6ff; }
+}
+@keyframes a-holo { from { background-position: 0 0, 130% 0; } to { background-position: 0 0, -70% 0; } }
+
+/* ═══ SUNSCAR OASIS: carved sandstone, turquoise inlay, arched tablets, sun disc ═══ */
+html[data-world="desert"] {
+  .bm-body::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 20px; background: url(/ui/desert/fret.png) left center / auto 16px repeat-x; opacity: .9; z-index: 1; pointer-events: none; }
+  .cs, .inv, .ql { padding-top: 34px; }
+  .inv-head, .cs-h { margin-top: 0; }
+  .k-ribbon { color: #ffe39a; text-shadow: 0 2px 0 #1a0d04; }
+  .cs-medal::before { content: ""; position: absolute; left: 50%; top: -62px; width: 87px; height: 54px; margin-left: -43px; background: url(/ui/desert/sun.png) center / 87px auto no-repeat; image-rendering: pixelated; z-index: 3; }
+  .cs-face { clip-path: none; border-radius: 74px 74px 0 0; inset: -20px; }
+  .cs-slot { border-radius: 24px 24px 3px 3px; padding-top: 18px; }
+  .cs-slot__gem { left: 50%; top: 6px; margin-left: -4px; }
+  .cs-stat__ic { border-radius: 6px; }
+  .cs-box, .inv-card, .ql-q { filter: drop-shadow(0 4px 0 rgba(74, 36, 10, .55)); }
+  .inv-cover { border-radius: 46px 46px 0 0; }
+  .inv-card { padding-top: 10px; }
+  .ql-seal { background: radial-gradient(circle, #fff6c8, #e8c27a 60%, #b9863a); box-shadow: 0 0 0 3px #3a2210, 0 0 0 6px #e0a21f, 0 0 0 9px #3a2210; }
+  .cs-h, .inv-head { border-bottom: 0; background: url(/ui/desert/fret.png) left bottom / auto 12px repeat-x; padding-bottom: 18px; }
+  .cs-quest__k, .cs-quest__txt p { text-shadow: none; }
+  .cs-creed { color: #fff0cf; }
+  .ql-state { background: #0f6a64; color: #e0fffb; }
+  .ql-q[data-active] .ql-state { background: #b8431f; color: #fff6dc; }
+  .ql-org { color: #075f5a; }
+  .k-chip { border-radius: 0; }
+}
+
+/* ═══ HOLLOW REACH: weathered slate, ivy, candle flicker, drifting motes ═══ */
+html[data-world="ruins"] {
+  .k-panel { filter: drop-shadow(0 0 10px rgba(95, 208, 160, .3)); box-shadow: none; }
+  .k-panel[data-v="modal"] { filter: drop-shadow(0 0 20px rgba(154, 123, 224, .4)) drop-shadow(0 0 8px rgba(95, 208, 160, .3)); }
+  .bm-body { position: relative; }
+  .bm-body::before, .bm-body::after { content: ""; position: absolute; z-index: 2; pointer-events: none; }
+  .cs, .inv, .ql { padding-top: 46px; }
+  .bm-body::before { left: -2px; top: -2px; width: 96px; height: 54px; background: url(/ui/ruins/ivy-tl.png) left top / contain no-repeat; image-rendering: pixelated; }
+  .bm-body::after { right: -2px; bottom: -2px; width: 96px; height: 54px; background: url(/ui/ruins/ivy-br.png) right bottom / contain no-repeat; image-rendering: pixelated; position: sticky; float: right; margin-top: -54px; }
+  .lab-body { background-image: radial-gradient(circle, rgba(154, 255, 214, .4) 0 1px, transparent 2px), radial-gradient(circle, rgba(196, 173, 255, .4) 0 1.5px, transparent 2.5px), linear-gradient(var(--a-hl), transparent 40px), var(--i-paper); background-size: 211px 263px, 307px 341px, auto, 96px 96px; animation: k-motes2 30s linear infinite; }
+  .k-ribbon { color: #e8f5f0; text-shadow: 0 0 10px rgba(154, 255, 214, .8); }
+  .cs-name { text-shadow: 0 0 16px rgba(154, 255, 214, .6), 0 3px 0 #050c0e; letter-spacing: 1px; }
+  .cs-face { clip-path: none; border-radius: 74px 74px 0 0; inset: -20px; }
+  .cs-medal::before, .cs-medal::after { content: ""; position: absolute; bottom: -4px; width: 12px; height: 40px; background: linear-gradient(90deg, #9fb8b0, #e4f0ea, #9fb8b0); box-shadow: 0 0 0 1px #2b3b40; z-index: 3; }
+  .cs-medal::before { left: -58px; } .cs-medal::after { right: -58px; }
+  .cs-top { position: relative; }
+  .cs-id::before { content: ""; position: absolute; }
+  .cs-flame { position: absolute; width: 10px; height: 16px; bottom: 34px; border-radius: 50% 50% 50% 50% / 62% 62% 38% 38%; background: radial-gradient(circle at 50% 72%, #fff 0, #ffe27a 38%, #ff9a3c 72%, transparent 100%); filter: drop-shadow(0 0 8px #ffb347); animation: k-flicker 2.2s steps(1) infinite; z-index: 4; }
+  .cs-slot { border-radius: 24px 24px 3px 3px; padding-top: 18px; box-shadow: 0 0 0 2px var(--a-edge), 0 0 0 4px var(--c), 0 0 14px color-mix(in srgb, var(--c) 45%, transparent), inset 0 3px 8px rgba(0, 0, 0, .55); }
+  .cs-slot__gem { left: 50%; top: 6px; margin-left: -4px; }
+  .cs-box, .inv-card, .ql-q { filter: drop-shadow(0 0 8px rgba(95, 208, 160, .22)); }
+  .inv-cover { border-radius: 14px 14px 0 0; filter: saturate(.85); }
+  .inv-card { border-radius: 0; }
+  .ql-seal { background: radial-gradient(circle, rgba(154, 240, 204, .4), #0e1619 70%); box-shadow: 0 0 0 3px var(--a-edge), 0 0 0 5px #7fc4b4, 0 0 20px #5fd0a0; animation: k-wisp 3.6s ease-in-out infinite; }
+  .ql-q[data-active] .ql-state { background: #6a4cc0; color: #efe6ff; }
+  .ql-state { background: #1d5a46; color: #d8fff0; }
+  .ql-org { color: #b9a2ff; }
+  .ql-chip { color: #06231b; }
+  .inv-t, .ql-role { text-shadow: 0 0 8px rgba(154, 255, 214, .25); }
+  .cs-h, .inv-head { border-bottom: 0; background: radial-gradient(circle at 5px 3px, #5fd0a0 0 2px, transparent 3px) left bottom / 14px 6px repeat-x; padding-bottom: 14px; }
+}
+@keyframes k-motes2 { to { background-position: 40px -300px, -30px -420px, 0 0, 0 0; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+
+html:not([data-world="ruins"]) .cs-flame { display: none; }
+html[data-world="ruins"] .cs-flame-l { left: -53px; }
+html[data-world="ruins"] .cs-flame-r { right: -53px; animation-delay: -1.1s; }
+
+/* reset leftovers from the earlier CSS-only ribbons */
+html[data-world] .k-ribbon::before, html[data-world] .k-ribbon::after { content: none; }
+html[data-world="city"] .toast-kick { background: #ff4fa3; color: #190619; box-shadow: 0 0 0 2px #05040f, 0 0 12px #ff4fa3; text-shadow: none; }
+html[data-world="desert"] .toast-kick { background: linear-gradient(180deg, #d8683a, #a8381a); }
+html[data-world="ruins"] .toast-kick { background: linear-gradient(180deg, #8a6ae0, #5a3cb0); color: #f4eeff; box-shadow: 0 0 0 2px #050c0e, 0 0 12px #9a7be0; }
+
+html[data-world="village"], html:not([data-world]) {
+  --a-line: rgba(138, 90, 24, .45); --a-bar1: #fff2b0; --a-bar2: #f5b93a; --a-bar3: #c98a22; --a-lv1: #fff2b0; --a-lv2: #f5b93a; --a-lv3: #c98a22; --a-lv-ink: #3a1d08;
+  --a-cb1: #ffe9a0; --a-cb2: #f5bf45; --a-cb3: #c98a22; --a-cb-ink: #3a1d08;
+}
+
+/* project cover: generative art, pixelated */
+.pcv { position: relative; overflow: hidden; background: #0d0b13; }
+.pcv-art { position: absolute; inset: 0; filter: url(#px4) brightness(1.9) contrast(1.1) saturate(1.5); transform: scale(1.5); image-rendering: pixelated; }
+.pcv::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(120% 90% at 20% 0%, color-mix(in srgb, var(--a) 28%, transparent), transparent 60%); mix-blend-mode: screen; }
+.pcv-art .qa { height: 100%; }
+.pcv-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
+.pcv-badge { position: absolute; left: 8px; bottom: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(8, 6, 16, .72); box-shadow: 0 0 0 2px var(--a), 0 3px 0 2px rgba(0,0,0,.5); z-index: 2; }
+.pcv-badge img { width: 32px; height: 32px; image-rendering: pixelated; }
+
+/* desert: dark carved wells (forge, contact) keep light type; light sandstone panels keep dark type */
+html[data-world="desert"] .k-well, html[data-world="desert"] .arc-bezel { background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 40px), #3f2411; color: #fff0cf; }
+html[data-world="desert"] .forge-col__head, html[data-world="desert"] .wiz-head { color: #ffe39a; }
+html[data-world="desert"] .wiz-box .k-btn[data-v="ghost"] { color: #fff0cf; }
+html[data-world="desert"] .cs-creed { color: var(--a-ink); border-color: rgba(53, 32, 15, .4); }

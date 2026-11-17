@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { playSound } from "@/lib/audio"
 import { monsterSheet } from "@/lib/na"
 import { GAMES, Overlay, submitScore } from "./Arcade"
+import { useWorldTheme } from "@/lib/theme"
 
 type Kind = "slime" | "gold" | "skull"
 interface Hole { kind: Kind | null; until: number; bonked: number }
@@ -17,6 +18,7 @@ export default function Slimes() {
   const [pops, setPops] = useState<{ id: number; i: number; txt: string; col: string }[]>([])
   const scoreRef = useRef(0)
   const color = GAMES.slimes.color
+  const mat = useWorldTheme().material
 
   const start = useCallback(() => {
     scoreRef.current = 0
@@ -83,26 +85,26 @@ export default function Slimes() {
   }, [bonk])
 
   return (
-    <div style={{ position: "relative", aspectRatio: "3 / 2", background: "radial-gradient(ellipse at 50% 30%, #3a2a1a, #140c06 75%)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <div style={{ position: "absolute", top: 12, left: 14, fontFamily: "var(--font-pixel)", fontSize: 12, color: "#fff4dc", textShadow: "0 2px 0 #1d1006" }}>SCORE {score}</div>
-      <div style={{ position: "absolute", top: 12, right: 14, fontFamily: "var(--font-pixel)", fontSize: 12, color: left <= 5 ? "#ff6a6a" : "#fff" }}>⏱ {left}s</div>
-      <div style={{ position: "absolute", top: 34, left: 14, right: 14, height: 4, background: "rgba(255,255,255,.1)", borderRadius: 4 }}>
-        <div style={{ height: "100%", width: `${(left / DURATION) * 100}%`, background: color, borderRadius: 4, transition: "width .1s linear", boxShadow: `0 0 8px ${color}` }} />
+    <div className="sl-board" data-m={mat}>
+      <div className="arc-hud arc-hud--l">SCORE {score}</div>
+      <div className="arc-hud arc-hud--r" style={{ color: left <= 5 ? "var(--arc-warn, #ff8a8a)" : undefined }}>⏱ {left}s</div>
+      <div className="sl-timer">
+        <div style={{ height: "100%", width: `${(left / DURATION) * 100}%`, background: color, transition: "width .1s linear", boxShadow: `0 0 8px ${color}` }} />
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "clamp(10px, 2.4vw, 22px)", width: "min(78%, 420px)", marginTop: 26 }}>
+      <div className="sl-grid">
         {holes.map((h, i) => (
-          <button key={i} onPointerDown={() => bonk(i)} aria-label={`Hole ${i + 1}`} style={{ position: "relative", aspectRatio: "1.25", background: "none", border: "none", cursor: "pointer", padding: 0 }}>
-            <div style={{ position: "absolute", left: "8%", right: "8%", bottom: "6%", height: "38%", borderRadius: "50%", background: "radial-gradient(ellipse at 50% 40%, #050302, #2b1a0c 70%)", boxShadow: "inset 0 6px 10px rgba(0,0,0,.8), 0 2px 0 #5a3a1c" }} />
-            <div style={{
-              position: "absolute", left: "50%", bottom: "16%", width: "62%", aspectRatio: "1", transform: `translateX(-50%) translateY(${h.kind ? (h.bonked ? "20%" : "0") : "70%"}) scaleY(${h.bonked ? 0.6 : 1})`,
-              opacity: h.kind ? 1 : 0, transition: "transform .12s cubic-bezier(.2,1.6,.4,1), opacity .1s",
-              backgroundImage: `url(${monsterSheet(h.kind === "skull" ? "Skull" : "Slime")})`, backgroundSize: "400% 400%", backgroundPosition: "0 0",
-              imageRendering: "pixelated", filter: h.kind === "gold" ? "sepia(1) saturate(4) hue-rotate(5deg) brightness(1.3) drop-shadow(0 0 8px #ffd76a)" : "drop-shadow(0 3px 0 rgba(0,0,0,.4))",
-              clipPath: "inset(0 0 22% 0)",
+          <button key={i} onPointerDown={() => bonk(i)} aria-label={`Hole ${i + 1}`} className="sl-hole">
+            <div className="sl-pit" />
+            <div className="sl-mon" style={{
+              transform: `translateX(-50%) translateY(${h.kind ? (h.bonked ? "20%" : "0") : "70%"}) scaleY(${h.bonked ? 0.6 : 1})`,
+              opacity: h.kind ? 1 : 0,
+              backgroundImage: `url(${monsterSheet(h.kind === "skull" ? "Skull" : "Slime")})`,
+              filter: h.kind === "gold" ? "sepia(1) saturate(4) hue-rotate(5deg) brightness(1.3) drop-shadow(0 0 8px #ffd76a)" : "drop-shadow(0 3px 0 rgba(0,0,0,.4))",
             }} />
-            <span style={{ position: "absolute", top: 2, left: 4, fontFamily: "var(--font-pixel)", fontSize: 7, color: "rgba(255,255,255,.3)" }}>{i + 1}</span>
+            <i className="sl-front" aria-hidden />
+            <span className="sl-num">{i + 1}</span>
             {pops.filter((p) => p.i === i).map((p) => (
-              <span key={p.id} className="score-pop" style={{ position: "absolute", left: "50%", top: "10%", fontFamily: "var(--font-pixel)", fontSize: 14, color: p.col, textShadow: "0 2px 0 #000" }}>{p.txt}</span>
+              <span key={p.id} className="score-pop" style={{ position: "absolute", left: "50%", top: "10%", fontFamily: "var(--font-head)", fontSize: 14, color: p.col, textShadow: "0 2px 0 #000" }}>{p.txt}</span>
             ))}
           </button>
         ))}
