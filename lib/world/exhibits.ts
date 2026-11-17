@@ -33,7 +33,7 @@ export const palOf = (accent: string): Pal => {
 }
 
 const INK = "#120f1c", WHITE = "#f6f2e8", PAPER = "#e6dcc4", STEEL = "#9aa5b5", STEEL_D = "#5d687b", STEEL_L = "#d3dae4", GOLD = "#f4c430", GOLD_D = "#b07d14"
-const RED = "#e5483d", GREEN = "#58c46a", BLUE = "#4aa3ff", NAVY = "#1c2340", ORANGE = "#ff9a3c", YELLOW = "#ffe066"
+const RED = "#e5483d", GREEN = "#58c46a", BLUE = "#4aa3ff", ORANGE = "#ff9a3c", YELLOW = "#ffe066"
 
 // ── 5x7 and 3x5 bitmap fonts ────────────────────────────────────
 const GLYPHS: Record<string, string> = {
@@ -222,7 +222,6 @@ function floor(P: Pen, y: number, c: Pal, tone = 0.6) {
   P.r(0, y, P.w, P.h - y, mix(c.a, "#0a0816", tone)); P.r(0, y, P.w, 1, mix(c.a, "#ffffff", 0.18))
   for (let x = 2; x < P.w; x += 8) P.r(x, y + 3, 4, 1, mix(c.a, "#0a0816", tone - 0.12))
 }
-function shadow(P: Pen, cx: number, y: number, rx: number) { P.a(0.35); P.ell(cx, y, rx, 1, "#000000"); P.a(1) }
 function glow(P: Pen, cx: number, cy: number, r: number, col: string, al = 0.18) {
   for (let k = 3; k >= 1; k--) { P.a(al * (4 - k) / 3); P.disc(cx, cy, Math.round((r * k) / 3), col) }
   P.a(1)
@@ -895,9 +894,9 @@ export function sculpture(p: ExProject, tone: "marble" | "bronze" | "glass" = "m
 }
 
 /** neon billboard: bezel with bulbs around the titled art, optional tagline strip beneath */
-export function billboard(p: ExProject, o: { pitch?: boolean; art?: HTMLCanvasElement } = {}): HTMLCanvasElement {
+export function billboard(p: ExProject, o: { pitch?: boolean; art?: HTMLCanvasElement; lines?: string[] } = {}): HTMLCanvasElement {
   const art = o.art ?? titledArt(p), c = palOf(p.accent)
-  const lines = o.pitch ? wrapMicro(p.tagline, 15, 2) : []
+  const lines = o.pitch ? (o.lines ?? wrapMicro(p.tagline, 15, 2)) : []
   const sh = lines.length ? lines.length * 6 + 3 : 0
   const W = art.width + 8, H = art.height + 8 + sh
   const { c: cv, ctx } = canvas(W, H)
