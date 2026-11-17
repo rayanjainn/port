@@ -92,16 +92,16 @@ export function AboutCity() {
   )
 }
 
-export function InventoryCity({ projects }: { projects: Project[] }) {
+export function InventoryCity({ projects, onOpen }: { projects: Project[]; onOpen?: (id: string) => void }) {
   const hero = projects.find((x) => x.featured) ?? projects[0]
   const rest = projects.filter((x) => x.id !== hero.id)
   return (
     <section className="inv inv-city">
       <div className="inv-head"><Ico n="chest-big" size={2} /> <b>APP STORE</b> <span>{projects.length} apps installed</span></div>
-      <article className="billboard"><div className="bb-lights" aria-hidden /><ProjectCover project={hero} height={190} badge={false} /><div className="bb-txt"><small>NOW SHOWING</small><b>{hero.title}</b><p>{hero.tagline}</p><span className="bb-btn">OPEN</span></div></article>
+      <article className="billboard" onClick={() => onOpen?.(hero.id)} style={{ cursor: onOpen ? "pointer" : undefined }}><div className="bb-lights" aria-hidden /><ProjectCover project={hero} height={190} badge={false} /><div className="bb-txt"><small>NOW SHOWING</small><b>{hero.title}</b><p>{hero.tagline}</p><span className="bb-btn">OPEN</span></div></article>
       <div className="apps">
-        {rest.slice(0, 6).map((pj, i) => (
-          <article key={pj.id} className="apptile">
+        {rest.map((pj, i) => (
+          <article key={pj.id} className="apptile" onClick={() => onOpen?.(pj.id)} style={{ cursor: onOpen ? "pointer" : undefined }}>
             <div className="apptile-ic"><ProjectCover project={pj} height={84} badge={false} /></div>
             <div className="apptile-b"><b>{pj.title}</b><small>{pj.category}</small><div className="stars" aria-label="rating">{"★★★★★".split("").map((s2, k) => <i key={k} data-on={k < 3 + (i % 3) ? "" : undefined}>{s2}</i>)}</div><div className="apptile-t">{pj.tech.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}</div></div>
             <span className="apptile-go">{i % 2 ? "GET" : "OPEN"}</span>
@@ -169,16 +169,16 @@ export function AboutDesert() {
   )
 }
 
-export function InventoryDesert({ projects }: { projects: Project[] }) {
-  const list = projects.slice(0, 6)
-  const rows = [list.slice(0, 3), list.slice(3, 6)]
+export function InventoryDesert({ projects, onOpen }: { projects: Project[]; onOpen?: (id: string) => void }) {
+  const rows: Project[][] = []
+  for (let i = 0; i < projects.length; i += 3) rows.push(projects.slice(i, i + 3))
   return (
     <section className="inv inv-desert">
       <div className="inv-head"><Ico n="chest-big" size={2} /> <b>RELIC HALL</b> <span>{projects.length} tablets recovered</span></div>
       {rows.map((row, r) => (
         <div key={r} className="shelf">
           {row.map((pj, i) => (
-            <article key={pj.id} className="relic" data-hero={pj.featured && r === 0 && i === 0 ? "" : undefined}>
+            <article key={pj.id} className="relic" onClick={() => onOpen?.(pj.id)} data-hero={pj.featured && r === 0 && i === 0 ? "" : undefined}>
               <div className="relic-niche"><ProjectCover project={pj} height={150} badge={false} /></div>
               <div className="relic-carve"><b>{pj.title}</b><small>{pj.category}</small></div>
               <p>{pj.tagline}</p>
@@ -198,7 +198,7 @@ export function QuestDesert({ items }: { items: LogItem[] }) {
       <div className="inv-head"><Ico n="scroll" size={2} /> <b>CARAVAN ROUTE</b> <span>{items.length} oases</span></div>
       <div className="route">
         {items.map((it, i) => (
-          <article key={it.e.id} className="oasis" data-side={i % 2 ? "r" : "l"}>
+          <article key={it.e.id} className="oasis" data-n={i}>
             <div className="oasis-pool" aria-hidden><i /><Ico n={it.e.kind === "leadership" ? "cup-gold" : "chest"} size={2} /></div>
             <div className="scroll-card">
               <div className="scroll-top"><b>{it.e.org}</b><em>{[it.e.start, it.e.end].filter(Boolean).join(" — ")}</em></div>
@@ -224,34 +224,34 @@ export function AboutRuins() {
       <div className="memo">
         <div className="memo-candles" aria-hidden><i /><i /></div>
         <div className="memo-arch">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/ui/portrait-ruins.png" alt={p.name} /></div>
-        <div className="memo-kicker">IN LIVING MEMORY OF</div>
+        <div className="memo-kicker">KEEPER OF HOLLOW REACH</div>
         <h2 className="memo-name">{p.name}</h2>
-        <div className="memo-dates">{p.title} · LV {new Date().getFullYear() - 2021} · {p.location}</div>
+        <div className="memo-dates">{p.title} · LV {new Date().getFullYear() - 2021} · haunting {p.location}</div>
         <div className="memo-runes" aria-hidden>ᚠ ᚢ ᚦ ᚨ ᚱ ᚲ</div>
         <p className="memo-bio">{p.bio}</p>
-        {p.available && <Chip color="#5fd0a0">Still answering the living</Chip>}
+        {p.available && <Chip color="#5fd0a0">The lantern is still lit</Chip>}
         <div className="memo-grid">
-          <div className="memo-box"><h3>VIRTUES</h3>
+          <div className="memo-box"><h3>GIFTS</h3>
             {stats.map((st) => <div key={st.k} className="virtue"><span><Ico n={st.ic} size={1} /> {st.k}</span><span className="pips">{Array.from({ length: 10 }).map((_, i) => <i key={i} data-on={i < Math.max(1, Math.round((st.v / st.cap) * 10)) ? "" : undefined} />)}</span><em>{st.v}</em></div>)}
           </div>
-          <div className="memo-box"><h3>RELICS</h3>
+          <div className="memo-box"><h3>TALISMANS</h3>
             <div className="niches">{top.map((sk) => <div key={sk.name} className="niche" title={sk.name}><Ico n={skillIcon(sk.name, sk.group)} size={3} /><b>{sk.name}</b></div>)}</div>
           </div>
         </div>
-        <div className="memo-note"><b>UNFINISHED BUSINESS</b><p>{p.now}</p><q>{p.motto}</q></div>
+        <div className="memo-note"><b>STILL BURNING</b><p>{p.now}</p><q>{p.motto}</q></div>
       </div>
       <Links />
     </section>
   )
 }
 
-export function InventoryRuins({ projects }: { projects: Project[] }) {
+export function InventoryRuins({ projects, onOpen }: { projects: Project[]; onOpen?: (id: string) => void }) {
   return (
     <section className="inv inv-ruins">
       <div className="inv-head"><Ico n="chest-big" size={2} /> <b>MEMORY VAULT</b> <span>{projects.length} memories bottled</span></div>
       <div className="jars">
-        {projects.slice(0, 6).map((pj, i) => (
-          <article key={pj.id} className="jar" style={{ ["--d" as string]: `${i * 0.7}s` } as CSSProperties}>
+        {projects.map((pj, i) => (
+          <article key={pj.id} onClick={() => onOpen?.(pj.id)} className="jar" style={{ ["--d" as string]: `${i * 0.7}s` } as CSSProperties}>
             <i className="jar-cork" aria-hidden />
             <div className="jar-glass"><ProjectCover project={pj} height={150} badge={false} /><i className="jar-shine" aria-hidden /><i className="jar-mote" aria-hidden /></div>
             <div className="jar-label"><b>{pj.title}</b><small>{pj.year} · {pj.category}</small></div>
@@ -266,11 +266,11 @@ export function InventoryRuins({ projects }: { projects: Project[] }) {
 export function QuestRuins({ items }: { items: LogItem[] }) {
   return (
     <section className="ql ql-ruins">
-      <div className="inv-head"><Ico n="scroll" size={2} /> <b>EPITAPHS</b> <span>{items.length} lives lived at work</span></div>
+      <div className="inv-head"><Ico n="scroll" size={2} /> <b>GHOST STORIES</b> <span>{items.length} tales from the lantern</span></div>
       <div className="epi">
         {items.map((it) => (
           <article key={it.e.id} className="grave">
-            <div className="grave-top"><small>HERE WORKED</small><b>{it.e.role}</b><span>{it.e.org} · {[it.e.start, it.e.end].filter(Boolean).join(" – ")}</span></div>
+            <div className="grave-top"><small>ONCE, AT {it.e.org.toUpperCase()}…</small><b>{it.e.role}</b><span>{[it.e.start, it.e.end].filter(Boolean).join(" – ")}</span></div>
             <div className="grave-body">
               {it.e.description && <p>{it.e.description}</p>}
               {it.e.highlights.length > 0 && <ul>{it.e.highlights.map((h) => <li key={h}>{h}</li>)}</ul>}

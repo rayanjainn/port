@@ -99,9 +99,9 @@ export const SECTION_NAMES: Record<string, Record<string, { title: string; sub: 
     academy: { title: "THE SCRIPTORIUM", sub: "Studies, honours and seals earned" }, wizard: { title: "THE ORACLE", sub: "" },
   },
   ruins: {
-    townhall: { title: "THE CRYPT HALL", sub: "A life remembered in whispers" }, gallery: { title: "THE MEMORY VAULT", sub: "Things I've built, bottled as memories" },
-    tavern: { title: "THE WAKE INN", sub: "Hauntings survived and crews joined" }, forge: { title: "THE SOULFORGE", sub: "Skills bound in glowing stone" },
-    academy: { title: "THE OSSUARY LIBRARY", sub: "Studies, honours and badges earned" }, wizard: { title: "THE SEANCE ROOM", sub: "" },
+    townhall: { title: "THE KEEPER'S HALL", sub: "The lantern keeper's tale" }, gallery: { title: "THE MEMORY VAULT", sub: "Things I've built, bottled as memories" },
+    tavern: { title: "THE LANTERN INN", sub: "Ghost stories and crews joined" }, forge: { title: "THE SOULFORGE", sub: "Skills bound in glowing stone" },
+    academy: { title: "THE LANTERN LIBRARY", sub: "Studies, honours and badges earned" }, wizard: { title: "THE SEANCE ROOM", sub: "" },
   },
 }
 
@@ -110,7 +110,7 @@ export const VOCAB: Record<string, { pass: string; map: string; toast: string; t
   village: { pass: "ADVENTURER", map: "MAP", toast: "UNLOCKED", toastNote: "ACHIEVEMENT", hero: "A PLAYABLE PORTFOLIO", dialog: "SPEAKING", area: "NOW ENTERING" },
   city: { pass: "HARBOR PASS", map: "METRO", toast: "NEW ALERT", toastNote: "ACHIEVEMENT", hero: "RESIDENT FILE // PLAYABLE PORTFOLIO", dialog: "INCOMING", area: "NOW ARRIVING" },
   desert: { pass: "CARAVAN SEAL", map: "CHART", toast: "SEALED", toastNote: "ACHIEVEMENT", hero: "A PLAYABLE PORTFOLIO", dialog: "SPEAKS", area: "NOW ENTERING" },
-  ruins: { pass: "SPIRIT LEDGER", map: "GHOST CHART", toast: "A WHISPER", toastNote: "ACHIEVEMENT", hero: "A PLAYABLE PORTFOLIO", dialog: "WHISPERS", area: "NOW HAUNTING" },
+  ruins: { pass: "LANTERN KEEPER", map: "GHOST CHART", toast: "A WHISPER", toastNote: "ACHIEVEMENT", hero: "A PLAYABLE PORTFOLIO", dialog: "WHISPERS", area: "NOW HAUNTING" },
 }
 
 /** title / kicker / subtitle / accent of a section building in the current world (labels come from the world's own landmarks) */

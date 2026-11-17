@@ -106,16 +106,16 @@ function AboutVillage({ world }: { world: string }) {
 
 const RARITY = [{ n: "LEGENDARY", c: "#f0b400" }, { n: "EPIC", c: "#a98bff" }, { n: "RARE", c: "#4aa3e8" }, { n: "COMMON", c: "#9aa68a" }]
 
-export function ProjectsInventory({ world = "village" }: { world?: string }) {
+export function ProjectsInventory({ world = "village", onOpen }: { world?: string; onOpen?: (id: string) => void }) {
   const { projects } = useContent()
-  if (world === "city") return <InventoryCity projects={projects} />
-  if (world === "desert") return <InventoryDesert projects={projects} />
-  if (world === "ruins") return <InventoryRuins projects={projects} />
-  return <InventoryVillage projects={projects} />
+  if (world === "city") return <InventoryCity projects={projects} onOpen={onOpen} />
+  if (world === "desert") return <InventoryDesert projects={projects} onOpen={onOpen} />
+  if (world === "ruins") return <InventoryRuins projects={projects} onOpen={onOpen} />
+  return <InventoryVillage projects={projects} onOpen={onOpen} />
 }
 
-function InventoryVillage({ projects }: { projects: Project[] }) {
-  const list = projects.slice(0, 6)
+function InventoryVillage({ projects, onOpen }: { projects: Project[]; onOpen?: (id: string) => void }) {
+  const list = projects
   return (
     <section className="inv">
       <div className="inv-head"><Ico n="chest-big" size={2} /> <b>INVENTORY</b> <span>{projects.length} items collected</span></div>
@@ -123,7 +123,7 @@ function InventoryVillage({ projects }: { projects: Project[] }) {
         {list.map((pj, i) => {
           const r = i < 2 && pj.featured ? RARITY[0] : RARITY[1 + (i % 3)]
           return (
-            <article key={pj.id} className="inv-card" style={{ ["--r" as string]: r.c } as CSSProperties} data-rare={r.n.toLowerCase()}>
+            <article key={pj.id} className="inv-card" onClick={() => onOpen?.(pj.id)} style={{ ["--r" as string]: r.c } as CSSProperties} data-rare={r.n.toLowerCase()}>
               <div className="inv-cover"><ProjectCover project={pj} height={128} /><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>
               <div className="inv-body">
                 <div className="inv-t">{pj.title}</div>

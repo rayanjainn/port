@@ -184,3 +184,15 @@
 
 .station-card ul, .scroll-card ul, .grave-body ul { list-style: disc; }
 .scroll-card { width: calc(50% - 44px); }
+
+/* caravan route: one side, tight */
+.route::before { left: 34px; margin-left: 0; }
+.oasis, .oasis[data-side] { display: block; margin-bottom: 18px; padding-left: 86px; min-height: 76px; }
+.oasis-pool { left: 0; top: 4px; margin-left: 0; width: 68px; height: 68px; }
+.scroll-card { width: auto; max-width: 780px; }
+.oasis-end { padding-left: 86px; margin-bottom: 0; min-height: 0; }
+.oasis-end .route-next { margin: 0; padding: 12px 16px; display: inline-block; }
+.oasis-end .oasis-pool { width: 48px; height: 48px; left: 10px; top: 0; }
+.route { padding-bottom: 6px; }
+.route::before { bottom: 40px; }
+@media (max-width: 760px) { .oasis, .oasis[data-side] { padding-left: 58px; } .oasis-pool { width: 44px; height: 44px; left: 4px; margin-left: 0; } .route::before { left: 24px; } .oasis-end { padding-left: 58px; } }

@@ -3,21 +3,20 @@ import { useState } from "react"
 import { useContent } from "@/lib/content"
 import { playSound } from "@/lib/audio"
 import { useSection } from "@/lib/theme"
-import { SectionHeader, Card, Chip, LinkBtn, LangDot, ProjectCover, Pill } from "./ui"
+import { useGameStore } from "@/lib/store"
+import { ProjectsInventory } from "@/components/art/Sheets"
+import { Card, Chip, LinkBtn, LangDot, ProjectCover, Pill } from "./ui"
 import { Button } from "@/components/ui/kit"
-import { Images, ArrowLeft, ExternalLink, Star, Check, ChevronRight } from "lucide-react"
+import { ArrowLeft, ExternalLink, Star, Check } from "lucide-react"
 import { Github } from "@/components/icons"
 
 export default function GalleryModal({ focus }: { focus?: string | null }) {
   const { projects } = useContent()
   const [sel, setSel] = useState<string | null>(focus ?? null)
-  const [filter, setFilter] = useState("All")
   const proj = projects.find((p) => p.id === sel)
+  const world = useGameStore((s) => s.world)
   const sec = useSection("gallery", { title: "THE GALLERY", sub: "Things I've built, hung on the wall" })
 
-  const cats = ["All", ...Array.from(new Set(projects.map((p) => p.category)))]
-  const featured = projects.filter((p) => p.featured)
-  const list = projects.filter((p) => filter === "All" || p.category === filter)
 
   const open = (id: string) => { playSound("click"); setSel(id) }
 
@@ -69,58 +68,8 @@ export default function GalleryModal({ focus }: { focus?: string | null }) {
   }
 
   return (
-    <div className="sec gallery" style={{ padding: "26px clamp(16px, 3vw, 30px) 30px" }}>
-      <SectionHeader
-        icon={<Images size={22} />} accent={sec.accent} kicker={sec.kicker}
-        title={sec.title} subtitle={sec.sub}
-        right={<Pill>{projects.length} EXHIBITS</Pill>}
-      />
-
-      {/* featured spotlight */}
-      {featured[0] && filter === "All" && (
-        <Card hover onClick={() => open(featured[0].id)} className="art art-spot" style={{ marginBottom: 18 }}>
-          <div className="art-cover art-spot__cover"><ProjectCover p={featured[0]} height="100%" big /></div>
-          <div className="art-body art-spot__body">
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <Pill bg={sec.accent}><Star size={9} fill="currentColor" /> MASTERPIECE</Pill>
-              <LangDot lang={featured[0].language} />
-            </div>
-            <div className="art-tag" style={{ fontSize: 18 }}>{featured[0].tagline}</div>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--u-body)", lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-              {featured[0].description}
-            </div>
-            <div className="art-go">INSPECT <ChevronRight size={12} /></div>
-          </div>
-        </Card>
-      )}
-
-      {/* filters */}
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 16 }}>
-        {cats.map((c) => (
-          <Button key={c} variant={filter === c ? "accent" : "plain"} accent={sec.accent} className="gal-filter" aria-pressed={filter === c} onClick={() => { playSound("click"); setFilter(c) }}>{c}</Button>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))", gap: 16 }}>
-        {list.filter((p) => !(filter === "All" && p.id === featured[0]?.id)).map((p, i) => (
-          <Card key={p.id} hover onClick={() => open(p.id)} className="art" style={{ animationDelay: `${i * 40}ms` }}>
-            <div className="art-cover">
-              <ProjectCover p={p} height={112} />
-            </div>
-            <div className="art-body">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, gap: 8 }}>
-                <LangDot lang={p.language} />
-                {p.featured && <Star size={14} color="var(--u-accent2)" fill="var(--u-accent2)" />}
-              </div>
-              <div style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--u-body)", lineHeight: 1.45, minHeight: 44 }}>{p.tagline}</div>
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 10 }}>
-                {p.tech.slice(0, 3).map((t) => <Chip key={t}>{t}</Chip>)}
-                {p.tech.length > 3 && <Chip>+{p.tech.length - 3}</Chip>}
-              </div>
-            </div>
-          </Card>
-        ))}
-      </div>
+    <div className="sec gallery">
+      <ProjectsInventory world={world} onOpen={open} />
     </div>
   )
 }

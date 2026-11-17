@@ -22,32 +22,9 @@
 .arc-over__card .k-btn { position: relative; z-index: 1; }
 @media (max-width: 720px) { .arc-grid { grid-template-columns: 1fr; } .arc-side { display: none; } }
 
-html[data-world="city"] {
-  .arc-bezel { background: #05040f; border: 2px solid var(--u-accent); border-radius: 4px; box-shadow: 0 0 20px rgba(255, 79, 163, .5), inset 0 0 0 2px #05040f, inset 0 0 0 3px var(--u-accent2); &::before { content: ""; position: absolute; left: 14px; top: -5px; width: 30px; height: 6px; background: var(--u-accent2); box-shadow: 0 0 10px var(--u-accent2); } &::after { content: ""; position: absolute; right: 14px; bottom: -5px; width: 30px; height: 6px; background: var(--u-accent); box-shadow: 0 0 10px var(--u-accent); } }
-  .arc-screen { border: 1px solid var(--u-accent2); background: #05040f; }
-  .arc-crt { background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .2) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(5, 3, 20, .45)); }
-  .arc-info { border: 1px solid var(--u-line-dk); box-shadow: inset 0 0 18px rgba(0, 0, 0, .35); border-radius: 2px; }
-  .arc-score { color: var(--u-accent2); text-shadow: 0 0 8px var(--u-accent2); }
-  .arc-hud { background: rgba(5, 4, 15, .8); border-color: var(--u-accent2); color: var(--u-accent2); text-shadow: 0 0 8px var(--u-accent2); border-radius: 2px; --arc-go: #7dffb0; --arc-warn: #ff8aa0; }
-  .arc-over { background: rgba(5, 3, 18, .66); }
-}
-html[data-world="desert"] {
-  .arc-bezel { background: var(--tx-grain), linear-gradient(180deg, #a07a44, #6d4c22); border: 3px solid #3a2210; border-radius: 4px; box-shadow: inset 0 0 0 2px rgba(224, 162, 31, .8), 0 5px 0 #2c1808; }
-  .arc-screen { border: 3px solid #2c1808; background: #e0b96e; }
-  .arc-crt { background: radial-gradient(ellipse at 50% 50%, transparent 62%, rgba(80, 40, 6, .3)); }
-  .arc-info { border: 2px solid var(--u-line-dk); box-shadow: 0 3px 0 rgba(74, 44, 20, .4); border-radius: 2px; background: var(--tx-grain), var(--u-card); }
-  .arc-hud { background: rgba(53, 32, 15, .88); border: 2px solid #e0a21f; color: #ffe39a; border-radius: 3px; --arc-go: #b8ffd0; --arc-warn: #ffb0a0; }
-  .arc-over { background: rgba(60, 30, 6, .5); }
-}
-html[data-world="ruins"] {
-  .arc-bezel { background: var(--tx-cracks) 0 0 / 220px 160px, linear-gradient(160deg, #3b5358, #1b2a2e); border: 2px solid #0a1214; border-radius: 10px 10px 4px 4px; box-shadow: inset 0 0 0 1px rgba(95, 208, 160, .55), 0 0 22px rgba(95, 208, 160, .3); }
-  .arc-screen { border: 2px solid #050c0e; background: #0c1618; box-shadow: inset 0 0 40px rgba(0, 0, 0, .7); }
-  .arc-crt { background: repeating-linear-gradient(0deg, rgba(0, 0, 0, .1) 0 1px, transparent 1px 3px), radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(2, 8, 10, .6)); }
-  .arc-info { border: 1px solid var(--u-line); box-shadow: inset 0 0 18px rgba(154, 123, 224, .12); border-radius: 2px; }
-  .arc-score { color: var(--u-accent-hi); text-shadow: 0 0 8px rgba(95, 208, 160, .7); }
-  .arc-hud { background: rgba(5, 12, 14, .82); border: 1px solid rgba(95, 208, 160, .55); color: #d8f5ea; border-radius: 8px 8px 2px 2px; --arc-go: #9af0cc; --arc-warn: #ff9aa8; }
-  .arc-over { background: rgba(2, 8, 10, .62); }
-}
+
+
+
 
 /* ── Runes: rune stones / neon pads / hieroglyph tiles / spirit orbs ── */
 .rn-board { position: relative; aspect-ratio: 3 / 2; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle at 50% 50%, #3a2a4a, #1a120a 75%); }

@@ -68,77 +68,13 @@
 @media (max-width: 480px) { .hud-trophy { display: none; } }
 
 /* ── village ── */
-html:is(:not([data-world]), [data-world="village"]) {
-  .hud-face { border: 3px solid #1d1006; box-shadow: 0 0 0 2px #e3c98a; }
-  .hud-trophy svg { color: #c58a12; }
-  .hud-mini__cv { border-color: #1d1006; }
-  .hud-mini__tab { background: #c8463b; color: #fff4dc; }
-  .map-frame { border-color: #1d1006; }
-  .hud-checks span { border-color: #1d1006; }
-}
+
 
 /* ── neon harbor: the profile card is a transit / ID pass ── */
-html[data-world="city"] {
-  .hud-card { padding-top: 24px !important; }
-  .hud-card .hud-top::before { content: ""; position: absolute; z-index: 1; left: 2px; top: -16px; width: 34px; height: 5px; border-radius: 3px; background: #05040f; box-shadow: 0 0 0 1px var(--u-accent2), inset 0 0 4px rgba(93, 230, 255, .5); }
-  .hud-pass { display: block; position: absolute; top: 5px; right: 20px; margin: 0; color: var(--u-accent2); text-shadow: 0 0 6px var(--u-accent2); }
-  .hud-face { border: 2px solid var(--u-accent); border-radius: 2px; box-shadow: 0 0 10px rgba(255, 79, 163, .55); &::after { content: ""; position: absolute; inset: 0; background: linear-gradient(135deg, transparent 40%, rgba(93, 230, 255, .28) 50%, transparent 60%), repeating-linear-gradient(0deg, rgba(0, 0, 0, .2) 0 1px, transparent 1px 3px); } }
-  .hud-name { color: #fff; text-shadow: 0 0 8px rgba(93, 230, 255, .6); }
-  .hud-title { font-family: var(--ff-jb), monospace; font-size: 12px; color: var(--u-muted); }
-  .hud-quest { border-top: 1px solid var(--u-line-dk); position: relative; &::before { content: ""; position: absolute; left: 0; top: -1px; width: 56px; height: 1px; background: var(--u-accent); box-shadow: 0 0 8px var(--u-accent); } }
-  .hud-dot { border: 2px solid var(--c); background: color-mix(in srgb, var(--c) 28%, #05040f); border-radius: 50%; box-shadow: 0 0 10px var(--c); }
-  .hud-qkick { color: var(--u-accent2); font-size: 6.5px; letter-spacing: 2px; text-shadow: 0 0 6px rgba(93, 230, 255, .6); }
-  .hud-qbody { font-size: 13px; color: var(--u-body); }
-  .hud-checks span { background: #05040f; border: 1px solid var(--u-line-dk); border-radius: 50%; width: 22px; height: 22px; min-width: 0; flex: none; line-height: 18px; padding: 0; &[data-on] { background: var(--c); border-color: #fff; box-shadow: 0 0 8px var(--c); color: #05040f; } }
-  .hud-checks { gap: 6px; justify-content: space-between; }
-  .hud-trophy { color: var(--u-accent2); text-shadow: 0 0 6px rgba(93, 230, 255, .6); svg { color: var(--u-accent); filter: drop-shadow(0 0 4px var(--u-accent)); } }
-  .hud-mini__frame { padding: 6px; }
-  .hud-mini__cv { border: 1px solid var(--u-accent2); }
-  .hud-mini__fx { background: var(--tx-scan), linear-gradient(rgba(93, 230, 255, .1) 1px, transparent 1px) 0 0 / 100% 14px, radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(5, 4, 15, .55)); }
-  .hud-mini__tab { background: #05040f; color: var(--u-accent2); border: 1px solid var(--u-accent2); border-radius: 2px; text-shadow: 0 0 6px var(--u-accent2); box-shadow: 0 0 8px rgba(93, 230, 255, .5); }
-  .hud-hints { padding: 8px 12px; background: rgba(5, 4, 15, .78); border-left: 3px solid var(--u-accent); box-shadow: 0 0 14px rgba(255, 79, 163, .25); backdrop-filter: blur(4px); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%); }
-  .map-frame { border: 1px solid var(--u-accent2); box-shadow: 0 0 18px rgba(93, 230, 255, .35); }
-  .map-fx { background: repeating-linear-gradient(0deg, rgba(5, 4, 15, .18) 0 1px, transparent 1px 3px), linear-gradient(rgba(93, 230, 255, .09) 1px, transparent 1px) 0 0 / 100% 32px, linear-gradient(90deg, rgba(93, 230, 255, .07) 1px, transparent 1px) 0 0 / 32px 100%, radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(5, 4, 15, .5)); }
-  .map-row__sw { border-radius: 50%; border: 3px solid #fff; background: var(--c); box-shadow: 0 0 8px var(--c); width: 16px; height: 16px; }
-  .map-row__name { color: var(--u-ink); letter-spacing: 1px; }
-  .map-pin { border-radius: 2px; }
-}
+
 
 /* ── sunscar oasis: carved tablet, cartouche name, caravan chart ── */
-html[data-world="desert"] {
-  .hud-face { border: 3px solid #4a2c14; box-shadow: 0 0 0 2px #e0a21f, 0 0 0 4px #4a2c14; border-radius: 28px 28px 4px 4px; }
-  .hud-pass { display: block; color: var(--u-link); font-size: 6px; text-align: left; }
-  .hud-name { display: inline-block; padding: 3px 10px 2px; background: #35200f; color: #ffe39a; border-radius: 999px; border: 2px solid #e0a21f; font-size: 8px; text-shadow: 0 1px 0 #1a0d04; }
-  .hud-title { margin-top: 5px; }
-  .hud-quest { border-top: 0; position: relative; padding-top: 12px; &::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: url(/ui/desert/fret.png) left center / auto 8px repeat-x; opacity: .85; } }
-  .hud-dot { border-color: #4a2c14; border-radius: 10px; box-shadow: 0 0 0 2px #e0a21f; }
-  .hud-checks span { border-color: #4a2c14; border-radius: 3px; }
-  .hud-trophy svg { color: #b8731a; }
-  .hud-mini__cv { border: 3px solid #4a2c14; }
-  .hud-mini__fx { background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(120, 70, 10, .35)); }
-  .hud-mini__tab { background: #35200f; color: #ffe39a; border: 2px solid #e0a21f; border-radius: 999px; padding: 4px 12px; }
-  .hud-hints { padding: 8px 14px; background: rgba(53, 32, 15, .84); border: 2px solid #e0a21f; border-radius: 3px; box-shadow: 0 3px 0 #1a0d04; }
-  .map-frame { border: 4px solid #4a2c14; box-shadow: 0 0 0 2px #e0a21f, 0 0 0 4px #4a2c14; }
-  .map-fx { background: url(/ui/desert/compass.png) right 12px bottom 12px / 99px 99px no-repeat, radial-gradient(ellipse at 50% 50%, transparent 55%, rgba(120, 70, 10, .38)), linear-gradient(rgba(224, 162, 31, .1), rgba(224, 162, 31, .1)); image-rendering: pixelated; box-shadow: inset 0 0 0 6px rgba(246, 230, 187, .25), inset 0 0 0 8px rgba(74, 44, 20, .5); }
-  .map-row__sw { border-radius: 4px; transform: rotate(45deg) scale(.85); border-color: #4a2c14; }
-  .map-pin { border-radius: 8px; }
-}
+
 
 /* ── hollow reach: slate pane, spirit ledger, tattered ghost chart ── */
-html[data-world="ruins"] {
-  .hud-face { border: 2px solid #0a1214; border-radius: 50% 50% 4px 4px / 36% 36% 4px 4px; box-shadow: 0 0 0 1px rgba(95, 208, 160, .6), 0 0 14px rgba(95, 208, 160, .4); &::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 20%, rgba(154, 255, 214, .22), transparent 70%), linear-gradient(180deg, transparent 60%, rgba(10, 18, 20, .55)); } }
-  .hud-pass { display: block; color: var(--u-accent); text-shadow: 0 0 6px rgba(95, 208, 160, .7); }
-  .hud-name { text-shadow: 0 0 10px rgba(154, 255, 214, .5); }
-  .hud-quest { border-top: 1px solid var(--u-line-dk); }
-  .hud-dot { background: color-mix(in srgb, var(--c) 30%, #0a1214); border: 2px solid var(--c); box-shadow: 0 0 12px var(--c); }
-  .hud-checks span { border: 1px solid var(--u-line-dk); border-radius: 8px 8px 2px 2px; background: #0a1214; &[data-on] { background: color-mix(in srgb, var(--c) 40%, #0a1214); border-color: var(--c); box-shadow: 0 0 8px var(--c); } }
-  .hud-trophy { svg { color: var(--u-accent2); } }
-  .hud-mini__cv { border: 2px solid #0a1214; }
-  .hud-mini__fx { background: radial-gradient(ellipse at 50% 50%, transparent 45%, rgba(5, 12, 14, .7)), linear-gradient(180deg, rgba(154, 123, 224, .12), transparent 40%); }
-  .hud-mini__tab { background: linear-gradient(180deg, #2c4146, #172226); color: var(--u-accent-hi); border: 1px solid var(--u-accent); border-radius: 12px 12px 0 0; border-bottom: 0; text-shadow: 0 0 6px var(--u-accent); box-shadow: 0 0 10px rgba(95, 208, 160, .4); }
-  .hud-hints { padding: 8px 14px; background: rgba(5, 12, 14, .78); border: 1px solid rgba(154, 123, 224, .55); border-radius: 10px 10px 3px 3px; box-shadow: 0 0 16px rgba(154, 123, 224, .3); backdrop-filter: blur(3px); }
-  .map-frame { border: 2px solid #0a1214; box-shadow: 0 0 0 1px rgba(95, 208, 160, .55), 0 0 22px rgba(154, 123, 224, .4); clip-path: polygon(0 6px, 12px 6px, 12px 0, 40% 0, 42% 4px, 70% 4px, 72% 0, 100% 0, 100% calc(100% - 8px), calc(100% - 14px) calc(100% - 8px), calc(100% - 14px) 100%, 55% 100%, 53% calc(100% - 5px), 20% calc(100% - 5px), 18% 100%, 0 100%); }
-  .map-fx { background: radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(5, 12, 14, .72)), linear-gradient(180deg, rgba(154, 123, 224, .14), rgba(95, 208, 160, .08)), var(--tx-cracks) 0 0 / 220px 160px; }
-  .map-row__sw { border-radius: 50% 50% 2px 2px; border-color: #0a1214; box-shadow: 0 0 8px var(--c); }
-  .map-pin { border-radius: 8px 8px 3px 3px; }
-}
+
