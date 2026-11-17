@@ -175,7 +175,7 @@ html[data-world="city"] {
     border: 1px solid var(--u-accent); box-shadow: 0 0 0 3px #05040f, 0 0 0 4px color-mix(in srgb, var(--u-accent) 60%, transparent), 0 0 24px rgba(255, 79, 163, .45);
     font-size: clamp(9px, 1.5vw, 13px); letter-spacing: 4px; text-transform: uppercase; clip-path: none;
     > span { display: block; text-shadow: 0 0 8px var(--u-accent2), 0 0 2px #fff; -webkit-mask: radial-gradient(circle at 1.5px 1.5px, #000 1.15px, transparent 1.45px) 0 0 / 3px 3px; mask: radial-gradient(circle at 1.5px 1.5px, #000 1.15px, transparent 1.45px) 0 0 / 3px 3px; animation: k-led-on .9s steps(1) both; }
-    &[data-small] { padding: 8px 20px; font-size: 8px; letter-spacing: 3px; }
+    &[data-small] { padding: 8px 20px; font-size: 8px; letter-spacing: 3px; > span { -webkit-mask: none; mask: none; text-shadow: 0 0 6px var(--u-accent2); } }
   }
   .k-chip { background: #0a0820; border: 1px solid var(--u-line-dk); border-radius: 2px; padding-left: 8px; font-family: var(--ff-jb), monospace; font-size: 12px; letter-spacing: .3px; &::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--u-accent2)); box-shadow: 0 0 0 2px #fff, 0 0 8px var(--c, var(--u-accent2)); flex: none; } }
   .k-pill { color: var(--c, var(--u-accent2)); background: #05040f; border: 1px solid var(--c, var(--u-accent2)); border-radius: 2px; text-shadow: 0 0 6px color-mix(in srgb, var(--c, var(--u-accent2)) 80%, transparent); box-shadow: 0 0 8px color-mix(in srgb, var(--c, var(--u-accent2)) 35%, transparent), inset 0 0 6px color-mix(in srgb, var(--c, var(--u-accent2)) 20%, transparent); }
@@ -328,4 +328,9 @@ html[data-world="ruins"] {
 
 @media (prefers-reduced-motion: reduce) {
   .k-fx::before, .k-fx::after, .k-ribbon > span, .k-chip::before { animation: none !important; }
+}
+
+/* the dot-matrix LED texture is only legible at larger sizes */
+@media (max-width: 900px) {
+  html[data-world="city"] .k-ribbon > span, html[data-world="city"] .k-head__title { -webkit-mask: none; mask: none; }
 }

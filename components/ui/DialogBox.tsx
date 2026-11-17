@@ -56,7 +56,7 @@ export default function DialogBox() {
 
   return (
     <div onClick={advance} className="dialog-wrap">
-      <Panel v="dialog" fx className="dialog-pop">
+      <Panel v="dialog" fx className="dialog-pop dlg">
         {dialog.face && (
           <div className="dlg-face">
             {/* eslint-disable-next-line @next/next/no-img-element */}

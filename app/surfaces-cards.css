@@ -32,6 +32,7 @@ html[data-world="ruins"] {
 
 /* ═══ ABOUT: the showpiece ═══ */
 .about-hero { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: start; margin-bottom: 26px; padding: 22px; }
+.about-deco { position: absolute; inset: 0; pointer-events: none; }
 .about-deco i { display: none; position: absolute; pointer-events: none; }
 .about-portrait-wrap { position: relative; }
 .about-portrait { width: 118px; height: 118px; overflow: hidden; background: #2a1a40; position: relative; }
