@@ -48,7 +48,7 @@ function Inner() {
         </div>
 
         <Rule />
-        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE HERO&apos;S CHRONICLE</Ribbon></div><div className="bm-body lab-body"><AboutSheet /></div></Panel>
+        <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE HERO&apos;S CHRONICLE</Ribbon></div><div className="bm-body lab-body"><AboutSheet world={world} /></div></Panel>
         <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE GALLERY</Ribbon></div><div className="bm-body lab-body"><ProjectsInventory /></div></Panel>
         <Panel v="modal" className="lab-card"><div className="bm-title"><Ribbon>THE TAVERN</Ribbon></div><div className="bm-body lab-body"><QuestLog /></div></Panel>
       </div>

@@ -1,11 +1,12 @@
 "use client"
 // Game-screen versions of the section cards (character sheet, inventory, quest log). Lab-only until approved.
 import type { CSSProperties } from "react"
-import { useContent } from "@/lib/content"
+import { useContent, type Project } from "@/lib/content"
 import { Button, Chip, Bar } from "@/components/ui/kit"
 import { MapPin, Mail, Globe, FileText } from "lucide-react"
 import { Github, Linkedin, XLogo } from "@/components/icons"
-import { ProjectCover } from "@/components/buildings/ui"
+import { hashStr, motifFor, rng, MOTIF_LABEL } from "@/lib/quick/motif"
+import { MOTIF_ICON, skillIcon } from "@/lib/itemIcons"
 
 const icon = (n: string) => `/ui/icons/${n}.png`
 export function Ico({ n, size = 3 }: { n: string; size?: number }) {
@@ -13,15 +14,14 @@ export function Ico({ n, size = 3 }: { n: string; size?: number }) {
   return <img src={icon(n)} alt="" className="ico" style={{ width: 16 * size, height: 16 * size }} />
 }
 
-const GEAR = ["sword", "magicwand", "hammer", "book", "bow", "pickaxe"]
 const tier = (l: number) => (l >= 88 ? { n: "LEGENDARY", c: "#f0b400" } : l >= 78 ? { n: "EPIC", c: "#a98bff" } : l >= 65 ? { n: "RARE", c: "#4aa3e8" } : { n: "UNCOMMON", c: "#5fc24a" })
 
-export function AboutSheet() {
+export function AboutSheet({ world = "village" }: { world?: string }) {
   const c = useContent()
   const p = c.profile, s = c.socials
   const langs = new Set(c.projects.map((x) => x.language)).size
   const skillsN = c.skills.reduce((n, g) => n + g.items.length, 0)
-  const top = c.skills.flatMap((g) => g.items).sort((a, b) => b.level - a.level).slice(0, 6)
+  const top = c.skills.flatMap((g) => g.items.map((i) => ({ ...i, group: g.group }))).sort((a, b) => b.level - a.level).slice(0, 6)
   const stats = [
     { k: "QUESTS", v: c.projects.length, cap: 15, ic: "sword", sub: "projects shipped" },
     { k: "GUILDS", v: c.experience.length, cap: 6, ic: "scroll", sub: "roles & teams" },
@@ -32,7 +32,7 @@ export function AboutSheet() {
     <section className="cs">
       <div className="cs-top">
         <div className="cs-medal">
-          <div className="cs-face">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={p.avatar} alt={p.name} /></div>
+          <div className="cs-face">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={`/ui/portrait-${world}.png`} alt={p.name} style={{ imageRendering: "pixelated" }} /></div>
           <span className="cs-lv">LV {new Date().getFullYear() - 2021}</span>
         </div>
         <div className="cs-id">
@@ -63,12 +63,12 @@ export function AboutSheet() {
         <div className="cs-box">
           <h3 className="cs-h"><Ico n="chest" size={2} />EQUIPMENT</h3>
           <div className="cs-slots">
-            {top.map((sk, i) => {
+            {top.map((sk) => {
               const t = tier(sk.level)
               return (
                 <div key={sk.name} className="cs-slot" style={{ ["--c" as string]: t.c } as CSSProperties} title={`${sk.name}: ${t.n}`}>
                   <span className="cs-slot__gem" />
-                  <Ico n={GEAR[i % GEAR.length]} size={3} />
+                  <Ico n={skillIcon(sk.name, sk.group)} size={3} />
                   <b>{sk.name}</b>
                   <i>{t.n}</i>
                 </div>
@@ -100,6 +100,25 @@ export function AboutSheet() {
 }
 
 const RARITY = [{ n: "LEGENDARY", c: "#f0b400" }, { n: "EPIC", c: "#a98bff" }, { n: "RARE", c: "#4aa3e8" }, { n: "COMMON", c: "#9aa68a" }]
+
+/** a distinct cover per project: its motif's item icon, seeded layout and its own accent */
+function InvCover({ p }: { p: Project }) {
+  const h = hashStr(p.id), r = rng(h)
+  const motif = motifFor(p)
+  const bars = Array.from({ length: 6 }, () => 10 + Math.floor(r() * 44))
+  const dots = Array.from({ length: 7 }, () => ({ x: Math.floor(r() * 92), y: Math.floor(r() * 80) }))
+  const left = h % 2 === 0
+  return (
+    <div className="pc inv-pc" style={{ ["--a" as string]: p.accent || "#ffd76a", background: `radial-gradient(120% 90% at ${left ? 15 : 85}% 10%, color-mix(in srgb, ${p.accent} 45%, transparent) 0%, transparent 58%), linear-gradient(${120 + (h % 80)}deg, #1b1230, #0d0818)` } as CSSProperties}>
+      <div className="pc-grid" style={{ backgroundSize: `${10 + (h % 6) * 2}px ${10 + (h % 6) * 2}px` }} />
+      {dots.map((d, i) => <i key={i} className="inv-dot" style={{ left: `${d.x}%`, top: `${d.y}%`, opacity: 0.25 + (i % 3) * 0.2 }} />)}
+      <div className="pc-stairs" style={{ [left ? "right" : "left"]: 0 } as CSSProperties}>{bars.map((b, i) => <div key={i} style={{ width: 12, height: b, background: p.accent, opacity: 0.16 + i * 0.1 }} />)}</div>
+      <span className="pc-cat">{MOTIF_LABEL[motif].toUpperCase()}</span>
+      <span className="inv-item" style={{ [left ? "left" : "right"]: 24 } as CSSProperties}><Ico n={MOTIF_ICON[motif]} size={4} /></span>
+    </div>
+  )
+}
+
 export function ProjectsInventory() {
   const { projects } = useContent()
   const list = projects.slice(0, 6)
@@ -111,7 +130,7 @@ export function ProjectsInventory() {
           const r = pj.featured ? RARITY[0] : RARITY[1 + (i % 3)]
           return (
             <article key={pj.id} className="inv-card" style={{ ["--r" as string]: r.c } as CSSProperties} data-rare={r.n.toLowerCase()}>
-              <div className="inv-cover"><ProjectCover p={pj} height={118} /><span className="inv-item"><Ico n={["chest-big", "scroll-thunder", "potion", "coin"][RARITY.indexOf(r)]} size={4} /></span><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>
+              <div className="inv-cover"><InvCover p={pj} /><span className="inv-tag">{r.n}</span>{pj.featured && <i className="inv-spark" aria-hidden />}</div>
               <div className="inv-body">
                 <div className="inv-t">{pj.title}</div>
                 <p>{pj.tagline}</p>
@@ -125,26 +144,51 @@ export function ProjectsInventory() {
   )
 }
 
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
+function when(s: string): number | null {
+  const m = s.toLowerCase().match(/([a-z]{3})\w*\s+(\d{4})/)
+  return m && MONTHS.includes(m[1]) ? new Date(Number(m[2]), MONTHS.indexOf(m[1]) + 1, 0).getTime() : null
+}
+function progress(start: string, end: string, now: number) {
+  const a = when(start), b = when(end)
+  if (a === null || b === null) return 0.5
+  return Math.max(0.05, Math.min(0.97, (now - a) / Math.max(1, b - a)))
+}
+
 export function QuestLog() {
   const { experience } = useContent()
+  const now = Date.now()
   return (
     <section className="ql">
       <div className="inv-head"><Ico n="scroll" size={2} /> <b>QUEST LOG</b> <span>{experience.length} chapters</span></div>
       {experience.map((e, i) => {
-        const active = e.end.toLowerCase() === "present"
+        const endT = when(e.end)
+        const open = /present|now/i.test(e.end)
+        const active = open || (endT !== null && endT > now)
+        const pr = active ? progress(e.start, open ? "Dec 2099" : e.end, now) : 1
         return (
           <article key={e.id} className="ql-q" data-active={active ? "" : undefined}>
-            <div className="ql-seal"><Ico n={active ? ["scroll-fire", "scroll-ice", "scroll-thunder", "scroll-plant"][i % 4] : "chest"} size={3} /></div>
+            <div className="ql-seal"><Ico n={active ? ["scroll-fire", "scroll-ice", "scroll-thunder"][i % 3] : e.kind === "leadership" ? "cup-gold" : "chest"} size={3} /></div>
             <div className="ql-main">
               <div className="ql-top">
                 <span className="ql-state">{active ? "ACTIVE QUEST" : "COMPLETED"}</span>
+                {e.kind && <span className="ql-kind">{e.kind === "leadership" ? "LEADERSHIP" : "INTERNSHIP"}</span>}
                 <span className="ql-dates">{[e.start, e.end].filter(Boolean).join(" — ")}</span>
               </div>
               <div className="ql-role">{e.role}</div>
               <div className="ql-org">Chapter {["I", "II", "III", "IV", "V"][experience.length - 1 - i] ?? i + 1} · {e.org}{e.location ? ` · ${e.location}` : ""}</div>
               {e.description && <p>{e.description}</p>}
-              <ul>{e.highlights.slice(0, 3).map((h) => <li key={h}><i data-done={!active ? "" : undefined} />{h}</li>)}</ul>
-              <div className="ql-reward"><b>REWARDS</b>{e.tech.slice(0, 5).map((t) => <Chip key={t}>{t}</Chip>)}</div>
+              <div className="ql-prog"><Bar value={pr} segments /><span>{active ? `${Math.round(pr * 100)}% of the term` : "QUEST COMPLETE"}</span></div>
+              {e.highlights.length > 0 && <ul>{e.highlights.map((h) => <li key={h}><i data-done={!active ? "" : undefined} />{h}</li>)}</ul>}
+              {e.shipped && e.shipped.length > 0 && (
+                <div className="ql-ship"><b>SHIPPED</b>
+                  {e.shipped.map((s) => {
+                    const href = s.projectId ? `/quick/${s.projectId}` : s.url
+                    return href ? <a key={s.label} href={href} target={s.projectId ? undefined : "_blank"} rel="noreferrer" className="ql-chip">{s.label} ↗</a> : <Chip key={s.label}>{s.label}</Chip>
+                  })}
+                </div>
+              )}
+              {e.tech.length > 0 && <div className="ql-reward"><b>REWARDS</b>{e.tech.slice(0, 6).map((t) => <Chip key={t}>{t}</Chip>)}</div>}
             </div>
           </article>
         )
