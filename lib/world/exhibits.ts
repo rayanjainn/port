@@ -925,7 +925,7 @@ export function wrapMicro(s: string, max: number, maxLines: number): string[] {
 }
 
 /** art carved in relief: stone ramp by luminance, gold inlay where the art is brightly coloured */
-export function carve(src: HTMLCanvasElement, accent: string, ramp: [string, string, string, string, string] = ["#2e1c10", "#6b4426", "#a8723e", "#d9a868", "#f6dca0"]): HTMLCanvasElement {
+export function carve(src: HTMLCanvasElement, accent: string, ramp: [string, string, string, string, string] = ["#6e4624", "#9a6a38", "#c49860", "#e4c088", "#f8e4b4"]): HTMLCanvasElement {
   const { c, ctx } = canvas(src.width, src.height)
   ctx.drawImage(src, 0, 0)
   const d = ctx.getImageData(0, 0, c.width, c.height), a = d.data
@@ -934,7 +934,7 @@ export function carve(src: HTMLCanvasElement, accent: string, ramp: [string, str
     const r = a[i], g = a[i + 1], b = a[i + 2]
     const l = (0.3 * r + 0.59 * g + 0.11 * b) / 255
     const mx = Math.max(r, g, b), mn = Math.min(r, g, b), sat = mx ? (mx - mn) / mx : 0
-    const q = Math.min(4, Math.floor(Math.pow(l, 0.8) * 5.2))
+    const q = Math.min(4, Math.floor(Math.pow(l, 0.55) * 5.1))
     let [R, G, B] = stops[q]
     if (sat > 0.55 && l > 0.45) { R = 244; G = 196; B = 70; if (l > 0.8) { R = 255; G = 240; B = 160 } }
     else if (l > 0.9) { R = 250; G = 236; B = 190 }
@@ -988,3 +988,84 @@ export function matted(art: HTMLCanvasElement, n: number, col: string): HTMLCanv
   ctx.drawImage(art, n, n)
   return c
 }
+
+// ── desert relics: carved sandstone ─────────────────────────────
+const SAND = { ink: "#3e2512", d: "#8a5e34", m: "#bf8f58", l: "#e2bc82", hl: "#f6dfae" }
+const ARCH_RY = 12
+function slabHalf(i: number, w: number, arch: boolean) {
+  const r = w / 2
+  if (arch && i < ARCH_RY) { const dy = (ARCH_RY - i - 0.5) / ARCH_RY; return Math.round(r * Math.sqrt(Math.max(0, 1 - dy * dy))) }
+  return r
+}
+function slab(P: Pen, x: number, y: number, w: number, h: number, arch: boolean, col: string) {
+  const r = w / 2
+  for (let i = 0; i < h; i++) { const half = slabHalf(i, w, arch); P.r(x + r - half, y + i, half * 2, 1, col) }
+}
+function slabSet(P: Pen, x: number, y: number, w: number, h: number, arch: boolean) {
+  slab(P, x - 1, y - 1, w + 2, h + 1, arch, SAND.ink)
+  slab(P, x, y, w, h, arch, SAND.m)
+  const r = w / 2
+  for (let i = 0; i < h; i++) {
+    const half = slabHalf(i, w, arch)
+    P.r(x + r - half, y + i, 2, 1, SAND.l); P.r(x + r + half - 2, y + i, 2, 1, SAND.d)
+    if (i === 0 || (arch && i < 3)) P.r(x + r - half, y + i, half * 2, 1, SAND.hl)
+  }
+}
+/** a carved sandstone stele: gold-inlaid title, the project art in relief (great ones add an arch, tagline and glyph frieze) */
+export function stele(p: ExProject, kind: "great" | "tablet" = "tablet"): HTMLCanvasElement {
+  const art = carve(exhibitArt(p), p.accent)
+  const great = kind === "great"
+  const W = great ? 84 : 76, H = great ? 82 : 72
+  const P = new Pen(W, H)
+  const sx = great ? 6 : 4, sw = W - sx * 2
+  P.box(0, H - 8, W, 8, SAND.d); P.r(1, H - 7, W - 2, 1, SAND.l)
+  slabSet(P, sx, 2, sw, H - 10, great)
+  const gy = great ? 6 : 4
+  slab(P, sx + 3, gy, sw - 6, H - 10 - gy - 3, great, "#b07d14"); slab(P, sx + 4, gy + 1, sw - 8, H - 10 - gy - 5, great, SAND.m)
+  for (let i = 0; i < 24; i++) { const hx = hashStr(p.id + "s" + i); P.p(sx + 6 + (hx % (sw - 12)), gy + 4 + ((hx >> 8) % (H - 30)), i % 3 ? SAND.d : SAND.l) }
+  const f = fitTitle(p.title, sw - 12)
+  const ty = great ? 13 : 7
+  P.r(sx + 5, ty - 3, sw - 10, 12, SAND.ink); P.r(sx + 6, ty - 2, sw - 12, 10, SAND.d)
+  const tx = Math.round((W - f.w) / 2)
+  if (f.micro) drawMicro(P.x, f.s, tx, ty + 1, "#ffd84a", SAND.ink); else drawText(P.x, f.s, tx, ty, "#ffd84a", SAND.ink)
+  const ay = ty + 13
+  P.r(W / 2 - 34, ay - 2, 68, 44, "#f4c430"); P.r(W / 2 - 33, ay - 1, 66, 42, SAND.ink)
+  P.x.drawImage(art, W / 2 - 32, ay)
+  for (const [qx, qy] of [[W / 2 - 35, ay - 3], [W / 2 + 33, ay - 3], [W / 2 - 35, ay + 41], [W / 2 + 33, ay + 41]]) { P.r(qx, qy, 3, 3, "#f4c430"); P.p(qx, qy, "#fff0b0") }
+  return P.c
+}
+
+/** striped cloth canopy on two poles, drawn over a relic; returns canvas of the given width */
+export function canopy(w: number, accent: string): HTMLCanvasElement {
+  const h = 34, P = new Pen(w, h), c = palOf(accent)
+  P.r(2, 12, 3, h - 12, "#5a3a1e"); P.r(w - 5, 12, 3, h - 12, "#5a3a1e"); P.r(3, 12, 1, h - 12, "#8a5e34"); P.r(w - 4, 12, 1, h - 12, "#8a5e34")
+  P.r(0, 8, w, 3, "#3e2512"); P.r(0, 8, w, 1, "#c9a14a")
+  for (let i = 0; i < w; i += 6) {
+    const col = (i / 6) % 2 ? WHITE : c.a
+    P.poly([[i, 11], [i + 6, 11], [i + 6, 4], [i + 3, 0], [i, 4]].map(([x, y]) => [x, y] as [number, number]), col)
+    P.r(i, 11, 6, 3, col); P.p(i + 2, 14, col); P.p(i + 3, 14, col)
+  }
+  for (let i = 0; i < w; i += 6) P.r(i, 4, 1, 10, "rgba(0,0,0,.18)")
+  return P.c
+}
+
+/**
+ * Stable entry points for UI code that wants a project's illustration as an image.
+ *  exhibitArtDataUrl(project): PNG data URL of the 64x40 illustration (scale 1..8, default 3), or null off the browser.
+ *  exhibitArtPath(id): static PNG baked under public/exhibits/art/ for the shipped projects (any scale-3 size 192x120).
+ */
+const urlCache = new Map<string, string>()
+export function exhibitArtDataUrl(p: ExProject, scale = 3): string | null {
+  if (typeof document === "undefined") return null
+  const key = `${p.id}|${p.accent}|${p.featured}|${scale}`
+  const hit = urlCache.get(key)
+  if (hit) return hit
+  const art = exhibitArt(p)
+  const { c, ctx } = canvas(art.width * scale, art.height * scale)
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(art, 0, 0, c.width, c.height)
+  const url = c.toDataURL("image/png")
+  urlCache.set(key, url)
+  return url
+}
+export const exhibitArtPath = (id: string) => `/exhibits/art/${id}.png`

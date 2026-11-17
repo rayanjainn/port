@@ -3,6 +3,7 @@ import {
   RUINS_SHEETS, RUINS_ART, RUINS_CHARS, MUD, SWAMP_WATER, DEAD_GRASS, HOLE, PLATEAU, CLIFF, PLANK, PROPS, SHEETS,
   charSheet, charFace, monsterSheet, animalSheet, type Rect, type Autotile,
 } from "@/lib/na"
+import type { Portfolio } from "@/lib/content"
 import { TS, G, img, sheet, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type Box, type SceneSign, type Landmark } from "./core"
 
 export const RW = 80
@@ -82,7 +83,7 @@ const doorOf = (b: B) => {
   return { x: b.c * TS + (b.flip ? w - dx : dx), y: b.r * TS + h }
 }
 
-export function buildRuins(): Scene {
+export function buildRuins(content?: Portfolio): Scene {
   const rnd = mulberry(66642)
   const idx = (c: number, r: number) => r * W + c
   const inb = (c: number, r: number) => c >= 0 && r >= 0 && c < W && r < H
