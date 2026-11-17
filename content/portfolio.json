@@ -462,6 +462,93 @@
       "started": "2026-02"
     },
     {
+      "id": "draw-app",
+      "repo": "draw-app",
+      "title": "Wdraw",
+      "tagline": "A shared canvas where a room draws together in real time.",
+      "description": "A collaborative drawing app. People join a room by its link and sketch on the same canvas, with every stroke relayed live over WebSockets. Built as a Turborepo monorepo: a Next.js canvas front end, an Express HTTP service for accounts and rooms, a separate WebSocket server, and a shared Prisma database package, deployed to a VM by a GitHub Actions workflow.",
+      "highlights": [
+        "Room-based canvases kept in sync over a dedicated WebSocket server",
+        "Monorepo split into front end, HTTP API, WS server and shared DB package",
+        "JWT auth with argon2 password hashing",
+        "Push-to-production deploy via GitHub Actions over SSH"
+      ],
+      "tech": [
+        "TypeScript",
+        "Next.js",
+        "WebSockets",
+        "Express",
+        "Prisma",
+        "Turborepo"
+      ],
+      "language": "TypeScript",
+      "category": "Realtime",
+      "year": "2025",
+      "started": "2025-02",
+      "githubUrl": "https://github.com/rayanjainn/draw-app",
+      "liveUrl": "https://wdraw.iamray.xyz",
+      "image": "",
+      "accent": "#38bdf8",
+      "featured": false
+    },
+    {
+      "id": "chess",
+      "repo": "chess",
+      "title": "Chess",
+      "tagline": "Online multiplayer chess, matched and played over WebSockets.",
+      "description": "A browser chess game for two players. A small Node WebSocket server pairs waiting players into games, validates every move with chess.js on the server, and streams the board to both sides; the React front end renders the board and plays the moves it receives.",
+      "highlights": [
+        "Server-side move validation with chess.js, so clients cannot cheat",
+        "Game manager that pairs waiting players into live matches",
+        "React and Vite front end with animated board"
+      ],
+      "tech": [
+        "TypeScript",
+        "React",
+        "WebSockets",
+        "chess.js",
+        "Vite"
+      ],
+      "language": "TypeScript",
+      "category": "Games",
+      "year": "2025",
+      "started": "2025-04",
+      "githubUrl": "https://github.com/rayanjainn/chess",
+      "liveUrl": "https://chess.iamray.xyz",
+      "image": "",
+      "accent": "#a3e635",
+      "featured": false
+    },
+    {
+      "id": "stackit",
+      "repo": "stackit",
+      "title": "StackIt",
+      "tagline": "A minimalist Q&A forum for learning together.",
+      "description": "A question-and-answer platform built for focused, structured knowledge sharing. Guests can read, signed-in users ask and answer with a rich text editor, vote, and tag questions, and the person who asked can accept the best answer. Admins moderate. Next.js front end on Radix UI, Express and MongoDB back end, Clerk for auth and Cloudinary for image uploads.",
+      "highlights": [
+        "Guest, user and admin roles with moderation",
+        "Rich text questions and answers with images, voting and accepted answers",
+        "Tag-based filtering and search"
+      ],
+      "tech": [
+        "TypeScript",
+        "Next.js",
+        "Express",
+        "MongoDB",
+        "Clerk",
+        "Cloudinary"
+      ],
+      "language": "TypeScript",
+      "category": "Web",
+      "year": "2025",
+      "started": "2025-07",
+      "githubUrl": "https://github.com/rayanjainn/stackit",
+      "liveUrl": "https://stackit.iamray.xyz",
+      "image": "",
+      "accent": "#f472b6",
+      "featured": false
+    },
+    {
       "id": "glitch",
       "repo": "glitch",
       "title": "BUG//REPORT",
@@ -540,6 +627,33 @@
       "accent": "#e879f9",
       "featured": false,
       "started": "2026-03"
+    },
+    {
+      "id": "ip-sniffer",
+      "repo": "ip_sniffer",
+      "title": "IP Sniffer",
+      "tagline": "A fast multithreaded port scanner for the terminal.",
+      "description": "A Rust command-line port scanner. It spreads a port range across native threads, shows a live progress bar with an ETA, and names common services (SSH, HTTP, Redis, Docker and others) on the ports it finds open. Target, thread count, timeout and port range are all flags.",
+      "highlights": [
+        "Multithreaded scan across the full 1-65535 range",
+        "Live progress bar with ETA via indicatif",
+        "Service identification for open ports"
+      ],
+      "tech": [
+        "Rust",
+        "clap",
+        "indicatif",
+        "CLI"
+      ],
+      "language": "Rust",
+      "category": "Systems",
+      "year": "2026",
+      "started": "2026-01",
+      "githubUrl": "https://github.com/rayanjainn/ip_sniffer",
+      "liveUrl": "",
+      "image": "",
+      "accent": "#fb923c",
+      "featured": false
     },
     {
       "id": "poker",
