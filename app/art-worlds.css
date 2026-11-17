@@ -45,8 +45,7 @@ html[data-world="desert"] {
   .inv-card { padding-top: 10px; }
   .ql-seal { background: radial-gradient(circle, #fff6c8, #e8c27a 60%, #b9863a); box-shadow: 0 0 0 3px #3a2210, 0 0 0 6px #e0a21f, 0 0 0 9px #3a2210; }
   .cs-h, .inv-head { border-bottom: 0; background: url(/ui/desert/fret.png) left bottom / auto 12px repeat-x; padding-bottom: 18px; }
-  .cs-quest__k, .cs-quest__txt p { text-shadow: 0 2px 0 #1a0d04; }
-  .cs-quest { background-blend-mode: multiply; background-color: #c4784a; }
+  .cs-quest__k, .cs-quest__txt p { text-shadow: none; }
   .cs-creed { color: #fff0cf; }
   .ql-state { background: #0f6a64; color: #e0fffb; }
   .ql-q[data-active] .ql-state { background: #b8431f; color: #fff6dc; }
@@ -111,3 +110,9 @@ html[data-world="village"], html:not([data-world]) {
 .pcv-img { width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; display: block; }
 .pcv-badge { position: absolute; left: 8px; bottom: 8px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: rgba(8, 6, 16, .72); box-shadow: 0 0 0 2px var(--a), 0 3px 0 2px rgba(0,0,0,.5); z-index: 2; }
 .pcv-badge img { width: 32px; height: 32px; image-rendering: pixelated; }
+
+/* desert: dark carved wells (forge, contact) keep light type; light sandstone panels keep dark type */
+html[data-world="desert"] .k-well, html[data-world="desert"] .arc-bezel { background: linear-gradient(180deg, rgba(255, 255, 255, .05), transparent 40px), #3f2411; color: #fff0cf; }
+html[data-world="desert"] .forge-col__head, html[data-world="desert"] .wiz-head { color: #ffe39a; }
+html[data-world="desert"] .wiz-box .k-btn[data-v="ghost"] { color: #fff0cf; }
+html[data-world="desert"] .cs-creed { color: var(--a-ink); border-color: rgba(53, 32, 15, .4); }

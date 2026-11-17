@@ -31,7 +31,7 @@ html[data-world="desert"], [data-world-preview="desert"] {
   --i-paper: url(/ui/desert/parchment.png); --i-paper-dk: url(/ui/desert/parchment-dk.png); --i-wood: url(/ui/desert/wood.png); --i-ribbon: url(/ui/desert/ribbon.png);
   --i-btn-cream: url(/ui/desert/btn-cream.png); --i-btn-cream-down: url(/ui/desert/btn-cream-down.png); --i-btn-gold: url(/ui/desert/btn-gold.png); --i-btn-gold-down: url(/ui/desert/btn-gold-down.png);
   --i-btn-wood: url(/ui/desert/btn-wood.png); --i-btn-wood-down: url(/ui/desert/btn-wood-down.png); --i-btn-red: url(/ui/desert/btn-red.png); --i-btn-red-down: url(/ui/desert/btn-red-down.png);
-  --a-ink: #35200f; --a-body: #50341a; --a-muted: #6f4d25; --a-link: #075f5a; --a-edge: #3a2210; --a-trim: #e0a21f; --a-gold: #e0a21f; --a-onwood: #fff0cf; --a-hi: #ffe39a;
+  --a-ink: #35200f; --a-body: #50341a; --a-muted: #5e3f1a; --a-link: #064f4b; --a-edge: #3a2210; --a-trim: #e0a21f; --a-gold: #e0a21f; --a-onwood: #2c1a08; --a-hi: #5a2600;
   --a-title-sh: #fbefcc; --a-cta-ink: #fffbe8; --a-inset: #3a2210; --a-chip: #f4e3b8; --a-chip2: #f6e8c4; --a-pill: #35200f; --a-pill-ink: #ffe39a; --a-kbd1: #8f6a35; --a-kbd2: #5e3a1c;
   --a-hl: rgba(255, 255, 255, .3); --a-lo: rgba(120, 70, 10, .3); --a-drop: rgba(60, 30, 8, .6); --a-btn-sh: rgba(255, 255, 255, .5); --a-btn-ink: #35200f; --a-key-ink: #fff0cf; --a-glow: transparent;
 }
@@ -292,3 +292,18 @@ html {
 .ws-root .ws-cta { border: 10px solid transparent; border-image: var(--i-btn-gold) 10 fill stretch; background: none; box-shadow: none; filter: drop-shadow(0 4px 0 var(--a-edge)); image-rendering: pixelated; color: var(--a-cta-ink); height: 56px; }
 .ws-root .ws-cta[data-soon="true"] { filter: grayscale(.8) drop-shadow(0 4px 0 var(--a-edge)); }
 .ws-root .ws-facts li { background: var(--a-chip); color: var(--a-ink); border-color: var(--a-edge); }
+
+@media (max-width: 760px) {
+  html .cs-top, html .cs-grid, html .cs-quest, html .ql-q { grid-template-columns: 1fr !important; justify-items: center; text-align: center; }
+  html .ql-q { justify-items: stretch; text-align: left; } html .ql-seal { justify-self: center; }
+  html .cs-medal { margin-bottom: 40px; }
+  html .cs-creed { border: 0; padding: 0; max-width: none; }
+  html .cs-meta { justify-content: center; }
+  html .cs, html .inv, html .ql { padding-left: 12px; padding-right: 12px; }
+  html .cs-slots { grid-template-columns: repeat(2, 1fr); }
+  html .inv-grid { grid-template-columns: 1fr; }
+  html .bm-title { top: -78px; transform: scale(.82); transform-origin: center bottom; }
+  html .bm-close { top: -50px; right: -4px; }
+}
+
+html .inv-head { flex-wrap: wrap; }
