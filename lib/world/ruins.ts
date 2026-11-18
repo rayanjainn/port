@@ -776,24 +776,25 @@ export function buildRuins(content?: Portfolio): Scene {
         if (!inb(c, r) || blocked[idx(c, r)] || !ok.has(kind[idx(c, r)])) return false
       return true
     }
+    // an even grid anchored at fixed multiples, so every region shares the same rows and lanes
     const lattice = (x0: number, x1: number, y0: number, y1: number, dx: number, dy: number) => {
       const out: { cx: number; fy: number }[] = []
-      for (let y = y0, k = 0; y <= y1; y += dy, k++) for (let x = x0 + (k % 2 ? dx / 2 : 0); x <= x1; x += dx) out.push({ cx: Math.round(x), fy: Math.round(y) })
+      for (let y = Math.ceil(y0 / dy) * dy; y <= y1; y += dy) for (let x = Math.ceil(x0 / dx) * dx; x <= x1; x += dx) out.push({ cx: x, fy: y })
       return out
     }
     const dropped = new Set<Sprite>()
     const vis: Box[] = [{ x: cx0 - 56, y: cy0 - crypt[3] - 14, w: 168, h: crypt[3] + 60 }]
     const dist = (a: { cx: number; fy: number }) => Math.hypot(a.cx - vd.x, (a.fy - vd.y) * 1.3)
-    const regions: [number, number, number, number][] = [[51 * TS + 24, 70 * TS - 24, 9 * TS + 8, 18 * TS + 8], [44 * TS, 76 * TS, 21 * TS, 31 * TS], [24 * TS, 76 * TS, 32 * TS, 52 * TS], [8 * TS, 44 * TS, 8 * TS, 22 * TS]]
-    const place = (sizeW: number, dx: number, dy: number, count: number, build: (i: number) => { cv: HTMLCanvasElement; w: number; h: number; frames: number }, start: number, glowCol: string, orbit: boolean) => {
+    const regions: [number, number, number, number][] = [[51 * TS + 24, 70 * TS - 24, 9 * TS + 8, 18 * TS + 8], [44 * TS, 76 * TS, 19 * TS, 29 * TS], [8 * TS, 44 * TS, 8 * TS, 22 * TS], [24 * TS, 56 * TS, 30 * TS, 38 * TS]]
+    const place = (sizeW: number, dx: number, dy: number, k: number, count: number, build: (i: number, k: number) => { cv: HTMLCanvasElement; w: number; h: number; frames: number }, start: number, glowCol: string, orbit: boolean) => {
       let n = 0
       for (const [x0, x1, y0, y1] of regions) {
-        const cand = lattice(x0, x1, y0, y1, 24, 12).sort((a, b) => dist(a) - dist(b))
+        const cand = lattice(x0, x1, y0, y1, dx, dy).sort((a, b) => dist(a) - dist(b))
         for (const sl of cand) {
           if (n >= count) return n
           if (!free(sl.cx, sl.fy, sizeW)) continue
           const pr = projects[start + n]
-          const m = build(start + n)
+          const m = build(start + n, k)
           const vb: Box = { x: sl.cx - m.w / 2 - 8, y: sl.fy - m.h - 8, w: m.w + 16, h: m.h + 12 }
           if (vis.some((b) => vb.x < b.x + b.w && vb.x + vb.w > b.x && vb.y < b.y + b.h && vb.y + vb.h > b.y)) continue
           vis.push(vb)
@@ -802,7 +803,7 @@ export function buildRuins(content?: Portfolio): Scene {
           const bx = { x: sl.cx - sizeW / 2, y: sl.fy - 8, w: sizeW, h: 8 }
           add({ kind: "sprite", src: m.cv, rect: [0, 0, m.w, m.h], x, y, baseY: sl.fy, solid: bx, anim: { frames: m.frames, fps: orbit ? 5 : 4, dx: m.w } })
           solids.push(bx)
-          hotspots.push({ id: `memory-${pr.id}`, box: { x: sl.cx - 26, y: sl.fy - 2, w: 52, h: 20 }, label: `RECALL ${pr.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: pr.id }, marker: true, markerX: sl.cx, markerY: y - 4 })
+          hotspots.push({ id: `memory-${pr.id}`, box: { x: sl.cx - 22, y: sl.fy - 2, w: 44, h: 20 }, label: `RECALL ${pr.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: pr.id }, marker: true, markerX: sl.cx, markerY: y - 4 })
           lamp(sl.cx, sl.fy - m.h * 0.6, orbit ? 70 : 50, glowCol, 0.9, 0.22)
           if (orbit) for (let k = 0; k < 2; k++) {
             const wsp = add({ kind: "sprite", src: wcv[(n + k) % 4], rect: [0, 0, 9, 9], x: sl.cx, y: sl.fy - 40, baseY: 9100 + n * 2 + k, dynamic: true })
@@ -814,9 +815,9 @@ export function buildRuins(content?: Portfolio): Scene {
       return n
     }
     const feat = projects.filter((q) => q.featured)
-    const placedF = place(60, 92, 60, feat.length, (i) => memoryPane(projects[i]), 0, "130,255,225", true)
+    const placedF = place(44, 80, 64, 0.7, feat.length, (i, k) => memoryPane(projects[i], 4, k), 0, "130,255,225", true)
     const restN = projects.length - feat.length
-    const placedR = place(36, 48, 40, restN, (i) => memoryTome(projects[i]), feat.length, "140,220,255", false)
+    const placedR = place(30, 56, 52, 0.65, restN, (i, k) => memoryTome(projects[i], 3, k), feat.length, "140,220,255", false)
     const missing = projects.length - placedF - placedR
     live.push(...sprites.slice(before))
     if (dropped.size) { for (const arr of [sprites, live]) { for (let i = arr.length - 1; i >= 0; i--) if (dropped.has(arr[i])) arr.splice(i, 1) } }

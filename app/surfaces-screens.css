@@ -147,6 +147,9 @@ html[data-world="ruins"] {
 /* ═══ AREA TITLE ═══ */
 .area-title { position: fixed; top: 8.5%; left: 0; right: 0; z-index: 60; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; opacity: 0; transform: translateY(-8px); transition: opacity .7s ease, transform .7s ease; }
 .area-title[data-on] { opacity: 1; transform: none; }
+.area-title[data-interior] { top: auto; bottom: 17%; gap: 6px; transform: translateY(8px); transition-duration: .45s; }
+.area-title[data-interior][data-on] { transform: none; }
+.area-title[data-interior] .area-title__name { font-size: clamp(14px, 2vw, 24px); text-shadow: 0 3px 0 var(--u-hero-shadow), 0 0 14px rgba(0, 0, 0, .7); }
 .area-title__sub { display: flex; align-items: center; gap: 14px; }
 .area-title__rule { width: 60px; height: 2px; background: linear-gradient(90deg, var(--u-hero-ink), transparent); }
 .area-title__rule--l { background: linear-gradient(90deg, transparent, var(--u-hero-ink)); }

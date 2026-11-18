@@ -5,7 +5,7 @@ import {
   CARS, PEOPLE, STATUES, personSheet, personFace, type RoofSet, type WallSet,
 } from "@/lib/kenney"
 import { runtime } from "@/lib/runtime"
-import { ordered, billboard, type ExProject } from "./exhibits"
+import { ordered, billboard, fitTitle, projectIcon, type ExProject } from "./exhibits"
 import type { Portfolio } from "@/lib/content"
 import { TS, img, sheet, blit, hash, mulberry, canvas, type Scene, type SceneSign, type Landmark, type Sprite, type Hotspot, type ActorDef, type Light, type Box } from "./core"
 
@@ -1084,13 +1084,12 @@ export function buildCity(content?: Portfolio): Scene {
   const glowSprite = (cv: HTMLCanvasElement, x: number, y: number, rgb: string, blur = 10) => emitters.push({ cv, x: Math.round(x), y: Math.round(y), rgb, blur })
   const stubs: ExProject[] = Object.keys(PITCH).map((id) => ({ id, title: id.toUpperCase(), tagline: "", accent: "#ff4fa3", year: "", featured: false, category: "", tech: [], description: "", highlights: [] }))
   const projects: ExProject[] = ordered((content?.projects ?? []).length ? content!.projects : stubs)
-  const ptitle = (p: { title: string }) => p.title.toUpperCase().slice(0, 11)
   const hexRgb = (h: string) => { const n = parseInt(h.slice(1), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}` }
   const mix = (h: string, k: number, to = 0) => { const n = parseInt(h.slice(1), 16); const f = (v: number) => Math.round(v + (to - v) * k); return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})` }
   const pitchOf = (p: { id: string; tagline: string }): [string, string] => PITCH[p.id] ?? [p.tagline.toUpperCase().slice(0, 15), p.tagline.toUpperCase().slice(15, 30).trim()]
 
   /** a project poster board: accent field, bitmap title, two lines of pitch */
-  const board = (p: { id: string; title: string; tagline: string; accent: string }, w: number, h: number, flat = false) => mk(w, h, (s) => {
+  const board = (p: { id: string; title: string; short?: string; tagline: string; accent: string }, w: number, h: number, flat = false) => mk(w, h, (s) => {
     s.fillStyle = "#0d0b16"; s.fillRect(0, 0, w, h)
     const gr = s.createLinearGradient(0, 0, w, h)
     gr.addColorStop(0, mix(p.accent, 0.55)); gr.addColorStop(1, mix(p.accent, 0.82))
@@ -1098,8 +1097,8 @@ export function buildCity(content?: Portfolio): Scene {
     for (let x = -h; x < w; x += 7) { s.fillStyle = "rgba(255,255,255,.07)"; for (let k = 0; k < h; k++) s.fillRect(x + k, k, 2, 1) }
     s.fillStyle = "rgba(0,0,0,.35)"; s.fillRect(2, 2, w - 4, 11)
     s.fillStyle = p.accent; s.fillRect(2, 12, w - 4, 1)
-    const t = ptitle(p), tx = Math.round((w - textW(t)) / 2)
-    drawText(s, t, tx, 4, "#ffffff", "rgba(0,0,0,.6)")
+    const ft = fitTitle(p, w - 6), tx = Math.round((w - ft.w) / 2)
+    if (ft.micro) micro(s, ft.s, tx, 6, "#ffffff"); else drawText(s, ft.s, tx, 4, "#ffffff", "rgba(0,0,0,.6)")
     const [l1, l2] = pitchOf(p)
     micro(s, l1, Math.round((w - l1.length * 4) / 2), 16, mix(p.accent, 0.1, 255))
     if (h > 26) micro(s, l2, Math.round((w - l2.length * 4) / 2), 23, "#ffffff")
@@ -1373,15 +1372,12 @@ export function buildCity(content?: Portfolio): Scene {
     const wh = 44
     const y0 = st.bottom * TS - 2 - wh
     const box = (p: ExProject, bw: number, bh: number) => mk(bw, bh, (s) => {
-      const body = mix(p.accent, 0.1), lid = mix(p.accent, 0.45, 255), dk = mix(p.accent, 0.45)
+      const body = p.accent, lid = mix(p.accent, 0.45, 255), dk = mix(p.accent, 0.4)
       s.fillStyle = "#120f1c"; s.fillRect(0, 0, bw, bh)
       s.fillStyle = body; s.fillRect(1, 1, bw - 2, bh - 2)
-      s.fillStyle = lid; s.fillRect(1, 1, bw - 2, 2)
-      s.fillStyle = dk; s.fillRect(bw - 4, 3, 3, bh - 4)
-      s.fillStyle = "#f4c430"; s.fillRect(Math.floor((bw - 4) / 2), 1, 2, bh - 2)
-      const ch = (p.title[0] ?? "?").toUpperCase()
-      if (bw >= 14) drawText(s, ch, Math.floor((bw - 4 - 5) / 2) + 1, Math.floor((bh - 7) / 2) + 2, "#ffffff", "rgba(0,0,0,.5)")
-      else micro(s, ch, Math.floor((bw - 3) / 2), Math.floor((bh - 5) / 2) + 1, "#ffffff")
+      s.fillStyle = dk; s.fillRect(1, bh - 3, bw - 2, 2)
+      s.fillStyle = lid; s.fillRect(1, 1, bw - 2, 1)
+      s.drawImage(projectIcon(p), Math.floor((bw - 12) / 2), Math.floor((bh - 12) / 2) - (bh > 15 ? 1 : 0))
     })
     for (let side = 0; side < 2; side++) {
       const big = feat.slice(side * 3, side * 3 + 3)
@@ -1397,11 +1393,11 @@ export function buildCity(content?: Portfolio): Scene {
         s.fillStyle = "#120f1c"; s.fillRect(0, wh - 3, ww, 3); s.fillStyle = "#8a9099"; s.fillRect(0, wh - 3, ww, 1)
         for (let k = 0; k < 3; k++) {
           const q = feat[(side * 3 + k + 1) % feat.length]
-          s.drawImage(box(q, 13, 11), 3 + k * 15, 10)
+          s.drawImage(box(q, 14, 13), 3 + k * 15, 9)
           const bp = big[k]
           if (bp) s.drawImage(box(bp, 14, 17), 2 + k * 16, wh - 3 - 17)
         }
-        micro(s, "NEW DROPS", 6, 3, "#ffe9a8")
+        micro(s, "NEW DROPS", 6, 2, "#ffe9a8")
       })
       // glass: a pale reflection streak and a dark mullion frame
       const gl = mk(ww, wh, (s) => {

@@ -752,8 +752,8 @@ function build(w: World, content?: Portfolio) {
     }
     // slots: staggered rows below the door, nearest the aisle first
     const slots: { cx: number; fy: number }[] = []
-    for (let k = 0; k < 6; k++) {
-      const fy = Y0 + 76 + k * 80, offs = (k % 2 ? [-102, 102, -190, 190, -278, 278, -366, 366, -454, 454] : [-58, 58, -146, 146, -234, 234, -322, 322, -410, 410, -498, 498])
+    for (let k = 0; k < 8; k++) {
+      const fy = Y0 + 64 + k * 62, offs = (k % 2 ? [-84, 84, -152, 152, -220, 220, -288, 288, -356, 356, -424, 424] : [-50, 50, -118, 118, -186, 186, -254, 254, -322, 322, -390, 390])
       for (const o of offs) slots.push({ cx: X0 + o, fy })
     }
     let placed = 0
@@ -765,13 +765,13 @@ function build(w: World, content?: Portfolio) {
       if (placed >= projects.length) break
       const p = projects[placed]
       const great = !!p.featured
-      const cv = stele(p, great ? "great" : "tablet")
+      const cv = stele(p, great ? "great" : "tablet", 0.75)
       if (!slotFree(sl.cx, sl.fy, cv.width - 8)) continue
       placed++
       const x = Math.round(sl.cx - cv.width / 2), y = sl.fy - cv.height
       w.spr(cv, [0, 0, cv.width, cv.height], x, y, { baseY: sl.fy, solid: { x: x + 6, y: sl.fy - 10, w: cv.width - 12, h: 10 } })
       rect(Math.floor((x + 4) / TS), Math.floor((sl.fy - 14) / TS), Math.floor((x + cv.width - 4) / TS), Math.floor(sl.fy / TS) + 1)
-      w.hotspots.push({ id: `relic-${p.id}`, box: { x: sl.cx - 26, y: sl.fy - 2, w: 52, h: 20 }, label: `VIEW ${p.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: p.id }, marker: true, markerX: sl.cx, markerY: y - 4 })
+      w.hotspots.push({ id: `relic-${p.id}`, box: { x: sl.cx - 22, y: sl.fy - 2, w: 44, h: 20 }, label: `VIEW ${p.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: p.id }, marker: true, markerX: sl.cx, markerY: y - 4 })
       w.lamp(sl.cx, sl.fy - cv.height * 0.55, great ? 66 : 54, great ? "255,206,120" : "255,190,110", 0.8)
       if (!great && placed % 3 === 0) {
         const cn = canopy(cv.width + 14, p.accent)

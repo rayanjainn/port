@@ -17,7 +17,7 @@ export default function AreaTitle() {
 
   if (!area) return null
   return (
-    <div key={area.key} className="area-title" data-on={visible ? "" : undefined}>
+    <div key={area.key} className="area-title" data-on={visible ? "" : undefined} data-interior={area.interior ? "" : undefined}>
       <div className="area-title__sub">
         <span className="area-title__rule area-title__rule--l" />
         <span className="area-title__kick">{area.sub}</span>

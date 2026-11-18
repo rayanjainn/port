@@ -5,7 +5,7 @@ import type { Project } from "@/lib/content"
 import { motifFor, hashStr, rng, type Motif } from "@/lib/quick/motif"
 import { canvas, img, ready } from "./core"
 
-export type ExProject = Pick<Project, "id" | "title" | "tagline" | "accent" | "year" | "featured" | "category" | "tech" | "description" | "highlights">
+export type ExProject = Pick<Project, "short" | "id" | "title" | "tagline" | "accent" | "year" | "featured" | "category" | "tech" | "description" | "highlights">
 
 /** native size of every illustration, in px (4 x 2.5 tiles) */
 export const ART_W = 64
@@ -98,16 +98,39 @@ export function drawMicro(ctx: Ctx, s: string, x: number, y: number, color: stri
   if (shadow) pass(1, 1, shadow)
   pass(0, 0, color)
 }
-/** a title that fits `max` px: the 5x7 face when it fits, otherwise the 3x5 one, otherwise trimmed words */
-export function fitTitle(title: string, max: number): { s: string; micro: boolean; w: number } {
-  const t = title.toUpperCase().replace(/[^A-Z0-9 &'.!/:+\-?#_()]/g, "").replace(/\s+/g, " ").trim() || "UNTITLED"
-  if (textW(t) <= max) return { s: t, micro: false, w: textW(t) }
-  if (microW(t) <= max) return { s: t, micro: true, w: microW(t) }
-  const words = t.split(" ")
-  while (words.length > 1 && microW(words.join(" ")) > max) words.pop()
-  let s = words.join(" ")
-  while (s.length > 1 && microW(s) > max) s = s.slice(0, -1)
-  return { s, micro: true, w: microW(s) }
+/** hand-picked short forms for titles too long for any plaque (a `short` on the content object wins over these) */
+const SHORT: Record<string, string> = { "financial-research-automation": "FIN RESEARCH", "classroom-mcp": "CLASSROOM" }
+const clean = (t: string) => t.toUpperCase().replace(/[^A-Z0-9 &'.!/:+\-?#_()]/g, "").replace(/\s+/g, " ").trim()
+/** split "ClassroomPilot" / "BUG//REPORT" style titles into words */
+const splitWords = (t: string) => t.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[\/_]+/g, " ").split(/\s+/).filter(Boolean)
+const abbr = (w: string, n: number) => (w.length <= n ? w : w.slice(0, Math.max(2, n - 1)) + ".")
+/** a title that fits `max` px: full title in the 5x7 face, else a short form or the 3x5 face, never a mid-word cut */
+export function fitTitle(src: string | { id?: string; title: string; short?: string }, max: number): { s: string; micro: boolean; w: number } {
+  const title = typeof src === "string" ? src : src.title
+  const short = typeof src === "string" ? undefined : src.short ?? (src.id ? SHORT[src.id] : undefined)
+  const full = clean(title) || "UNTITLED"
+  const ws = splitWords(title.replace(/[^A-Za-z0-9 \/_]/g, " ")).map((w) => w.toUpperCase())
+  const cands: string[] = []
+  if (short) cands.push(clean(short))
+  cands.push(full, ws.join(" "))
+  for (let n = 8; n >= 3; n--) {
+    const cur = [...ws]
+    for (;;) {
+      const i = cur.reduce((bi, w, k) => (w.length > cur[bi].length ? k : bi), 0)
+      if (!cur.length || cur[i].length <= n) break
+      cur[i] = abbr(cur[i], n)
+      cands.push(cur.join(" "))
+    }
+  }
+  if (ws.length > 1) cands.push(ws.map((w) => w[0]).join(""))
+  const ok = cands.filter(Boolean), np = (short ? 3 : 2)
+  for (const grp of [ok.slice(0, np), ok.slice(np)]) {
+    for (const t of grp) if (textW(t) <= max) return { s: t, micro: false, w: textW(t) }
+    for (const t of grp) if (microW(t) <= max) return { s: t, micro: true, w: microW(t) }
+  }
+  const first = ws[0] ?? full
+  for (let n = first.length; n > 1; n--) { const t = abbr(first, n); if (microW(t) <= max) return { s: t, micro: true, w: microW(t) } }
+  return { s: first.slice(0, 1), micro: true, w: 3 }
 }
 
 // ── pen: crisp, integer-only drawing ───────────────────────────
@@ -788,13 +811,52 @@ export function titledArt(p: ExProject, tag?: string): HTMLCanvasElement {
   const P = new Pen(ART_W, ART_H)
   P.x.drawImage(base, 0, 0)
   const c = palOf(p.accent)
-  const f = fitTitle(p.title, ART_W - 8)
+  const f = fitTitle(p, ART_W - 8)
   P.r(0, ART_H - 10, ART_W, 10, "rgba(8,6,16,.86)"); P.r(0, ART_H - 11, ART_W, 1, c.a)
   const x = Math.round((ART_W - f.w) / 2)
   if (f.micro) drawMicro(P.x, f.s, x, ART_H - 7, WHITE, "rgba(0,0,0,.6)")
   else drawText(P.x, f.s, x, ART_H - 9, WHITE, "rgba(0,0,0,.55)")
   if (tag) drawMicro(P.x, tag, 2, 2, c.ll, "rgba(0,0,0,.7)")
   return P.c
+}
+
+// ── tiny 12x12 product icons: one per motif (and a few hand-picked subjects), white glyph with ink detail ──
+const ICON_ID: Record<string, string> = { duckops: "duck", chess: "pawn" }
+// 1 = white, 2 = ink, 3 = yellow, 4 = orange, 5 = red
+const ICON: Record<string, string> = {
+  shield: "..11111111.. .1111111111. .1111221111. .1122222211. .1111221111. .1111221111. .1111111111. ..11111111.. ..11111111.. ...111111... ....1111.... .....11.....",
+  duck: "............ ....3333.... ...333333... ...332333... ...33333444. ....3333444. ....3333.... ..33333333.. .3333333333. .3333333333. ..33333333.. ...333333...",
+  pawn: "....1111.... ...111111... ...111111... ....1111.... .....11..... ....1111.... ....1111.... .....11..... ....1111.... ...111111... ..11111111.. ..11111111..",
+  network: "11........11 11........11 ..1......1.. ...1....1... ....1..1.... .....11..... .....11..... ....1..1.... ...1....1... ..1......1.. 11........11 11........11",
+  pipeline: "............ 11..11..11.. .11..11..11. ..11..11..11 .11..11..11. 11..11..11.. ............ 11..11..11.. .11..11..11. ..11..11..11 .11..11..11. 11..11..11..",
+  api: "............ ........1... ........11.. .1111111111. ........11.. ........1... ...1........ ..11........ .1111111111. ..11........ ...1........ ............",
+  cards: "2222222..... 2111112..... 2111112..... 211122222222 211121111112 222221111112 ....21515112 ....21555112 ....21151112 ....21111112 ....21111112 ....22222222",
+  wave: "............ ..1.....1... ..1..1..1..1 .11..1.11..1 .11.11.11.11 .11.11.11.11 11111111111. .11.11.11.11 .11.11.11.11 .11..1.11..1 ..1..1..1... ............",
+  terminal: "111111111111 122222222221 121222222221 122122222221 121222222221 122222222221 122222222221 122222222221 122222222221 111111111111 ............ ............",
+  dial: "............ ...111111... .11......11. .1........1. 11....3...11 1.....3....1 1....3.....1 1...3......1 1..........1 11...11...11 .1111111111. ............",
+  neural: "............ .11.....11.. .11.1.1.11.. ....1.1..... .11.111.11.. .11.1.1.1111 ....1.1.11.. .11.111.11.. .11.1.1..... .11.....11.. ............ ............",
+  scan: "111......111 1..........1 1....11....1 ......11..... ...111111... ...1....1... ...1.33.1... ...1....1... ...111111... 1..........1 1..........1 111......111",
+  hash: "..1...1..... ..1...1..... 1111111111.. ..1...1..... ..1...1..... 1111111111.. ..1...1..... ..1...1..... ............ ............ ............ ............",
+  dock: "............ ............ ..11..11.... ..11..11.... ............ 111111111111 122222222221 1213141.1.21 122222222221 111111111111 ............ ............",
+  grid: "............ .111.111.111 .111.111.111 .111.111.111 ............ .111.....111 .111.....111 .111.....111 ............ .111.111.... .111.111.... .111.111....",
+  glitch: "............ 111111111... ............ ..11111111.. ............ 1111111..... ...........1 ..1111111111 ............ 11111111.... ............ ............",
+  ledger: "..111111.... ..122221.... ..121121.... ..122221.... ..111111.... ..121121.... ..122221.... ..111111.... ..11111111.. ............ ............ ............",
+  tools: "............ ....1111.... ....1..1.... 111111111111 122222222221 123333333221 122222222221 122222222221 122222222221 111111111111 ............ ............",
+  board: "............ .....33..... ....3333.... ....3333.... ..111.11111. ..121.12221. 11121.12221. 11121.12221. 11121.12221. 11111111111. ............ ............",
+  mosaic: "............ .1111.2222.. .1111.2222.. .1111.2222.. .1111.2222.. ............ .2222.1111.. .2222.1111.. .2222.1111.. .2222.1111.. ............ ............",
+}
+const ICON_COL: Record<string, string> = { "1": "#ffffff", "2": INK, "3": YELLOW, "4": ORANGE, "5": RED }
+const iconCache = new Map<string, HTMLCanvasElement>()
+/** 12x12 pixel icon for a project: its motif's glyph, no letters */
+export function projectIcon(p: ExProject): HTMLCanvasElement {
+  const key = ICON_ID[p.id] ?? motifFor(p)
+  const hit = iconCache.get(key)
+  if (hit) return hit
+  const { c, ctx } = canvas(12, 12)
+  const rows = (ICON[key] ?? ICON.mosaic).split(" ").map((r) => r.padEnd(12, ".").slice(0, 12))
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { const col = ICON_COL[ch]; if (col) { ctx.fillStyle = col; ctx.fillRect(x, y, 1, 1) } }))
+  iconCache.set(key, c)
+  return c
 }
 
 /** featured first (stable within each group), the order every world presents the work in */
@@ -849,7 +911,7 @@ export function frameAround(art: HTMLCanvasElement, style: FrameStyle = "gold", 
 
 /** brass plate with title and year */
 export function plaque(p: ExProject, w = 56, style: FrameStyle = "gold"): HTMLCanvasElement {
-  const f = fitTitle(p.title, w - 8), h = f.micro ? 15 : 17
+  const f = fitTitle(p, w - 8), h = f.micro ? 15 : 17
   const { c, ctx } = canvas(w, h)
   const L = FRAME_LINE[style]
   ctx.fillStyle = L[3]; ctx.fillRect(0, 0, w, h); ctx.fillStyle = L[2]; ctx.fillRect(1, 1, w - 2, h - 2); ctx.fillStyle = L[1]; ctx.fillRect(1, 1, w - 2, h - 3); ctx.fillStyle = L[0]; ctx.fillRect(1, 1, w - 2, 1)
@@ -1012,7 +1074,7 @@ function slabSet(P: Pen, x: number, y: number, w: number, h: number, arch: boole
   }
 }
 /** a carved sandstone stele: gold-inlaid title, the project art in relief (great ones add an arch, tagline and glyph frieze) */
-export function stele(p: ExProject, kind: "great" | "tablet" = "tablet"): HTMLCanvasElement {
+export function stele(p: ExProject, kind: "great" | "tablet" = "tablet", k = 1): HTMLCanvasElement {
   const art = carve(exhibitArt(p), p.accent)
   const great = kind === "great"
   const W = great ? 84 : 76, H = great ? 82 : 72
@@ -1023,19 +1085,44 @@ export function stele(p: ExProject, kind: "great" | "tablet" = "tablet"): HTMLCa
   const gy = great ? 6 : 4
   slab(P, sx + 3, gy, sw - 6, H - 10 - gy - 3, great, "#b07d14"); slab(P, sx + 4, gy + 1, sw - 8, H - 10 - gy - 5, great, SAND.m)
   for (let i = 0; i < 24; i++) { const hx = hashStr(p.id + "s" + i); P.p(sx + 6 + (hx % (sw - 12)), gy + 4 + ((hx >> 8) % (H - 30)), i % 3 ? SAND.d : SAND.l) }
-  const f = fitTitle(p.title, sw - 12)
   const ty = great ? 13 : 7
-  P.r(sx + 5, ty - 3, sw - 10, 12, SAND.ink); P.r(sx + 6, ty - 2, sw - 12, 10, SAND.d)
-  const tx = Math.round((W - f.w) / 2)
-  if (f.micro) drawMicro(P.x, f.s, tx, ty + 1, "#ffd84a", SAND.ink); else drawText(P.x, f.s, tx, ty, "#ffd84a", SAND.ink)
+  const title = (T: Pen, bx: number, by: number, bw: number, tw: number) => {
+    const f = fitTitle(p, tw)
+    T.r(bx, by - 3, bw, 12, SAND.ink); T.r(bx + 1, by - 2, bw - 2, 10, SAND.d)
+    const tx = Math.round((T.w - f.w) / 2)
+    if (f.micro) drawMicro(T.x, f.s, tx, by + 1, "#ffd84a", SAND.ink); else drawText(T.x, f.s, tx, by, "#ffd84a", SAND.ink)
+  }
+  if (k === 1) title(P, sx + 5, ty, sw - 10, sw - 12)
   const ay = ty + 13
   P.r(W / 2 - 34, ay - 2, 68, 44, "#f4c430"); P.r(W / 2 - 33, ay - 1, 66, 42, SAND.ink)
   P.x.drawImage(art, W / 2 - 32, ay)
   for (const [qx, qy] of [[W / 2 - 35, ay - 3], [W / 2 + 33, ay - 3], [W / 2 - 35, ay + 41], [W / 2 + 33, ay + 41]]) { P.r(qx, qy, 3, 3, "#f4c430"); P.p(qx, qy, "#fff0b0") }
-  return P.c
+  if (k === 1) return P.c
+  const sc = shrink(P.c, k), T = new Pen(sc.width, sc.height)
+  T.x.drawImage(sc, 0, 0)
+  // lettering is drawn after scaling so it stays crisp
+  const bx = Math.round((sx + 5) * k), by = Math.round(ty * k) + 1, bw = Math.round((sw - 10) * k)
+  title(T, bx, by, bw, bw - 4)
+  return T.c
 }
 
 /** striped cloth canopy on two poles, drawn over a relic; returns canvas of the given width */
+/** nearest-neighbour downscale of a finished canvas (keeps the pixel look) */
+export function shrink(src: HTMLCanvasElement, k: number): HTMLCanvasElement {
+  const w = Math.round(src.width * k), h = Math.round(src.height * k)
+  const { c, ctx } = canvas(w, h)
+  ctx.imageSmoothingEnabled = false
+  ctx.drawImage(src, 0, 0, src.width, src.height, 0, 0, w, h)
+  return c
+}
+/** shrink a horizontal strip of equal frames, frame by frame, with nearest sampling */
+function shrinkStrip(src: HTMLCanvasElement, frames: number, k: number): { cv: HTMLCanvasElement; w: number; h: number } {
+  const fw = src.width / frames, w = Math.round(fw * k), h = Math.round(src.height * k)
+  const { c, ctx } = canvas(w * frames, h)
+  ctx.imageSmoothingEnabled = false
+  for (let f = 0; f < frames; f++) ctx.drawImage(src, f * fw, 0, fw, src.height, f * w, 0, w, h)
+  return { cv: c, w, h }
+}
 export function canopy(w: number, accent: string): HTMLCanvasElement {
   const h = 34, P = new Pen(w, h), c = palOf(accent)
   P.r(2, 12, 3, h - 12, "#5a3a1e"); P.r(w - 5, 12, 3, h - 12, "#5a3a1e"); P.r(3, 12, 1, h - 12, "#8a5e34"); P.r(w - 4, 12, 1, h - 12, "#8a5e34")
@@ -1073,7 +1160,7 @@ export const exhibitArtPath = (id: string) => `/exhibits/art/${id}.png`
 // ── ruins: memories ─────────────────────────────────────────────
 const cell = (strip: HTMLCanvasElement, f: number, w: number, h: number) => { const k = canvas(w, h); k.ctx.drawImage(strip, f * w, 0, w, h, 0, 0, w, h); return k.c }
 /** a floating spectral pane over a small obelisk, as an animated strip of `frames` cells of 80 x 82 */
-export function memoryPane(p: ExProject, frames = 4): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
+export function memoryPane(p: ExProject, frames = 4, k = 1): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
   const sp = spectral(exhibitArt(p), p.accent, frames)
   const FW = 80, FH = 82
   const { c, ctx } = canvas(FW * frames, FH)
@@ -1088,16 +1175,17 @@ export function memoryPane(p: ExProject, frames = 4): { cv: HTMLCanvasElement; w
     ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 27, 62, 26, 20); ctx.fillStyle = "#2a4a58"; ctx.fillRect(ox + 28, 63, 24, 18); ctx.fillStyle = "#4a7a88"; ctx.fillRect(ox + 28, 63, 24, 2); ctx.fillStyle = "#16303c"; ctx.fillRect(ox + 46, 65, 6, 16)
     ctx.fillStyle = "#6effd6"; ctx.fillRect(ox + 38, 70, 4, 4); ctx.fillStyle = "#ffffff"; ctx.fillRect(ox + 39, 71, 2, 2)
     ctx.fillStyle = "rgba(200,255,245,.85)"
-    for (let k = 0; k < 3; k++) ctx.fillRect(ox + 30 + k * 9, 60 - ((f * 3 + k * 5) % 9), 1, 1)
+    for (let q = 0; q < 3; q++) ctx.fillRect(ox + 30 + q * 9, 60 - ((f * 3 + q * 5) % 9), 1, 1)
   }
+  if (k !== 1) { const r = shrinkStrip(c, frames, k); return { cv: r.cv, w: r.w, h: r.h, frames } }
   return { cv: c, w: FW, h: FH, frames }
 }
 /** a tome on a lectern with a faint hologram of the art above it: strip of `frames` cells of 44 x 62 */
-export function memoryTome(p: ExProject, frames = 3): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
+export function memoryTome(p: ExProject, frames = 3, k = 1): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
   const sp = spectral(exhibitArt(p), p.accent, frames)
   const FW = 44, FH = 62
   const { c, ctx } = canvas(FW * frames, FH)
-  const f0 = fitTitle(p.title, 38)
+  const f0 = fitTitle(p, 38)
   for (let f = 0; f < frames; f++) {
     const ox = f * FW
     const bob = f === 1 ? 1 : 0
@@ -1113,7 +1201,16 @@ export function memoryTome(p: ExProject, frames = 3): { cv: HTMLCanvasElement; w
     ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 8, 32, 28, 6)
     ctx.fillStyle = "#bff7ec"; ctx.fillRect(ox + 9, 33, 12, 4); ctx.fillRect(ox + 23, 33, 12, 4); ctx.fillStyle = "#6edcc4"; ctx.fillRect(ox + 21, 32, 2, 6)
     const tx = ox + 5 + Math.round((34 - f0.w) / 2)
-    if (f0.micro) drawMicro(ctx, f0.s, tx, 46, "#a8f0e0"); else drawText(ctx, f0.s, tx, 44, "#a8f0e0")
+    if (k === 1) { if (f0.micro) drawMicro(ctx, f0.s, tx, 46, "#a8f0e0"); else drawText(ctx, f0.s, tx, 44, "#a8f0e0") }
+  }
+  if (k !== 1) {
+    const r = shrinkStrip(c, frames, k)
+    const ctx2 = r.cv.getContext("2d")!
+    // lettering is drawn after scaling so it stays crisp
+    const f1 = fitTitle(p, Math.round(34 * k) - 2)
+    const tx = Math.round(5 * k) + Math.round((Math.round(34 * k) - f1.w) / 2), ty = Math.round(45 * k)
+    for (let f = 0; f < frames; f++) { if (f1.micro) drawMicro(ctx2, f1.s, f * r.w + tx, ty, "#a8f0e0"); else drawText(ctx2, f1.s, f * r.w + tx, ty - 1, "#a8f0e0") }
+    return { cv: r.cv, w: r.w, h: r.h, frames }
   }
   return { cv: c, w: FW, h: FH, frames }
 }

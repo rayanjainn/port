@@ -220,7 +220,7 @@ export default function GameCanvas() {
         const world = worldById(useGameStore.getState().world)
         if (id !== world.scene) {
           const b = BUILDINGS.find((x) => x.id === id)
-          useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? "")
+          useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? "", true)
           useGameStore.getState().markVisited(id)
         } else useGameStore.getState().showArea(world.id === "village" ? "THE VILLAGE" : world.name.toUpperCase(), "WELCOME BACK")
       },
