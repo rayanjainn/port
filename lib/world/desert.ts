@@ -1018,7 +1018,7 @@ function people(w: World) {
   npc("rafi", "LionBoy", "Rafi the Caravan Driver", 12, 37, 12, ["Next stop: wherever the portfolio goes next.", "Ship fast. Break things. Fix faster. Also: water the camels."])
   npc("amon", "Monk2", "Brother Amon", 12, 11, 6,
     ["First place at Ignisa '26. A long climb, like this one.", "Breathe. The view is the point."],
-    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "CreditIQ won Ignisa '26; NeuroCred was built at the Airavat Hackathon. All shipped under time pressure."])
+    ["You climbed all the way up! Good.", "From here you can see the whole oasis. Hackathons, challenges, ML, platforms: Rayan has crossed a lot of dunes.", "CreditIQ won Ignisa '26, NeuroCred won AIRAVAT '26, and he placed top 500 in the Amazon ML Challenge. All under time pressure."])
   npc("tomas", "Caveman", "Old Tomas the Digger", 14, 51, 14, ["Found a fossil of a bug that nobody could reproduce.", "Vendex turns a product video into a ranked supplier list. I turn dirt into bones."])
   const animal = (id: string, n: string, c: number, r: number, wander = 30) => w.actors.push({ id, kind: "animal", sheet: animalSheet(n), x: c * TS + 8, y: r * TS + 12, wander, speed: 14 })
   animal("camel1", "cow", 11, 39, 20); animal("camel2", "cow", 13, 41, 20); animal("camel3", "cow", 6, 41, 16); animal("camel4", "cow", 36, 38, 30)
