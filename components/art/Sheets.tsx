@@ -31,7 +31,7 @@ function AboutVillage({ world }: { world: string }) {
     { k: "QUESTS", v: c.projects.length, cap: 15, ic: "sword", sub: "projects shipped" },
     { k: "GUILDS", v: c.experience.length, cap: 6, ic: "scroll", sub: "roles & teams" },
     { k: "TONGUES", v: langs, cap: 8, ic: "book", sub: "languages" },
-    { k: "SKILLS", v: skillsN, cap: 28, ic: "hammer", sub: "in the forge" },
+    { k: "SKILLS", v: skillsN, cap: 60, ic: "hammer", sub: "in the forge" },
   ]
   return (
     <section className="cs">

@@ -30,9 +30,11 @@
   "socials": {
     "email": "rayansjain@gmail.com",
     "github": "https://github.com/rayanjainn",
-    "linkedin": "https://www.linkedin.com/in/rayanjain",
+    "linkedin": "https://www.linkedin.com/in/rayanjain/",
     "twitter": "https://twitter.com/rayanjainn",
-    "website": "https://raycode.tech"
+    "website": "https://raycode.tech",
+    "leetcode": "https://leetcode.com/u/rayanjainn/",
+    "codeforces": "https://codeforces.com/profile/pookieblinders"
   },
   "projects": [
     {
@@ -40,19 +42,21 @@
       "repo": "Ferrite-Browser",
       "title": "Ferrite",
       "tagline": "A browser for AI agents that can't be talked into things.",
-      "description": "A browser written in Rust on the Servo engine, so an AI agent can browse without being steered by what it reads. Ferrite does not try to spot malicious text. It predicts what a task legitimately needs, dry-runs the agent's plan in a sandbox on fake data, compares the two, and asks the user before anything off-plan runs. Security events go into a SHA-256 hash-chained audit log.",
+      "description": "A cross-platform browser written in Rust on the Servo engine, so an AI agent can browse without being steered by what it reads. Ferrite does not try to spot malicious text. It predicts what the task legitimately needs from the prompt, dry-runs the agent's plan in a no-network sandbox, compares the two, and gates any deviation behind a consent panel that pages cannot reach. It has tabs, find, zoom, bookmarks, history, downloads and built-in DevTools.",
       "highlights": [
-        "Predict, dry-run, compare, consent-gate pipeline",
-        "Sandboxed dry-runs on fake data with no real network",
-        "Live run with gemma4:31b: attacks that ran fell from 2.0% to 0.4% of 1,542 measurable runs",
-        "938-case red-team corpus plus 1,046 imported AgentDojo cases"
+        "Predict, dry-run, compare, consent-gate defence against indirect prompt injection",
+        "Runtime guard, 8-language sanitizer and a SHA-256 hash-chained audit log",
+        "Over 3,968 live-model runs the guard cut executed attacks from 2.0% to 0.4%",
+        "OpenGL renderer with CPU fallback; fixed engine bugs in layout, WebGL swap and threading"
       ],
       "tech": [
         "Rust",
         "Servo",
-        "Sandboxing",
-        "LLM agents",
-        "Ollama"
+        "OpenGL",
+        "iced",
+        "Tokio",
+        "Ollama",
+        "Python"
       ],
       "language": "Rust",
       "category": "Systems",
@@ -98,19 +102,24 @@
       "repo": "duckops",
       "title": "DuckOps",
       "tagline": "Pick a stack. Get a repo, a k8s deploy, CI/CD and monitoring.",
-      "description": "A self-hosted internal developer platform. Choose a language, framework, database and ORM in a wizard and DuckOps scaffolds the code, creates the GitHub repo, builds and pushes the image, provisions a Kubernetes namespace with Terraform, deploys with Ansible, wires a Jenkins pipeline and health-checks the app, streaming every stage live over Socket.io.",
+      "description": "A self-hosted internal developer platform of six microservices that turns a prompt into a deployed, monitored app. Choose a stack in a wizard and DuckOps scaffolds the code, creates the GitHub repo, builds and pushes the image, provisions a Kubernetes namespace with Terraform, deploys with Ansible and wires a Jenkins pipeline, streaming every stage live over Socket.io.",
       "highlights": [
-        "8-stage automated provisioning pipeline",
-        "Terraform, Ansible and Jenkins on a local k3d cluster",
-        "Live stage streaming over Socket.io, BullMQ job queue"
+        "8-stage automated provisioning pipeline across 6 microservices",
+        "Terraform, Ansible and auto-created Jenkins pipelines on a local k3d cluster",
+        "BullMQ and Redis job queue, live Socket.io status, 30 s health checks, Prometheus and Grafana",
+        "An AI builder that commits and redeploys code"
       ],
       "tech": [
         "TypeScript",
         "Next.js",
+        "Express",
         "Kubernetes",
         "Terraform",
         "Ansible",
-        "Jenkins"
+        "Jenkins",
+        "BullMQ",
+        "Redis",
+        "Prisma"
       ],
       "language": "TypeScript",
       "category": "Platform",
@@ -126,18 +135,22 @@
       "id": "sentinel",
       "repo": "sentinel",
       "title": "Sentinel",
-      "tagline": "See everything running on your machine, and act on it in plain English.",
-      "description": "A desktop app for macOS, Windows and Linux that shows live processes, ports and connections, CPU, memory and disk. Its agent reads the real state of the system, then lays out each step for approval before anything runs. A storage treemap, firewall rules and an activity log sit alongside. Rust core with a Tauri and React interface.",
+      "tagline": "A system monitor and AI control center for macOS, Windows and Linux.",
+      "description": "A native macOS, Windows and Linux monitor for live processes, ports mapped to PIDs, CPU, memory and disk, plus a tool-calling AI agent whose actions need your approval. Under it sits an OS abstraction layer over /proc and netlink (Linux), sysctl and IOKit via FFI (macOS) and the Win32/NT APIs (Windows). Rust core with Tauri v2 and a React interface.",
       "highlights": [
-        "Every listening port and connection matched to its process",
-        "An AI agent proposes each step; nothing runs without approval",
-        "Storage treemap and firewall rules in the same app"
+        "Every listening port and connection matched to its owning process",
+        "AI agent proposes each step; nothing runs without approval",
+        "Process control via POSIX signals, pidfd and scheduling priority",
+        "Samples under 2.1% CPU using multithreading, lock-free channels and ring buffers"
       ],
       "tech": [
         "Rust",
-        "Tauri",
+        "Tauri v2",
         "React",
-        "Networking"
+        "TypeScript",
+        "Tokio",
+        "Rayon",
+        "Win32"
       ],
       "language": "Rust",
       "category": "Systems",
@@ -183,7 +196,7 @@
       "repo": "neurocred",
       "title": "NeuroCred",
       "tagline": "A live digital twin and credit engine for Indian MSMEs.",
-      "description": "Builds a live, versioned digital twin of a small business from UPI, bank, SMS and EMI signals, then runs a credit engine on top of it: Monte Carlo risk simulation, anomaly and fraud detection on Redis Streams, and plain-language reasoning from a local LLM. Built at the Airavat Hackathon with Team Pookies.",
+      "description": "Builds a live, versioned digital twin of a small business from UPI, bank, SMS and EMI signals, then runs a credit engine on top of it: Monte Carlo risk simulation, anomaly and fraud detection on Redis Streams, and plain-language reasoning from a local LLM. Won 1st place at AIRAVAT '26 (SPIT) with Team Pookies.",
       "highlights": [
         "Ten-tier async pipeline from ingestion to audit export",
         "Monte Carlo risk projections and stress tests",
@@ -384,17 +397,18 @@
       "repo": "vendex",
       "title": "Vendex",
       "tagline": "Reel to real: product video to ranked supplier list.",
-      "description": "Paste an Instagram or TikTok reel, or an Alibaba link. Vendex downloads the video, picks the sharpest frame, runs a visual search on Alibaba and returns a ranked supplier shortlist with prices, MOQs, trust badges and one-click chat. Includes a Chrome extension.",
+      "description": "Paste an Instagram or TikTok reel, or an Alibaba link, and Vendex returns a ranked supplier shortlist in about 60 seconds, with prices, MOQs, trust badges and one-click chat. Built during an internship at LazerBelieve: a concurrent vision and scraping pipeline (yt-dlp, OpenCV, patched Playwright) runs 10 parallel browser tabs per job with CAPTCHA solving, handles CSV batches over 2 concurrent jobs, and ships with a Chrome extension.",
       "highlights": [
-        "Sharpest-frame extraction from short-form video",
-        "Visual supplier search with stealth Playwright",
-        "Chrome MV3 extension"
+        "Product reel or URL to a ranked Alibaba supplier shortlist in about 60 s",
+        "10 parallel browser tabs per job with CAPTCHA solving",
+        "CSV batches over 2 concurrent jobs, plus a Chrome extension"
       ],
       "tech": [
         "Next.js",
         "FastAPI",
         "Playwright",
-        "Python"
+        "OpenCV",
+        "yt-dlp"
       ],
       "language": "TypeScript",
       "category": "Product",
@@ -691,9 +705,18 @@
       "start": "Jun 2026",
       "end": "Aug 2026",
       "location": "Pune",
-      "description": "",
-      "highlights": [],
-      "tech": [],
+      "description": "Worked on the CI/CD and delivery tooling a regulated bank's engineering teams build on.",
+      "highlights": [
+        "Modernized a shared GitLab CI/CD component library, adding dynamic environments and runtime variables",
+        "Automated build, test and deploy stages of containerized services on Kubernetes with Helm charts",
+        "Built a pipeline analytics dashboard tracking run history and failures in a regulated financial environment"
+      ],
+      "tech": [
+        "GitLab CI",
+        "Kubernetes",
+        "Helm",
+        "Docker"
+      ],
       "kind": "internship"
     },
     {
@@ -743,16 +766,31 @@
     },
     {
       "id": "lazerbelieve",
-      "role": "Software Engineer Intern",
+      "role": "Software Development Engineer Intern",
       "org": "LazerBelieve",
       "url": "",
       "start": "Mar 2026",
-      "end": "Jun 2026",
+      "end": "May 2026",
       "location": "Mumbai",
-      "description": "",
-      "highlights": [],
-      "tech": [],
-      "kind": "internship"
+      "description": "Built Vendex, a tool that turns a product reel or URL into a ranked supplier shortlist.",
+      "highlights": [
+        "Vendex (Next.js, FastAPI, Playwright): product reel or URL to a ranked Alibaba supplier shortlist in about 60 s, with CSV batches over 2 concurrent jobs and a Chrome extension",
+        "Concurrent vision and scraping pipeline (yt-dlp, OpenCV, patched Playwright) running 10 parallel browser tabs per job with CAPTCHA solving"
+      ],
+      "tech": [
+        "Next.js",
+        "FastAPI",
+        "Playwright",
+        "OpenCV",
+        "yt-dlp"
+      ],
+      "kind": "internship",
+      "shipped": [
+        {
+          "label": "Vendex",
+          "projectId": "vendex"
+        }
+      ]
     }
   ],
   "education": [
@@ -760,23 +798,23 @@
       "id": "edu-spit",
       "school": "Sardar Patel Institute of Technology (Bharatiya Vidya Bhavan's SPIT)",
       "degree": "BTech",
-      "field": "Computer Science & Engineering",
+      "field": "Computer Science",
       "start": "Aug 2023",
-      "end": "2027",
-      "note": "",
+      "end": "Jun 2027",
+      "note": "CGPA 9.68/10 last semester, 9.64/10 average.",
       "kind": "university",
       "place": "Andheri, Mumbai"
     },
     {
       "id": "edu-spjimr",
       "school": "SPJIMR (SP Jain Institute of Management & Research)",
-      "degree": "Management programme",
+      "degree": "Minor in Management",
       "field": "",
       "start": "Jan 2025",
       "end": "Jul 2027",
       "note": "Runs alongside the BTech.",
       "kind": "programme",
-      "place": ""
+      "place": "Mumbai"
     },
     {
       "id": "edu-pace",
@@ -805,7 +843,7 @@
     {
       "id": "ach-ignisa",
       "title": "1st Place, Ignisa '26",
-      "issuer": "MITWPU",
+      "issuer": "MIT-WPU",
       "date": "2026",
       "url": "https://github.com/rayanjainn/CreditIQ",
       "kind": "hackathon",
@@ -814,13 +852,58 @@
     },
     {
       "id": "ach-airavat",
-      "title": "Airavat Hackathon",
-      "issuer": "Airavat",
+      "title": "1st Place, AIRAVAT '26",
+      "issuer": "SPIT",
       "date": "2026",
       "url": "https://github.com/rayanjainn/neurocred",
       "kind": "hackathon",
-      "note": "Built NeuroCred there with Team Pookies.",
+      "note": "NeuroCred, built with Team Pookies.",
       "projectId": "neurocred"
+    },
+    {
+      "id": "ach-rapid",
+      "title": "1st Place, rAPId",
+      "issuer": "SPIT CSI",
+      "date": "2026",
+      "url": "",
+      "kind": "hackathon",
+      "note": "API Development Competition."
+    },
+    {
+      "id": "ach-codeitout",
+      "title": "1st Place, CodeItOut",
+      "issuer": "SPIT ACSES",
+      "date": "2026",
+      "url": "",
+      "kind": "hackathon",
+      "note": "Competitive Programming."
+    },
+    {
+      "id": "ach-braindrain",
+      "title": "1st Place, BrainDrain",
+      "issuer": "IEEE CS",
+      "date": "2026",
+      "url": "",
+      "kind": "hackathon",
+      "note": "Competitive Programming."
+    },
+    {
+      "id": "ach-meta",
+      "title": "Top 800, Meta Hackathon",
+      "issuer": "Meta",
+      "date": "2026",
+      "url": "",
+      "kind": "hackathon",
+      "note": "Out of 31,000+ teams."
+    },
+    {
+      "id": "ach-amazonml",
+      "title": "Top 500, Amazon ML Challenge",
+      "issuer": "Amazon",
+      "date": "2026",
+      "url": "",
+      "kind": "hackathon",
+      "note": "Out of 10,000+ teams."
     },
     {
       "id": "ach-brew",
@@ -882,36 +965,77 @@
           "level": 72
         },
         {
+          "name": "SQL",
+          "level": 70
+        },
+        {
+          "name": "Shell",
+          "level": 66
+        },
+        {
+          "name": "C++",
+          "level": 62
+        },
+        {
           "name": "Java",
           "level": 60
+        },
+        {
+          "name": "C",
+          "level": 58
         },
         {
           "name": "C#",
           "level": 56
         },
         {
-          "name": "C++",
-          "level": 52
-        },
-        {
           "name": "Go",
           "level": 45
-        },
-        {
-          "name": "Lua",
-          "level": 40
         }
       ]
     },
     {
-      "group": "Frameworks",
+      "group": "Systems",
+      "items": [
+        {
+          "name": "OS & Linux internals",
+          "level": 80
+        },
+        {
+          "name": "Multithreading",
+          "level": 80
+        },
+        {
+          "name": "Memory management",
+          "level": 74
+        },
+        {
+          "name": "System calls",
+          "level": 74
+        },
+        {
+          "name": "Networking",
+          "level": 72
+        },
+        {
+          "name": "Computer architecture",
+          "level": 62
+        },
+        {
+          "name": "OpenGL",
+          "level": 55
+        }
+      ]
+    },
+    {
+      "group": "Backend & Web",
       "items": [
         {
           "name": "Next.js / React",
           "level": 94
         },
         {
-          "name": "Node.js / Bun",
+          "name": "Node.js / Express",
           "level": 86
         },
         {
@@ -923,8 +1047,16 @@
           "level": 80
         },
         {
+          "name": "WebSockets",
+          "level": 80
+        },
+        {
           "name": "Playwright",
           "level": 74
+        },
+        {
+          "name": "Tauri",
+          "level": 72
         },
         {
           "name": "SwiftUI",
@@ -933,24 +1065,12 @@
         {
           "name": "Electron",
           "level": 68
-        },
-        {
-          "name": "Tauri",
-          "level": 66
-        },
-        {
-          "name": "PyTorch",
-          "level": 64
         }
       ]
     },
     {
-      "group": "Data & Infra",
+      "group": "Data",
       "items": [
-        {
-          "name": "Docker",
-          "level": 86
-        },
         {
           "name": "PostgreSQL",
           "level": 84
@@ -964,24 +1084,90 @@
           "level": 76
         },
         {
-          "name": "Linux",
-          "level": 78
+          "name": "MySQL",
+          "level": 62
         },
         {
-          "name": "Jenkins / GH Actions",
-          "level": 72
+          "name": "SQLite",
+          "level": 60
+        }
+      ]
+    },
+    {
+      "group": "DevOps & Cloud",
+      "items": [
+        {
+          "name": "Docker",
+          "level": 86
         },
         {
           "name": "Kubernetes",
-          "level": 70
+          "level": 78
+        },
+        {
+          "name": "GitHub Actions",
+          "level": 78
+        },
+        {
+          "name": "Jenkins",
+          "level": 74
+        },
+        {
+          "name": "GitLab CI",
+          "level": 72
         },
         {
           "name": "Terraform / Ansible",
+          "level": 70
+        },
+        {
+          "name": "Helm",
+          "level": 66
+        },
+        {
+          "name": "Grafana / Prometheus",
           "level": 66
         },
         {
           "name": "Cloudflare Workers",
           "level": 64
+        },
+        {
+          "name": "AWS",
+          "level": 56
+        }
+      ]
+    },
+    {
+      "group": "AI/ML & Tools",
+      "items": [
+        {
+          "name": "Git",
+          "level": 88
+        },
+        {
+          "name": "LLM agents & tool calling",
+          "level": 80
+        },
+        {
+          "name": "Cargo",
+          "level": 80
+        },
+        {
+          "name": "Ollama",
+          "level": 70
+        },
+        {
+          "name": "PyTorch",
+          "level": 64
+        },
+        {
+          "name": "scikit-learn",
+          "level": 60
+        },
+        {
+          "name": "CMake",
+          "level": 50
         }
       ]
     }

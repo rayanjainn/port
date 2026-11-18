@@ -8,7 +8,7 @@ import { AnimatePresence, motion } from "framer-motion"
 import { useContent, type Portfolio } from "@/lib/content"
 import { SITE_ANCHORS, projectHref } from "@/lib/quick/data"
 import { Github, Linkedin, XLogo } from "@/components/icons"
-import { Search, Gamepad2, Download, Mail, Copy, CornerDownLeft, Globe, Hash, FolderOpen, Check, X } from "lucide-react"
+import { Search, Gamepad2, Download, Mail, Copy, CornerDownLeft, Globe, Hash, FolderOpen, Check, X, Code, Trophy } from "lucide-react"
 import { scrollToAnchor, setScrollLocked } from "./fx"
 
 type Group = "Go to" | "Projects" | "Actions" | "Elsewhere"
@@ -90,7 +90,7 @@ export default function Chrome({ home, staticIds, children }: { home: boolean; s
       { id: "a-cv", group: "Actions", label: "Download résumé", hint: "Print to PDF", icon: <Download size={16} />, keywords: "resume cv pdf print", run: () => { window.setTimeout(() => printResume(c.profile.name), 120) } },
       { id: "a-play", group: "Actions", label: "Play the world", hint: "Pixel-art village", icon: <Gamepad2 size={16} />, keywords: "game village rpg home", run: () => router.push("/") },
     )
-    const soc: [string, string, ReactNode][] = [["GitHub", c.socials.github, <Github key="g" size={16} />], ["LinkedIn", c.socials.linkedin, <Linkedin key="l" size={16} />], ["X", c.socials.twitter, <XLogo key="x" size={14} />], ["Website", c.socials.website, <Globe key="w" size={16} />]]
+    const soc: [string, string, ReactNode][] = [["GitHub", c.socials.github, <Github key="g" size={16} />], ["LinkedIn", c.socials.linkedin, <Linkedin key="l" size={16} />], ["X", c.socials.twitter, <XLogo key="x" size={14} />], ["Website", c.socials.website, <Globe key="w" size={16} />], ["LeetCode", c.socials.leetcode ?? "", <Code key="lc" size={16} />], ["Codeforces", c.socials.codeforces ?? "", <Trophy key="cf" size={16} />]]
     soc.forEach(([label, url, icon]) => { if (url) list.push({ id: `e-${label}`, group: "Elsewhere", label, hint: url.replace(/^https?:\/\/(www\.)?/, ""), icon, keywords: "social profile link", run: () => window.open(url, "_blank", "noopener") }) })
     return list
   }, [c, home, go, router, staticIds, say])

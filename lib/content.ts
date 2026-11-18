@@ -109,6 +109,8 @@ export interface Portfolio {
     linkedin: string
     twitter: string
     website: string
+    leetcode?: string
+    codeforces?: string
   }
   projects: Project[]
   experience: Experience[]

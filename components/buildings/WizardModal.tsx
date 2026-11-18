@@ -5,7 +5,7 @@ import { playSound } from "@/lib/audio"
 import { useSection, useWorldTheme } from "@/lib/theme"
 import { SectionHeader, Card } from "./ui"
 import { Button, Well } from "@/components/ui/kit"
-import { Wand2, Mail, Globe, Send, Copy, Check, Sparkles } from "lucide-react"
+import { Wand2, Mail, Globe, Send, Copy, Check, Sparkles, Code, Trophy } from "lucide-react"
 import { Github, Linkedin, XLogo } from "@/components/icons"
 
 export default function WizardModal() {
@@ -23,6 +23,8 @@ export default function WizardModal() {
     { icon: <Linkedin size={20} />, label: "LinkedIn", value: socials.linkedin.replace(/^https?:\/\/(www\.)?/, ""), href: socials.linkedin, col: "#0a66c2" },
     { icon: <XLogo size={18} />, label: "X / Twitter", value: socials.twitter.replace(/^https?:\/\/(www\.)?(twitter|x)\.com\//, "@"), href: socials.twitter, col: "#2b2b33" },
     { icon: <Globe size={20} />, label: "Website", value: socials.website.replace(/^https?:\/\//, ""), href: socials.website, col: "#2a8a80" },
+    { icon: <Code size={20} />, label: "LeetCode", value: (socials.leetcode ?? "").replace(/^https?:\/\/(www\.)?leetcode\.com\/u\//, "@").replace(/\/$/, ""), href: socials.leetcode ?? "", col: "#b8741a" },
+    { icon: <Trophy size={20} />, label: "Codeforces", value: (socials.codeforces ?? "").replace(/^https?:\/\/(www\.)?codeforces\.com\/profile\//, "@"), href: socials.codeforces ?? "", col: "#1f6fb2" },
   ].filter((c) => c.href)
 
   const copy = async () => {

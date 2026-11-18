@@ -179,6 +179,8 @@ function SocialsTab({ data, set }: { data: Portfolio; set: SetFn }) {
         <Field label="LinkedIn"><Text value={s.linkedin} onChange={(v) => up({ linkedin: v })} /></Field>
         <Field label="X / Twitter"><Text value={s.twitter} onChange={(v) => up({ twitter: v })} /></Field>
         <Field label="Website"><Text value={s.website} onChange={(v) => up({ website: v })} /></Field>
+        <Field label="LeetCode"><Text value={s.leetcode ?? ""} onChange={(v) => up({ leetcode: v })} /></Field>
+        <Field label="Codeforces"><Text value={s.codeforces ?? ""} onChange={(v) => up({ codeforces: v })} /></Field>
         <Field label="GitHub username" hint="used to import repos"><Text value={data.meta.githubUsername} onChange={(v) => set("meta", { ...data.meta, githubUsername: v })} /></Field>
       </Card>
     </>

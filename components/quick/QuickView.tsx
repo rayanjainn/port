@@ -5,7 +5,7 @@ import dynamic from "next/dynamic"
 import { useContent, type Project } from "@/lib/content"
 import { STATIC_IDS, TIERS, projectHref, projectsUsing, tierOf, type Tier } from "@/lib/quick/data"
 import { Github, Linkedin, XLogo } from "@/components/icons"
-import { ArrowUpRight, ArrowDown, Mail, MapPin, Copy, Check, Globe, Clock, Gamepad2, Download, X, Command } from "lucide-react"
+import { ArrowUpRight, ArrowDown, Mail, MapPin, Copy, Check, Globe, Clock, Gamepad2, Download, X, Command, Code, Trophy } from "lucide-react"
 import { SmoothScroll, ScrollProgress, Reveal, Scramble, CountUp, Marquee, LocalClock, Terminal, scrollToAnchor } from "./fx"
 import Chrome, { printResume } from "./Chrome"
 import ProjectArt from "./ProjectArt"
@@ -54,6 +54,8 @@ function Page({ stats }: { stats: QuickStats }) {
     { href: s.linkedin, label: "LinkedIn", icon: <Linkedin size={18} /> },
     { href: s.twitter, label: "X", icon: <XLogo size={16} /> },
     { href: s.website, label: "Website", icon: <Globe size={18} /> },
+    { href: s.leetcode ?? "", label: "LeetCode", icon: <Code size={18} /> },
+    { href: s.codeforces ?? "", label: "Codeforces", icon: <Trophy size={18} /> },
   ].filter((x) => x.href)
 
   const matching = useMemo(() => (filter ? new Set(projectsUsing(filter, c.projects).map((x) => x.id)) : null), [filter, c.projects])
