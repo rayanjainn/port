@@ -57,7 +57,7 @@ interface GameStore {
   mapOpen: boolean
   dialog: DialogState | null
   arcade: string | null
-  areaTitle: { title: string; sub: string; key: number } | null
+  areaTitle: { title: string; sub: string; key: number; interior?: boolean } | null
   sceneId: string
   view: ViewMode
   world: string
@@ -85,7 +85,7 @@ interface GameStore {
   setMapOpen: (v: boolean) => void
   say: (d: DialogState | null) => void
   openArcade: (id: string | null) => void
-  showArea: (title: string, sub: string) => void
+  showArea: (title: string, sub: string, interior?: boolean) => void
   setScene: (id: string) => void
   markVisited: (id: string) => void
 }
@@ -178,6 +178,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setMapOpen: (v) => set({ mapOpen: v }),
   say: (d) => set({ dialog: d }),
   openArcade: (id) => set({ arcade: id, phase: id ? "building" : "playing", mapOpen: false }),
-  showArea: (title, sub) => set({ areaTitle: { title, sub, key: Date.now() } }),
+  showArea: (title, sub, interior) => set({ areaTitle: { title, sub, key: Date.now(), interior: !!interior } }),
   setScene: (id) => set({ sceneId: id }),
 }))

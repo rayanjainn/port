@@ -6,6 +6,8 @@ export interface Project {
   id: string
   repo: string
   title: string
+  /** Optional short display name for plaques and signs */
+  short?: string
   tagline: string
   description: string
   highlights: string[]
