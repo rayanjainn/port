@@ -1,19 +1,11 @@
 // Hearthvale village rooms: Town Hall, Tavern, Forge, Academy and Raven Post, built with the shared room kit in the
 // village's own warm wood-and-parchment look (Ninja Adventure floor and prop tiles plus painted wall pieces).
 import type { Portfolio } from "@/lib/content"
-import { CHARS, animalSheet } from "@/lib/na"
-import { drawText, drawMicro, fitTitle, textW, microW, wrapMicro } from "./exhibits"
+import { CHARS } from "@/lib/na"
+import { drawText, fitTitle, wrapMicro } from "./exhibits"
 import { TS, type Scene } from "./core"
-import { makeRoom, npc, pen, shadow, shade, strip, type Room, type Pen } from "./interiors-kit"
-import {
-  INK, WOOD, WOOD_D, WOOD_L, WOOD_LL, PARCH, PARCH_D, PARCH_DD, GOLD, GOLD_D, RED, RED_D, TEAL,
-  villageTheme, prop, text, rug, flame, lanternStrip, candelabra, candle, banner, framedPage, plankSign, windowEvening,
-} from "./interiors-village-kit"
-
-const lanternLight = (R: Room, cx: number, top: number, r = 64) => {
-  R.wall(lanternStrip(), cx, top, { anim: { frames: 3, fps: 4, dx: 16 } })
-  R.light(cx, top + 18, r, "255,200,110", 1)
-}
+import { makeRoom, npc, pen, shadow, shade } from "./interiors-kit"
+import { INK, WOOD, WOOD_D, WOOD_L, WOOD_LL, PARCH, PARCH_DD, GOLD, GOLD_D, RED, RED_D, villageTheme, prop, text, rug, candelabra, candle, banner, framedPage } from "./interiors-village-kit"
 
 // ── TOWN HALL ───────────────────────────────────────────────────
 function villageMap(): HTMLCanvasElement {
@@ -172,7 +164,3 @@ export function buildTownHall(content: Portfolio): Scene {
 
 const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]
 function stamp(s: string) { const m = /([A-Za-z]{3})[a-z]*\s+(\d{4})/.exec(s); return m ? +m[2] * 12 + Math.max(0, MONTHS.indexOf(m[1].toLowerCase())) : 0 }
-
-// silence unused imports until the remaining rooms are built
-void [animalSheet, strip, drawText, drawMicro, textW, microW, WOOD, WOOD_D, WOOD_L, WOOD_LL, PARCH, PARCH_D, PARCH_DD, GOLD_D, TEAL, INK, flame, plankSign, windowEvening, lanternLight, TS]
-export type { Pen }

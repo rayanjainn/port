@@ -3,6 +3,7 @@ import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalShe
 import type { Portfolio } from "@/lib/content"
 import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
 import { buildTownHall } from "./interiors-village"
+import { buildTavern } from "./interiors-village-tavern"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -252,29 +253,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
     out.gallery = R.finish({ dark: 0.5 })
   }
 
-  // ── TAVERN ──────────────────────────────────────────────────
-  {
-    const R = room("tavern", "Tavern", { w: 15, h: 11, wall: "brown", floor: "wood" })
-    R.put("longTable", 2, 3); R.put("longTable", 5, 3)
-    R.put("barrel", 1, 1); R.put("barrel", 2, 1); R.put("jar", 3, 1); R.put("pot", 4, 1); R.put("crate", 7, 1)
-    R.put("redSign", 10, 1)
-    R.put("redTable", 4, 6); R.put("stool", 3, 6, undefined, false); R.put("stool", 5, 6, undefined, false)
-    R.put("redTable", 10, 6); R.put("stool", 9, 6, undefined, false); R.put("stool", 11, 6, undefined, false)
-    R.put("redTable", 7, 8); R.put("stool", 6, 8, undefined, false); R.put("stool", 8, 8, undefined, false)
-    R.put("candles", 4, 5, undefined, false); R.put("candles", 10, 5, undefined, false)
-    R.put("barrel", 13, 8); R.put("barrel", 13, 9)
-    R.actors.push({ id: "dog", kind: "animal", sheet: animalSheet("dog"), x: 8 * TS, y: 9 * TS, wander: 30, speed: 12 })
-    R.actors.push(npc(CHARS.barkeep, 4 * TS + 8, 2 * TS + 14, {
-      id: "barkeep", name: "Barkeep Taro",
-      lines: [`Pull up a stool, friend!`, `Folks here swap tales of ${first}'s past quests.`, `The quest board on the wall has them all.`],
-      action: { type: "section", id: "tavern" },
-    }))
-    R.actors.push(npc("Villager2", 3 * TS + 8, 6 * TS + 14, { id: "patron1", facing: "right", bark: ["Another round!"] }))
-    R.actors.push(npc("Monk", 11 * TS + 8, 6 * TS + 14, { id: "patron2", facing: "left", bark: ["Heard about the hackathons?"] }))
-    R.spot("board", 10 * TS + 8, 2 * TS + 12, "READ QUEST BOARD", { type: "section", id: "tavern" }, true, 10 * TS + 8, TS - 6)
-    for (const [x, y] of [[4, 5], [10, 5]]) R.lights.push({ x: x * TS + 8, y: y * TS + 4, r: 56, color: "255,180,90", flicker: 1 })
-    out.tavern = R.finish({ dark: 0.35 })
-  }
+  out.tavern = buildTavern(content)
 
   // ── FORGE ───────────────────────────────────────────────────
   {

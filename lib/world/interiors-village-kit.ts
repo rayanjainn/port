@@ -21,7 +21,6 @@ const FLOORS: Record<string, Rect[]> = {
   dark: [[208, 208, 16, 16], [272, 224, 16, 16]],
   green: [[192, 112, 16, 16]],
 }
-const WOODFLOOR: Rect[] = [[80, 208, 16, 16], [96, 208, 16, 16], [112, 208, 16, 16]]
 
 export type WallKind = "plaster" | "plank" | "stone"
 export interface VillageThemeOpts {
@@ -46,8 +45,22 @@ export function villageTheme(o: VillageThemeOpts): Theme {
     bg: "#0d0b14", dark: o.dark ?? 0.3, music: o.music ?? "chill", mat: o.mat ?? ["#7a3b2a", "#b5583c"],
     lighting: { tint: o.tint ?? "40,16,4", glow: o.glow ?? 0.3, holeStrength: 0.8, heroRadius: 70, radiusScale: 1 },
     floor: (g, x, y, c, r) => {
-      const rects = o.floor === "wood" ? WOODFLOOR : FLOORS[o.floor]
-      blit(g, sheet(o.floor === "wood" ? "water" : "ifloor"), rects[Math.floor(hash(c, r, 4) * rects.length)], x, y)
+      if (o.floor === "wood") {
+        // two staggered rows of planks per tile, warm and low-contrast
+        for (let half = 0; half < 2; half++) {
+          const py = y + half * 8, tone = hash(c, r * 2 + half, 11)
+          g.fillStyle = tone > 0.66 ? "#a8703c" : tone > 0.33 ? "#9c6634" : "#a46c3a"; g.fillRect(x, py, TS, 8)
+          g.fillStyle = "rgba(255,214,150,.14)"; g.fillRect(x, py, TS, 1)
+          g.fillStyle = "rgba(50,22,6,.55)"; g.fillRect(x, py + 7, TS, 1)
+          const jx = x + ((c * 5 + r * 3 + half * 7) % 3) * 5 + 3
+          g.fillStyle = "rgba(50,22,6,.5)"; g.fillRect(jx, py, 1, 7)
+          if (tone > 0.8) { g.fillStyle = "rgba(60,28,8,.4)"; g.fillRect(x + 9, py + 3, 3, 2); g.fillStyle = "rgba(255,214,150,.18)"; g.fillRect(x + 9, py + 2, 3, 1) }
+          g.fillStyle = "rgba(40,18,4,.5)"; g.fillRect(jx + 1, py + 1, 1, 1); g.fillRect(jx - 2, py + 5, 1, 1)
+        }
+        return
+      }
+      const rects = FLOORS[o.floor]
+      blit(g, sheet("ifloor"), rects[Math.floor(hash(c, r, 4) * rects.length)], x, y)
     },
     back: (g, w, h) => {
       g.fillStyle = base; g.fillRect(0, 0, w, h)
