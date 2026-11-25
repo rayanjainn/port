@@ -4,6 +4,7 @@ import type { Portfolio } from "@/lib/content"
 import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
 import { buildTownHall } from "./interiors-village"
 import { buildTavern } from "./interiors-village-tavern"
+import { buildForge } from "./interiors-village-forge"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -255,42 +256,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
 
   out.tavern = buildTavern(content)
 
-  // ── FORGE ───────────────────────────────────────────────────
-  {
-    // one rack per skill group, 4 tiles apart; the room widens to fit them all
-    const R = room("forge", "Forge", { w: Math.max(13, content.skills.length * 4 + 3), h: 10, wall: "brown", floor: "dark" })
-    R.put("oven", 2, 1); R.put("oven", 3, 1); R.put("cauldron", 9, 1); R.put("logs", 10, 1); R.put("crate", 11, 1)
-    R.put("brazier", 3, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
-    // a wide forge (one rack per skill group) gets a second work bay so the back wall is not bare
-    const FW = Math.max(13, content.skills.length * 4 + 3)
-    if (FW > 16) {
-      const m = Math.floor(FW / 2) + 3
-      R.put("oven", m, 1); R.put("oven", m + 1, 1); R.put("cauldron", FW - 4, 1); R.put("logs", FW - 3, 1)
-      R.put("brazier", m + 1, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
-      R.lights.push({ x: (m + 1) * TS + 8, y: 3 * TS + 6, r: 110, color: "255,120,50", flicker: 1.5 })
-    }
-    const groups = content.skills
-    const RACKS: [string, number, number][][] = [
-      [["Katana", 6, 14], ["Sword", 6, 17], ["Rapier", 10, 15]],
-      [["Hammer", 9, 16], ["Axe", 11, 13], ["Sai", 7, 13]],
-      [["Lance", 6, 23], ["Pickaxe", 11, 13], ["BigSword", 7, 16]],
-    ]
-    groups.forEach((gr, i) => {
-      const c = 2 + i * 4
-      const rack = R.put("stall", c - 1, 5, undefined, true)
-      RACKS[i % RACKS.length].forEach(([name, ww, wh], k) => {
-        R.sprites.push({ kind: "sprite", src: img(`/na/weapons/${name}.png`), rect: [0, 0, ww, wh], x: (c - 1) * TS + 12 + k * 11 - ww / 2 + 3, y: 5 * TS + 22 - wh, baseY: rack.baseY + 1 })
-      })
-      R.spot(`skills-${i}`, c * TS + 8, 7 * TS + 6, `INSPECT ${gr.group.toUpperCase()}`, { type: "section", id: "forge", focus: gr.group }, true, c * TS + 8, 5 * TS - 4)
-    })
-    R.actors.push(npc(CHARS.smith, 6 * TS + 8, 2 * TS + 12, {
-      id: "smith", name: "Smith Kenji",
-      lines: [`Hot work in here!`, `These racks hold ${first}'s weapons of choice.`, `Rust, TypeScript, Kubernetes... all tempered by shipping.`],
-      action: { type: "section", id: "forge" },
-    }))
-    R.lights.push({ x: 3 * TS + 8, y: 3 * TS + 6, r: 110, color: "255,120,50", flicker: 1.5 }, { x: 3 * TS, y: 2 * TS, r: 60, color: "255,150,60", flicker: 1 })
-    out.forge = R.finish({ dark: 0.5 })
-  }
+  out.forge = buildForge(content)
 
   // ── ACADEMY ─────────────────────────────────────────────────
   {
