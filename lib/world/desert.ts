@@ -4,7 +4,7 @@ import {
   SAND_BASE, MUD_BASE, MESA, DESERT_ART, DESERT_PROPS as DP, TAN_ROCKS, type Rect, type Autotile,
 } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
-import { ordered, stele, canopy } from "./exhibits"
+import { ordered, stele } from "./exhibits"
 import { TS, G, img, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type SceneSign, type Landmark } from "./core"
 
 export const DW = 84
@@ -732,7 +732,7 @@ function build(w: World, content?: Portfolio) {
     const X0 = gl.x, Y0 = gl.y
     // sandstone paving down the middle, a gold line inlaid
     w.ops.push({ z: 28, fn: (g) => {
-      const x0 = X0 - 26, y0 = Y0, len = 330
+      const x0 = X0 - 26, y0 = Y0, len = 120
       g.fillStyle = "#8a5e34"; g.fillRect(x0 - 2, y0, 56, len)
       for (let yy = 0; yy < len; yy += 8) for (let xx = 0; xx < 52; xx += 13) {
         const o = (yy / 8) % 2 ? 6 : 0
@@ -750,40 +750,33 @@ function build(w: World, content?: Portfolio) {
         if (!inb(c, r) || w.blocked[idx(c, r)] || w.water[idx(c, r)] || w.mesa[idx(c, r)] || w.bed[idx(c, r)] || w.reserved[idx(c, r)]) return false
       return true
     }
-    // slots: staggered rows below the door, nearest the aisle first
-    const slots: { cx: number; fy: number }[] = []
-    for (let k = 0; k < 8; k++) {
-      const fy = Y0 + 64 + k * 62, offs = (k % 2 ? [-84, 84, -152, 152, -220, 220, -288, 288, -356, 356, -424, 424] : [-50, 50, -118, 118, -186, 186, -254, 254, -322, 322, -390, 390])
-      for (const o of offs) slots.push({ cx: X0 + o, fy })
-    }
-    let placed = 0
+    // two featured steles flank the door as a teaser; everything else lives inside the Hall
     const torch = (x: number, y: number) => {
       w.spr(elem, PROPS.brazier.rect, x - 8, y - 16, { baseY: y, glow: { x: 8, y: 6, r: 40, color: "255,150,60" }, solid: { x: x - 6, y: y - 6, w: 12, h: 6 } })
       w.lamp(x, y - 12, 56, "255,160,70", 1.4)
     }
-    for (const sl of slots) {
-      if (placed >= projects.length) break
-      const p = projects[placed]
-      const great = !!p.featured
-      const cv = stele(p, great ? "great" : "tablet", 0.75)
-      if (!slotFree(sl.cx, sl.fy, cv.width - 8)) continue
-      placed++
-      const x = Math.round(sl.cx - cv.width / 2), y = sl.fy - cv.height
-      w.spr(cv, [0, 0, cv.width, cv.height], x, y, { baseY: sl.fy, solid: { x: x + 6, y: sl.fy - 10, w: cv.width - 12, h: 10 } })
-      rect(Math.floor((x + 4) / TS), Math.floor((sl.fy - 14) / TS), Math.floor((x + cv.width - 4) / TS), Math.floor(sl.fy / TS) + 1)
-      w.hotspots.push({ id: `relic-${p.id}`, box: { x: sl.cx - 22, y: sl.fy - 2, w: 44, h: 20 }, label: `VIEW ${p.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: p.id }, marker: true, markerX: sl.cx, markerY: y - 4 })
-      w.lamp(sl.cx, sl.fy - cv.height * 0.55, great ? 66 : 54, great ? "255,206,120" : "255,190,110", 0.8)
-      if (!great && placed % 3 === 0) {
-        const cn = canopy(cv.width + 14, p.accent)
-        w.spr(cn, [0, 0, cn.width, cn.height], x - 7, y - 24, { baseY: sl.fy + 2 })
-        torch(x - 10, sl.fy + 4); torch(x + cv.width + 10, sl.fy + 4)
-      } else if (great && placed % 2 === 1) { torch(x + cv.width + 6, sl.fy + 2) }
-    }
-    if (placed < projects.length) {
-      const left = projects.length - placed
-      const sx = X0 + 40, sy = Y0 + 20
-      w.hotspots.push({ id: "relic-more", box: { x: sx - 16, y: sy - 2, w: 32, h: 20 }, label: "READ THE PLAQUE", action: { type: "sign", lines: [`${left} more relic${left > 1 ? "s" : ""} rest inside the Hall.`, "Step through the glowing door to see every project."] }, marker: true, markerX: sx, markerY: sy - 28 })
-      w.spr(elem, PROPS.redSign.rect, sx - 8, sy - 12, { baseY: sy + 4, solid: { x: sx - 6, y: sy, w: 12, h: 4 } })
+    const teaser = projects.filter((p) => p.featured).slice(0, 2)
+    teaser.forEach((p, i) => {
+      const cv = stele(p, "great", 0.75)
+      const cx = X0 + (i ? 62 : -62), fy = Y0 + 70
+      if (!slotFree(cx, fy, cv.width - 8)) return
+      const x = Math.round(cx - cv.width / 2), y = fy - cv.height
+      w.spr(cv, [0, 0, cv.width, cv.height], x, y, { baseY: fy, solid: { x: x + 6, y: fy - 10, w: cv.width - 12, h: 10 } })
+      rect(Math.floor((x + 4) / TS), Math.floor((fy - 14) / TS), Math.floor((x + cv.width - 4) / TS), Math.floor(fy / TS) + 1)
+      w.hotspots.push({ id: `relic-${p.id}`, box: { x: cx - 22, y: fy - 2, w: 44, h: 20 }, label: `VIEW ${p.title.toUpperCase()}`, action: { type: "section", id: "gallery", focus: p.id }, marker: true, markerX: cx, markerY: y - 4 })
+      w.lamp(cx, fy - cv.height * 0.55, 66, "255,206,120", 0.8)
+    })
+    // the way in: a sign on the path, braziers lining the aisle
+    const sx = X0 + 34, sy = Y0 + 96
+    w.hotspots.push({ id: "relic-more", box: { x: sx - 16, y: sy - 2, w: 32, h: 20 }, label: "READ THE PLAQUE", action: { type: "sign", lines: [`All ${projects.length} projects rest inside the Hall.`, "Step through the glowing door to see every one."] }, marker: true, markerX: sx, markerY: sy - 28 })
+    w.spr(elem, PROPS.redSign.rect, sx - 8, sy - 12, { baseY: sy + 4, solid: { x: sx - 6, y: sy, w: 12, h: 4 } })
+    for (const [dx, dy] of [[-30, 140], [30, 140], [-30, 230], [30, 230]]) torch(X0 + dx, Y0 + dy)
+    // ordinary desert scenery where the avenue used to be
+    const scenery: [string, number, number][] = [["palm", -130, 120], ["palm", 130, 125], ["palm", -190, 210], ["palm", 190, 215], ["palm", -100, 300], ["palm", 105, 300], ["stall", -110, 205], ["stall", 120, 200], ["palm", -230, 120], ["palm", 235, 130]]
+    for (const [k, dx, dy] of scenery) {
+      const c = Math.floor((X0 + dx) / TS), r = Math.floor((Y0 + dy) / TS)
+      if (!slotFree(c * TS + 8, r * TS + 14, 28)) continue
+      if (k === "palm") palm(c, r); else w.spr(desertImg, dx < 0 ? DP.stallBlue : DP.stallYellow, c * TS, r * TS, { baseY: r * TS + 31, flip: dx > 0, solid: { x: c * TS + 2, y: r * TS + 22, w: 28, h: 8 } })
     }
   }
 

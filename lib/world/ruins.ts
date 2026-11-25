@@ -4,7 +4,7 @@ import {
   charSheet, charFace, monsterSheet, animalSheet, type Rect, type Autotile,
 } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
-import { ordered, memoryPane, memoryTome, FRAME_PRELOAD } from "./exhibits"
+import { ordered, memoryPane, FRAME_PRELOAD } from "./exhibits"
 import { TS, G, img, sheet, blit, hash, mulberry, autotile, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light, type Box, type SceneSign, type Landmark } from "./core"
 
 export const RW = 80
@@ -814,11 +814,22 @@ export function buildRuins(content?: Portfolio): Scene {
       }
       return n
     }
-    const feat = projects.filter((q) => q.featured)
-    const placedF = place(44, 80, 64, 0.7, feat.length, (i, k) => memoryPane(projects[i], 4, k), 0, "130,255,225", true)
-    const restN = projects.length - feat.length
-    const placedR = place(30, 56, 52, 0.65, restN, (i, k) => memoryTome(projects[i], 3, k), feat.length, "140,220,255", false)
-    const missing = projects.length - placedF - placedR
+    // only two glowing panes flank the crypt door as a teaser; every project lives inside the Vault
+    const feat = projects.filter((q) => q.featured).slice(0, 2)
+    place(44, 80, 64, 0.7, feat.length, (i, k) => memoryPane(projects[i], 4, k), 0, "130,255,225", true)
+    // refill the rest of the yard with ordinary graveyard scenery
+    let extra = 0
+    for (const [x0, x1, y0, y1] of regions) {
+      for (const sl of lattice(x0, x1, y0, y1, 56, 48)) {
+        if (extra >= 36) break
+        if (hash(sl.cx, sl.fy, 61) < 0.45 || !free(sl.cx, sl.fy, 18)) continue
+        if (vis.some((b) => sl.cx > b.x - 8 && sl.cx < b.x + b.w + 8 && sl.fy > b.y && sl.fy < b.y + b.h + 8)) continue
+        const bx = { x: sl.cx - 7, y: sl.fy - 6, w: 14, h: 6 }
+        prop(["grave", "stoneA", "stoneB"][extra % 3], sl.cx - 8, sl.fy - 16, {})
+        solids.push(bx); extra++
+      }
+    }
+    const missing = 0
     live.push(...sprites.slice(before))
     if (dropped.size) { for (const arr of [sprites, live]) { for (let i = arr.length - 1; i >= 0; i--) if (dropped.has(arr[i])) arr.splice(i, 1) } }
     if (missing > 0) {

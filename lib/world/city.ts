@@ -1086,6 +1086,7 @@ export function buildCity(content?: Portfolio): Scene {
   const projects: ExProject[] = ordered((content?.projects ?? []).length ? content!.projects : stubs)
   const hexRgb = (h: string) => { const n = parseInt(h.slice(1), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}` }
   const mix = (h: string, k: number, to = 0) => { const n = parseInt(h.slice(1), 16); const f = (v: number) => Math.round(v + (to - v) * k); return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})` }
+  const feats: ExProject[] = projects.filter((q) => q.featured).length ? projects.filter((q) => q.featured) : projects
   const pitchOf = (p: { id: string; tagline: string }): [string, string] => PITCH[p.id] ?? [p.tagline.toUpperCase().slice(0, 15), p.tagline.toUpperCase().slice(15, 30).trim()]
 
   /** a project poster board: accent field, bitmap title, two lines of pitch */
@@ -1123,26 +1124,10 @@ export function buildCity(content?: Portfolio): Scene {
     markOcc(Math.floor((fx - 38) / TS), Math.floor((fy - 8) / TS), Math.floor((fx + 38) / TS) + 1, Math.floor(fy / TS) + 1)
     focusSpot(`ad-${p.id}-${Math.round(fx)}`, p, fx, fy - 20, 44, true, fy - h - legs - 6)
   }
-  /** billboard standing on a roof line: drawn just over its building */
-  const roofBoard = (bid: string, pi: number) => {
-    const b = BUILDINGS.find((q) => q.id === bid)!
-    const p = projects[pi % projects.length]
-    const bb = billboard(p)
-    const w = bb.width, h = bb.height
-    const cx = (b.c + b.w / 2) * TS, top = (b.bottom - b.rr - b.fr) * TS
-    const cv = mk(w, h + 10, (s) => {
-      s.fillStyle = "#2b2f36"; s.fillRect(8, h, 3, 10); s.fillRect(w - 11, h, 3, 10); s.fillRect(8, h + 4, w - 19, 2)
-      s.drawImage(bb, 0, 0)
-    })
-    const x = Math.round(cx - w / 2), y = top + 12 - (h + 10)
-    spr(cv, x, y, b.bottom * TS + 1)
-    glowSprite(bb, x, y, hexRgb(p.accent), 8)
-    lights.push({ x: cx, y: y + 20, r: 52, color: hexRgb(p.accent) })
-  }
   /** an LED wall: cycles through projects, pixel-grid overlay, glows at night */
   const ledScreens: ((t: number) => void)[] = []
   const ledScreen = (x: number, y: number, baseY: number, picks: number[], period = 3.2, pole = true) => {
-    const ps = picks.map((i) => projects[i % projects.length])
+    const ps = picks.map((i) => feats[i % feats.length])
     const first = billboard(ps[0])
     const w = first.width, h = first.height
     const cv = mk(w, h, () => undefined)
@@ -1356,11 +1341,11 @@ export function buildCity(content?: Portfolio): Scene {
   }
 
   // ── billboards that sell the work ──
-  ground(projects[0], 10 * TS + 8, 16 * TS + 15)
-  ground(projects[1 % projects.length], 70 * TS, 16 * TS + 15)
-  ground(projects[2 % projects.length], 20 * TS, 35 * TS + 14)
-  ground(projects[3 % projects.length], 68 * TS, 35 * TS + 14)
-  roofBoard("w2", 4); roofBoard("post", 6); roofBoard("harbour", 8); roofBoard("r3", 9); roofBoard("h-r", 10)
+  // street ads are part of a city, but only for the featured work: four boards plus the LED screens. The full list lives in the Project Studio.
+  ground(feats[0], 10 * TS + 8, 16 * TS + 15)
+  ground(feats[1 % feats.length], 70 * TS, 16 * TS + 15)
+  ground(feats[2 % feats.length], 20 * TS, 35 * TS + 14)
+  ground(feats[3 % feats.length], 68 * TS, 35 * TS + 14)
   const b3 = BUILDINGS.find((q) => q.id === "h-l")!, b2 = BUILDINGS.find((q) => q.id === "t4")!
   ledScreen(Math.round((b3.c + b3.w / 2) * TS - 36), (b3.bottom - b3.rr - b3.fr) * TS + 12 - 58, b3.bottom * TS + 1, [5, 0, 2], 3.4, false)
   ledScreen(Math.round((b2.c + b2.w / 2) * TS - 36), (b2.bottom - b2.rr - b2.fr) * TS + 12 - 58, b2.bottom * TS + 1, [7, 1, 3], 3.8, false)
@@ -1368,7 +1353,7 @@ export function buildCity(content?: Portfolio): Scene {
   // ── Project Studio: glass storefront with the featured work boxed up on shelves ──
   {
     const st = BUILDINGS.find((q) => q.id === "studio")!
-    const feat = projects.slice(0, Math.min(6, projects.length))
+    const feat = feats.slice(0, Math.min(3, feats.length))
     const wh = 44
     const y0 = st.bottom * TS - 2 - wh
     const box = (p: ExProject, bw: number, bh: number) => mk(bw, bh, (s) => {
@@ -1379,7 +1364,7 @@ export function buildCity(content?: Portfolio): Scene {
       s.fillStyle = lid; s.fillRect(1, 1, bw - 2, 1)
       s.drawImage(projectIcon(p), Math.floor((bw - 12) / 2), Math.floor((bh - 12) / 2) - (bh > 15 ? 1 : 0))
     })
-    for (let side = 0; side < 2; side++) {
+    for (let side = 0; side < 1; side++) {
       const big = feat.slice(side * 3, side * 3 + 3)
       if (!big.length) continue
       const wx = (st.c + (side ? 6 : 1)) * TS, ww = 48
@@ -1416,7 +1401,7 @@ export function buildCity(content?: Portfolio): Scene {
   // a live ticker over the court: cycles through the whole portfolio
   {
     const fx = 83 * TS + 8, fy = 16 * TS + 4
-    ledScreen(fx - 36, fy - 16 - 48, fy, projects.map((_, i) => i), 4)
+    ledScreen(fx - 36, fy - 16 - 48, fy, feats.map((_, i) => i), 4)
   }
 
   // ── more neon, in more colours ──
