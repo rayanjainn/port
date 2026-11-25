@@ -1,3 +1,4 @@
+@import "./art-cards.css";
 /* World-specific layouts for the section cards (markup in components/art/Variants.tsx). */
 .station-t { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
