@@ -94,7 +94,7 @@ html[data-world="ruins"] .cs-flame-r { right: -53px; animation-delay: -1.1s; }
 /* reset leftovers from the earlier CSS-only ribbons */
 html[data-world] .k-ribbon::before, html[data-world] .k-ribbon::after { content: none; }
 html[data-world="city"] .toast-kick { background: #ff4fa3; color: #190619; box-shadow: 0 0 0 2px #05040f, 0 0 12px #ff4fa3; text-shadow: none; }
-html[data-world="desert"] .toast-kick { background: linear-gradient(180deg, #d8683a, #a8381a); }
+html[data-world="desert"] .toast-kick { background: linear-gradient(180deg, #b9461f, #86290f); }
 html[data-world="ruins"] .toast-kick { background: linear-gradient(180deg, #8a6ae0, #5a3cb0); color: #f4eeff; box-shadow: 0 0 0 2px #050c0e, 0 0 12px #9a7be0; }
 
 html[data-world="village"], html:not([data-world]) {
