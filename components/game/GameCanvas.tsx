@@ -612,8 +612,12 @@ export default function GameCanvas() {
       tx = sw <= vw ? (sw - vw) / 2 : Math.max(0, Math.min(sw - vw, tx))
       ty = sh <= vh ? (sh - vh) / 2 - 6 : Math.max(0, Math.min(sh - vh, ty))
       if (!S.cam.init) { S.cam.x = tx; S.cam.y = ty; S.cam.init = true }
-      S.cam.x += (tx - S.cam.x) * Math.min(1, dt * 8)
-      S.cam.y += (ty - S.cam.y) * Math.min(1, dt * 8)
+      // frame-rate independent damped follow (same feel at 30, 60 or 144 Hz), settling exactly instead of crawling the last pixel
+      const kf = 1 - Math.exp(-dt * 8)
+      S.cam.x += (tx - S.cam.x) * kf
+      S.cam.y += (ty - S.cam.y) * kf
+      if (Math.abs(tx - S.cam.x) < 0.02) S.cam.x = tx
+      if (Math.abs(ty - S.cam.y) < 0.02) S.cam.y = ty
       const camX = Math.round(S.cam.x), camY = Math.round(S.cam.y)
 
       // ── draw (native resolution)
