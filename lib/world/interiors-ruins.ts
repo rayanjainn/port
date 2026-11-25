@@ -417,7 +417,7 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
       R.light(cx, base - 24, 50, "140,220,255", 0.9)
       R.spot(`art-${p.id}`, cx, base + 14, `RECALL ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - m.h - 6)
     })
-    for (const x of [13.9, 17.1]) for (let r = 0; r <= rows; r++) brazier(R, x * TS, (NW + 5 + r * 5) * TS + 12, 76)
+    for (const x of [13.9, 17.1]) for (let r = 0; r <= rows; r++) brazier(R, x * TS, (NW + 7 + r * 5) * TS + 12, 76)
     for (const x of [1, 29]) { R.add(jar(VIOLET, 22), x * TS + 8, (NW + 2) * TS + 8, { anim: { frames: 4, fps: 3, dx: 14 }, solid: [10, 6] }); R.light(x * TS + 8, (NW + 2) * TS - 2, 40, "170,150,255", 0.8) }
     R.add(plant(), 15.5 * TS, (h - 2) * TS, { solid: false })
     R.actors.push(folk("hobb", "Gravekeeper Hobb", RUINS_CHARS.gravekeeper, 15 * TS + 8, (NW + 2) * TS + 4, {

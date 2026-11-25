@@ -113,7 +113,7 @@ export function fitTitle(src: string | { id?: string; title: string; short?: str
   const cands: string[] = []
   if (short) cands.push(clean(short))
   cands.push(full, ws.join(" "))
-  for (let n = 8; n >= 3; n--) {
+  for (let n = 8; n >= 4; n--) {
     const cur = [...ws]
     for (;;) {
       const i = cur.reduce((bi, w, k) => (w.length > cur[bi].length ? k : bi), 0)
@@ -122,7 +122,6 @@ export function fitTitle(src: string | { id?: string; title: string; short?: str
       cands.push(cur.join(" "))
     }
   }
-  if (ws.length > 1) cands.push(ws.map((w) => w[0]).join(""))
   const ok = cands.filter(Boolean), np = (short ? 3 : 2)
   for (const grp of [ok.slice(0, np), ok.slice(np)]) {
     for (const t of grp) if (textW(t) <= max) return { s: t, micro: false, w: textW(t) }
