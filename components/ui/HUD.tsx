@@ -29,7 +29,7 @@ export default function HUD() {
   const nextQuest = QUEST_ORDER.find((q) => !isV(q))
   const inside = sceneId !== world.scene
   const outdoor = !!engine.scenes[sceneId]?.scene.outdoor
-  const here = lms.find((b) => b.id === sceneId)
+  const here = lms.find((b) => b.id === sceneId.split(":").pop())
 
   useEffect(() => {
     let raf = 0, last = 0
