@@ -51,6 +51,17 @@ function villageMap(): HTMLCanvasElement {
   return P.c
 }
 
+/** a padded waiting bench in red leather on a wooden frame */
+function bench(w = 44): HTMLCanvasElement {
+  const P = pen(w, 22)
+  shadow(P, 2, 19, w - 4)
+  P.r(3, 13, 3, 7, INK); P.r(w - 6, 13, 3, 7, INK); P.r(4, 14, 1, 5, WOOD)
+  P.r(1, 2, w - 2, 7, INK); P.r(2, 3, w - 4, 5, "#a8382e"); P.r(2, 3, w - 4, 1, "#d85a48")                 // backrest
+  P.r(0, 9, w, 6, INK); P.r(1, 10, w - 2, 4, "#b8443a"); P.r(1, 10, w - 2, 1, "#e0685a"); P.r(1, 13, w - 2, 1, RED_D)
+  for (let x = 6; x < w - 4; x += 8) P.p(x, 5, GOLD)
+  return P.c
+}
+
 function mayorDesk(): HTMLCanvasElement {
   const W = 88, H = 34
   const P = pen(W, H)
@@ -135,6 +146,8 @@ export function buildTownHall(content: Portfolio): Scene {
   prop(R, "pottedPlant", 1, 11); prop(R, "pottedPlant", 27, 11); prop(R, "plantPot", 9, NW + 1); prop(R, "plantPot", 19, NW + 1)
   prop(R, "redTable", 4, 10); prop(R, "stool", 3, 10); prop(R, "stool", 5, 10)
   prop(R, "candles", 4, 9, { solid: false, dy: 9 })
+  R.add(bench(44), cx - 76, 12 * TS + 4, { solid: [40, 8] }); R.add(bench(44), cx + 76, 12 * TS + 4, { solid: [40, 8] })
+  for (const x of [cx - 76, cx + 76]) R.light(x, 11 * TS, 44, "255,200,130", 0.3)
   prop(R, "longTable", 23, 10); prop(R, "scrolls", 24, 10, { solid: false, dy: -5 })
   prop(R, "catStatue", 26, 8); prop(R, "dresser", 26, 10)
 
