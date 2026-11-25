@@ -68,6 +68,10 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
   const keyEl = useRef<HTMLDivElement>(null)
   const labelEl = useRef<HTMLSpanElement>(null)
   const touch = useRef(false)
+  // project exhibits: their pixel nameplates are tiny in 3D, so the nearest one gets a readable board
+  const arts = useMemo(() => sc.hotspots.filter((h) => h.id.startsWith("art-") && h.markerX !== undefined && h.markerY !== undefined), [sc])
+  const artEl = useRef<HTMLDivElement | null>(null)
+  const artT = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     touch.current = matchMedia("(pointer: coarse)").matches
@@ -109,6 +113,21 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
         el.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy + Math.sin(now * 4 + m.markerX!) * 4)}px)`
         ;(el.querySelector("[data-fill]") as SVGElement | null)?.style.setProperty("fill", S.near === m ? "var(--cv-mark-on)" : "var(--cv-mark)")
       })
+      const ae = artEl.current
+      if (ae) {
+        let best: (typeof arts)[number] | null = null, bd = 56
+        for (const h of arts) { const d = Math.hypot(S.hero.x - (h.box.x + h.box.w / 2), S.hero.y - (h.box.y + h.box.h / 2)); if (d < bd) { bd = d; best = h } }
+        if (best && !engine.paused) {
+          const [sx, sy] = proj(best.markerX!, best.markerY! + 16, 22)
+          const on = ok(sx, sy, w, h)
+          vis(ae, on)
+          if (on) {
+            const txt = best.label.replace(/^(VIEW|RECALL)\s+/, "")
+            if (artT.current && artT.current.textContent !== txt) artT.current.textContent = txt
+            ae.style.transform = `translate(${Math.round(sx)}px,${Math.round(sy) - 18}px) translate(-50%,-100%)`
+          }
+        } else vis(ae, false)
+      }
       for (let i = 0; i < npcs.length; i++) {
         const a = npcs[i]
         const bang = bangEls.current[i], bub = bubEls.current[i]
@@ -148,7 +167,7 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
       }
     }
     return () => { overlay.update = null }
-  }, [rt, sc, signs, marks, npcs])
+  }, [rt, sc, signs, marks, npcs, arts])
 
   return (
     <div aria-hidden style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 5 }}>
@@ -160,6 +179,12 @@ export default function Overlay3D({ rt }: { rt: SceneRT }) {
           <Bubble el={(e) => { bubEls.current[i] = e }} />
         </span>
       ))}
+      <div ref={artEl} style={base}>
+        <div data-box className="o3-sign" style={{ ["--ac" as string]: "#c8a050" } as React.CSSProperties}>
+          <div ref={artT} className="o3-sign__t" />
+          <div className="o3-sign__s">PROJECT</div>
+        </div>
+      </div>
       <div ref={promptEl} style={base}>
         <div className="o3-prompt">
           <div ref={keyEl} className="o3-prompt__key">E</div>
