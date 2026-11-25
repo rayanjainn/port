@@ -1,12 +1,21 @@
 # Rayan World
 
-An interactive pixel-art portfolio. Visitors walk a living village where every building is a chapter you can step inside: the Town Hall (about), Gallery (one painting per project), Tavern (experience), Forge (skills), Academy (education & honours) and Raven Post (contact). Villagers wander and chat, chickens and cows roam the farm, a watermill turns on the river, and an old mine hides a torch-lit arcade with four minigames. Day/night, quests, a world map with fast travel, click-to-walk and music included.
+An interactive pixel-art portfolio. Visitors explore four worlds, each with seven landmarks you can walk into, and every landmark is a chapter of the portfolio: About, Projects, Experience, Skills, Education & Honours, Contact, plus an arcade with four minigames.
 
-For visitors who'd rather skim, **Quick View** (`/quick`) presents the same content as a cinematic scrolling page with a 3D voxel model of the village.
+| World | Mood | Travel |
+| --- | --- | --- |
+| **Hearthvale** | cosy village by a river | boat at the dock |
+| **Neon Harbor** | modern city with traffic and neon nights | metro station |
+| **Sunscar Oasis** | desert oasis with mesas and a waterfall | caravan gate |
+| **Hollow Reach** | haunted ruins in permanent twilight | ghost ferry |
+
+Each world has its own UI skin (parchment, neon, sandstone, spectral), weather, ambient sound, day/night (outdoor worlds), named characters who talk about the real work, and a Projects room that shows one pixel illustration per project. Everything renders in **2D** or in an **HD-2D 3D view** (toggle with `V`), from the same simulation.
+
+For visitors who'd rather skim, **Quick View** (`/quick`) presents the same content as a fast scrolling page with a case-study page per project, a command palette (`Cmd/Ctrl K`), GitHub numbers baked at build time and a print-ready résumé.
 
 ## Stack
 
-Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Framer Motion · Lenis · React Three Fiber · Zustand · Howler · Canvas 2D · Ninja Adventure (CC0)
+Next.js 16 (App Router) · React 19 · Tailwind CSS v4 · Framer Motion · Lenis · three.js / React Three Fiber · Zustand · Howler · Web Audio · Canvas 2D · Ninja Adventure and Kenney art (CC0)
 
 ## Editing content (no backend)
 
@@ -33,7 +42,7 @@ Edit `content/portfolio.json` directly (or use **Download JSON** in the admin) a
 ```bash
 npm install
 npm run dev     # http://localhost:3000
-npm run build
+npm run build   # also refreshes content/github.json (keeps the old file if GitHub is unreachable)
 npm run lint
 ```
 
@@ -45,8 +54,10 @@ npm run lint
 | Click / tap | Walk there (and interact on arrival) |
 | E / Enter | Talk, enter, interact |
 | M | World map (fast travel) |
-| N | Toggle day / night |
-| Space | Swing your sword (in the mine) |
+| G | Choose a world |
+| V | Switch 2D / 3D |
+| N | Toggle day / night (outdoor worlds) |
+| Space | Swing your sword (dungeons and monster corners) |
 | Esc | Close |
 
 Touch devices get a virtual joystick and an action button.
@@ -54,19 +65,24 @@ Touch devices get a virtual joystick and an action button.
 ## Project layout
 
 ```
-app/                 routes: / (game), /quick, /admin
-components/game/     canvas engine: scenes, actors, lighting, input
-components/buildings building modals (one per section)
-components/arcade/   the mine's four minigames
-components/ui/       title screen, HUD, dialogue, minimap, toasts, touch controls
-components/quick/    quick view page + 3D voxel village
-components/admin/    admin editor
-content/             portfolio.json, the single source of truth
-lib/world/           village generator, interiors, scene model
-lib/na.ts            sprite catalogue for the art pack
-public/na/           Ninja Adventure art, music and sounds (CC0)
+app/                  routes: / (game), /quick, /quick/[id], /admin
+components/game/      canvas engine, 3D view (three/), intro
+components/ui/        title, loader, HUD, map, world select, travel, dialogue, toasts
+components/art/       per-world layouts for the section cards
+components/buildings/ section card shells
+components/arcade/    the four minigames
+components/quick/     Quick View page, case studies, generative project art
+components/admin/     admin editor
+content/              portfolio.json (single source of truth), github.json (generated)
+lib/world/            world builders, interiors, exhibits, world registry
+lib/ambience.ts       procedural ambient sound
+lib/weather.ts        weather schedule and particles
+public/na/, public/kenney/   art, music and sounds (CC0)
+scripts/sync-github.mjs      build-time GitHub stats
 ```
 
 ## Credits
 
-Art, music and sounds are from the [Ninja Adventure asset pack](https://pixel-boy.itch.io/ninja-adventure-asset-pack) by Pixel-boy and AAA, released under CC0.
+- Art, music and sounds: [Ninja Adventure asset pack](https://pixel-boy.itch.io/ninja-adventure-asset-pack) by Pixel-boy and AAA (CC0).
+- City tiles, modern characters, vehicles and UI frames: [Kenney](https://kenney.nl) (CC0).
+- Ambient sound is synthesised in the browser.
