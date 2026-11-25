@@ -1,4 +1,6 @@
 @import "./art-cards.css";
+@import "./art-mobile.css";
+@import "./art-a11y.css";
 /* World-specific layouts for the section cards (markup in components/art/Variants.tsx). */
 .station-t { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 
@@ -43,7 +45,7 @@
 
 .inv-city .billboard { position: relative; margin-bottom: 24px; border: 2px solid #ff4fa3; box-shadow: 0 0 24px rgba(255, 79, 163, .5), 0 0 0 4px #05040f; }
 .bb-lights { position: absolute; left: 0; right: 0; top: -12px; height: 10px; background: radial-gradient(circle, #ffd27a 0 2.5px, transparent 3.5px) 0 0 / 18px 10px repeat-x; filter: drop-shadow(0 0 4px #ffb347); animation: k-bulbs 1.4s steps(2) infinite; }
-.bb-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 20px 14px; background: linear-gradient(0deg, rgba(5, 4, 15, .95), transparent); }
+.bb-txt { position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 20px 14px; background: linear-gradient(0deg, rgba(5, 4, 15, .97) 62%, rgba(5, 4, 15, .82)); }
 .bb-txt small { font-family: var(--ff-jb), monospace; font-size: 10px; letter-spacing: 4px; color: #ff8cc8; }
 .bb-txt b { display: block; font-family: var(--font-head); font-weight: 400; font-size: clamp(16px, 2.6vw, 24px); color: #fff; text-shadow: 0 0 12px #5de6ff; margin: 6px 0; }
 .bb-txt p { margin: 0 0 8px; font-family: var(--font-body); font-size: 15px; color: #c9d1f7; max-width: 52ch; }
@@ -83,7 +85,7 @@
 .stele-name { margin: 20px 0 8px; font-weight: 400; }
 .stele-name span { display: inline-block; padding: 11px 30px 10px; font-family: var(--font-head); font-size: clamp(15px, 2.6vw, 26px); color: #ffe39a; background: #35200f; border: 3px solid #e0a21f; border-radius: 999px; box-shadow: 0 0 0 3px #35200f, 0 5px 0 3px #35200f; text-shadow: 0 2px 0 #1a0d04; }
 .stele-title { font-family: var(--font-body); font-weight: 600; font-size: 18px; color: #075f5a; margin-top: 12px; }
-.stele-meta { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; font-family: var(--font-body); font-size: 15px; color: #6f4d25; }
+.stele-meta { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 8px 16px; margin-top: 8px; font-family: var(--font-body); font-size: 15px; color: #4d3314; }
 .stele-meta span { display: inline-flex; align-items: center; gap: 5px; }
 .fret { height: 16px; margin: 20px 0 16px; background: url(/ui/desert/fret.png) center / auto 16px repeat-x; }
 .stele-bio { max-width: 62ch; margin: 0 auto 22px; font-family: var(--font-body); font-size: 17px; line-height: 1.65; color: #50341a; }
@@ -101,7 +103,7 @@
 .papyrus { margin-top: 22px; padding: 18px 64px; text-align: left; border-top: 3px solid #8f6a35; border-bottom: 3px solid #8f6a35; background: linear-gradient(90deg, #7d5a2c 0, #d6b068 4%, #f6e6bb 7%, #c79d5a 10%, transparent 10%, transparent 90%, #c79d5a 90%, #f6e6bb 93%, #d6b068 96%, #7d5a2c 100%), var(--tx-grain), linear-gradient(180deg, #f8ebc6, #ecd7a2); }
 .papyrus-k { font-family: var(--font-head); font-size: 8px; letter-spacing: 3px; color: #075f5a; margin-bottom: 8px; }
 .papyrus p { margin: 0 0 8px; font-family: var(--font-body); font-size: 16px; line-height: 1.55; color: #35200f; }
-.papyrus q { font-family: var(--ff-vt), monospace; font-size: 22px; color: #6f4d25; }
+.papyrus q { font-family: var(--ff-vt), monospace; font-size: 22px; color: #4d3314; }
 
 .shelf { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 6px 8px 30px; margin-bottom: 26px; }
 .shelf-ledge { position: absolute; left: -10px; right: -10px; bottom: 0; height: 22px; background: var(--tx-grain), linear-gradient(180deg, #d4aa6a, #8f6a35); border: 3px solid #3a2210; box-shadow: 0 6px 0 #3a2210, inset 0 3px 0 rgba(255, 255, 255, .3); }
@@ -109,7 +111,7 @@
 .relic:hover { transform: translateY(-5px); }
 .relic-niche { border-radius: 64px 64px 0 0; overflow: hidden; border: 3px solid #3a2210; box-shadow: 0 0 0 2px #e0a21f; }
 .relic-carve { margin-top: 12px; } .relic-carve b { display: block; font-family: var(--font-head); font-weight: 400; font-size: 10px; line-height: 1.4; color: #35200f; text-shadow: 0 1px 0 rgba(255, 255, 255, .6); }
-.relic-carve small { display: block; margin-top: 4px; font-family: var(--font-body); font-size: 13px; color: #6f4d25; }
+.relic-carve small { display: block; margin-top: 4px; font-family: var(--font-body); font-size: 13px; color: #4d3314; }
 .relic p { margin: 8px 0; font-family: var(--font-body); font-size: 14px; line-height: 1.45; color: #50341a; min-height: 40px; }
 .relic-t { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
 
@@ -120,7 +122,7 @@
 .oasis-pool { position: absolute; left: 50%; top: 14px; width: 68px; height: 68px; margin-left: -34px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #b8f4ff, #3ab8d8 55%, #1a7aa0); box-shadow: 0 0 0 4px #e0b878, 0 0 0 7px #3a2210, 0 5px 0 7px rgba(74, 44, 20, .4); z-index: 2; }
 .oasis-pool i { position: absolute; inset: 6px; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .45); }
 .scroll-card { width: calc(50% - 56px); padding: 16px 30px 16px; border-top: 3px solid #8f6a35; border-bottom: 3px solid #8f6a35; background: linear-gradient(90deg, #7d5a2c 0, #d6b068 2.4%, #f6e6bb 4.4%, #c79d5a 6.4%, transparent 6.4%, transparent 93.6%, #c79d5a 93.6%, #f6e6bb 95.6%, #d6b068 97.6%, #7d5a2c 100%), var(--tx-grain), linear-gradient(180deg, #f8ebc6, #ecd7a2); box-shadow: 0 5px 0 rgba(74, 44, 20, .4); }
-.scroll-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: var(--font-body); font-size: 15px; color: #075f5a; } .scroll-top em { font-style: normal; font-family: var(--font-head); font-size: 8px; color: #6f4d25; align-self: center; }
+.scroll-top { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-family: var(--font-body); font-size: 15px; color: #075f5a; } .scroll-top em { font-style: normal; font-family: var(--font-head); font-size: 8px; color: #4d3314; align-self: center; }
 .scroll-role { margin: 6px 0 8px; font-family: var(--font-head); font-size: 13px; line-height: 1.4; color: #35200f; }
 .oasis-end .route-next { margin: 22px auto 0; padding: 10px 18px; font-family: var(--font-head); font-size: 8px; letter-spacing: 3px; color: #4a2c14; background: #f1dfae; border: 3px solid #8f6a35; position: relative; z-index: 3; margin-top: 90px; }
 .oasis-end { justify-content: center; }
@@ -170,7 +172,7 @@
 .epi { display: grid; gap: 28px; }
 .grave { position: relative; border: 3px solid #050c0e; background: var(--tx-grain-cool), linear-gradient(180deg, #1f2f35, #121b1e); box-shadow: 0 0 0 2px #46666a, 0 0 22px rgba(95, 208, 160, .18); }
 .grave-top { padding: 38px 20px 16px; text-align: center; border-radius: 120px 120px 0 0 / 70px 70px 0 0; background: radial-gradient(ellipse 80% 90% at 50% 0%, rgba(154, 255, 214, .18), transparent 70%), linear-gradient(180deg, #2c4146, #1b2a2e); border-bottom: 2px solid #050c0e; }
-.grave-top small { display: block; font-family: var(--font-head); font-size: 7px; letter-spacing: 5px; color: #b9a2ff; }
+.grave-top small { display: block; font-family: var(--font-head); font-size: 7px; letter-spacing: 5px; color: #d2c4ff; }
 .grave-top b { display: block; margin: 8px 0 6px; font-family: var(--font-head); font-weight: 400; font-size: 15px; line-height: 1.4; color: #e8f5f0; text-shadow: 0 -2px 0 #050c0e, 0 0 14px rgba(154, 255, 214, .4); }
 .grave-top span { font-family: var(--font-body); font-size: 14px; color: #96b0a9; }
 .grave-body { padding: 18px 24px 20px; }

@@ -103,7 +103,7 @@ export function InventoryCity({ projects, onOpen }: { projects: Project[]; onOpe
         {rest.map((pj, i) => (
           <article key={pj.id} className="apptile" onClick={() => onOpen?.(pj.id)} style={{ cursor: onOpen ? "pointer" : undefined }}>
             <div className="apptile-ic"><ProjectCover project={pj} height={84} badge={false} /></div>
-            <div className="apptile-b"><b>{pj.title}</b><small>{pj.category}</small><div className="stars" aria-label="rating">{"★★★★★".split("").map((s2, k) => <i key={k} data-on={k < 3 + (i % 3) ? "" : undefined}>{s2}</i>)}</div><div className="apptile-t">{pj.tech.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}</div></div>
+            <div className="apptile-b"><b>{pj.title}</b><small>{pj.category}</small><div className="stars" role="img" aria-label={`rating ${3 + (i % 3)} of 5`}>{"★★★★★".split("").map((s2, k) => <i key={k} data-on={k < 3 + (i % 3) ? "" : undefined}>{s2}</i>)}</div><div className="apptile-t">{pj.tech.slice(0, 2).map((t) => <Chip key={t}>{t}</Chip>)}</div></div>
             <span className="apptile-go">{i % 2 ? "GET" : "OPEN"}</span>
           </article>
         ))}
