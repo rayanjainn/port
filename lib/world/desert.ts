@@ -697,7 +697,7 @@ function build(w: World, content?: Portfolio) {
     const [, , bw, bh] = srcRect
     const dxc = x + (door[0] + door[1]) / 2, dyb = y + bh
     w.spr(src, srcRect, x, y, { baseY: y + bh - 2, solid: { x: x + 2, y: y + solidTop, w: bw - 4, h: bh - solidTop - 3 }, tag: `b:${id}` })
-    w.hotspots.push({ id: `door-${id}`, box: { x: dxc - 12, y: dyb - 6, w: 24, h: 18 }, label: `ENTER ${label}`, action: { type: "section", id }, marker: true, markerX: dxc, markerY: y - 6 })
+    w.hotspots.push({ id: `door-${id}`, box: { x: dxc - 12, y: dyb - 6, w: 24, h: 18 }, label: `ENTER ${label}`, action: { type: "door", to: `desert:${id}`, label }, marker: true, markerX: dxc, markerY: y - 6 })
     w.signs.push({ x: dxc, y: y - 2, label, sub, accent, hotspot: `door-${id}` })
     w.lamp(dxc, dyb - 8, 38, glow, 0.6)
     rect(Math.floor(x / TS) - 1, Math.floor(y / TS), Math.ceil((x + bw) / TS), Math.floor(dyb / TS) + 1)

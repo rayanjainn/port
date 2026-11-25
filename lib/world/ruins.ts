@@ -437,7 +437,7 @@ export function buildRuins(content?: Portfolio): Scene {
       if (b.lit) lamp(b.c * TS + a[2] / 2, y + a[3] * 0.4, 46, b.light, 0.8, 0.2)
     }
     if (b.section) {
-      hotspots.push({ id: `door-${b.id}`, box: { x: d.x - 12, y: d.y - 6, w: 24, h: 18 }, label: `ENTER ${b.label}`, action: { type: "section", id: b.section }, marker: true, markerX: d.x, markerY: y - 6 })
+      hotspots.push({ id: `door-${b.id}`, box: { x: d.x - 12, y: d.y - 6, w: 24, h: 18 }, label: `ENTER ${b.label}`, action: { type: "door", to: `ruins:${b.section}`, label: b.label! }, marker: true, markerX: d.x, markerY: y - 6 })
       signs.push({ x: d.x, y: y + 4, label: b.label!, sub: b.sub, accent: b.accent, hotspot: `door-${b.id}` })
     }
     reserve(b.c - 1, b.r - 1, b.c + bSize(b).tw, b.r + bSize(b).th + 1)
@@ -510,7 +510,7 @@ export function buildRuins(content?: Portfolio): Scene {
   add({ kind: "sprite", src: gr.reliefDetail, rect: crypt, x: cx0, y: cy0 - crypt[3], baseY: cy0 - 1, solid: solid(cx0 + 2, cy0 - 22, crypt[2] - 4, 19), tag: "b:vault" })
   const vd = { x: cx0 + 24, y: cy0 + 2 }
   lamp(vd.x, vd.y - 8, 76, "120,170,255", 0.8, 0.4)
-  hotspots.push({ id: "door-gallery", box: { x: vd.x - 12, y: vd.y - 6, w: 24, h: 18 }, label: "ENTER MEMORY VAULT", action: { type: "section", id: "gallery" }, marker: true, markerX: vd.x, markerY: cy0 - crypt[3] - 6 })
+  hotspots.push({ id: "door-gallery", box: { x: vd.x - 12, y: vd.y - 6, w: 24, h: 18 }, label: "ENTER MEMORY VAULT", action: { type: "door", to: "ruins:gallery", label: "MEMORY VAULT" }, marker: true, markerX: vd.x, markerY: cy0 - crypt[3] - 6 })
   signs.push({ x: vd.x, y: cy0 - crypt[3] + 4, label: "MEMORY VAULT", sub: "PROJECTS", accent: "#9a7be0", hotspot: "door-gallery" })
   for (const dx of [-30, 54]) { add({ kind: "sprite", src: rawElement, rect: PROPS.brazier.rect, x: cx0 + dx, y: cy0 - 12, baseY: cy0, solid: solid(cx0 + dx + 2, cy0 - 6, 10, 6) }); lamp(cx0 + dx + 8, cy0 - 12, 56, "110,190,255", 1.2, 0.3) }
   artFoot("pillarGrey", cx0 - 8, cy0 + 2, {}, gr.house); artFoot("pillarGrey", cx0 + 56, cy0 + 2, {}, gr.house)

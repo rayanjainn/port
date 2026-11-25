@@ -584,7 +584,7 @@ export function buildCity(content?: Portfolio): Scene {
       lights.push({ x: dX, y: y + gTop * TS - 10, r: 44, color: L.accent === "#5b8fd6" ? "150,190,255" : "255,230,190" })
       hotspots.push({
         id: `door-${b.id}`, box: { x: dX - 14, y: b.bottom * TS - 6, w: 28, h: 20 }, label: `ENTER ${L.label}`,
-        action: { type: "section", id: L.section }, marker: true, markerX: dX, markerY: y + gTop * TS - 22,
+        action: { type: "door", to: `city:${L.section}`, label: L.label }, marker: true, markerX: dX, markerY: y + gTop * TS - 22,
       })
     }
   }

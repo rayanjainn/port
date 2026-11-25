@@ -134,7 +134,7 @@ export function fitTitle(src: string | { id?: string; title: string; short?: str
 }
 
 // ── pen: crisp, integer-only drawing ───────────────────────────
-class Pen {
+export class Pen {
   readonly c: HTMLCanvasElement
   readonly x: Ctx
   constructor(public w: number, public h: number) { const k = canvas(w, h); this.c = k.c; this.x = k.ctx }

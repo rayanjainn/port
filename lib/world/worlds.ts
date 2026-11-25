@@ -84,11 +84,17 @@ const LOADERS: Record<string, () => Promise<WorldModule>> = {
     return { build: (content) => ({ village: v.buildVillage(), ...i.buildInteriors(content) }), preload: [...v.VILLAGE_PRELOAD, ...i.INTERIOR_PRELOAD, "/worlds/village.png", "/worlds/village-night.png"] }
   },
   city: async () => {
-    const c = await import("./city")
-    return { build: (content) => ({ city: c.buildCity(content) }), preload: [...c.CITY_PRELOAD, "/worlds/city.png", "/worlds/city-night.png"] }
+    const [c, i] = await Promise.all([import("./city"), import("./interiors-city")])
+    return { build: (content) => ({ city: c.buildCity(content), ...i.buildCityInteriors(content) }), preload: [...c.CITY_PRELOAD, ...i.CITY_INTERIOR_PRELOAD, "/worlds/city.png", "/worlds/city-night.png"] }
   },
-  desert: async () => { const d = await import("./desert"); return { build: (content) => ({ desert: d.buildDesert(content) }), preload: [...d.DESERT_PRELOAD, "/worlds/desert.png", "/worlds/desert-night.png"] } },
-  ruins: async () => { const r = await import("./ruins"); return { build: (content) => ({ ruins: r.buildRuins(content) }), preload: [...r.RUINS_PRELOAD, "/worlds/ruins.png"] } },
+  desert: async () => {
+    const [d, i] = await Promise.all([import("./desert"), import("./interiors-desert")])
+    return { build: (content) => ({ desert: d.buildDesert(content), ...i.buildDesertInteriors(content) }), preload: [...d.DESERT_PRELOAD, ...i.DESERT_INTERIOR_PRELOAD, "/worlds/desert.png", "/worlds/desert-night.png"] }
+  },
+  ruins: async () => {
+    const [r, i] = await Promise.all([import("./ruins"), import("./interiors-ruins")])
+    return { build: (content) => ({ ruins: r.buildRuins(content), ...i.buildRuinsInteriors(content) }), preload: [...r.RUINS_PRELOAD, ...i.RUINS_INTERIOR_PRELOAD, "/worlds/ruins.png"] }
+  },
 }
 
 export type WorldStatus = "open" | "soon"
