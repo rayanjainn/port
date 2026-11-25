@@ -91,7 +91,7 @@
       "category": "Apps",
       "year": "2026",
       "githubUrl": "https://github.com/rayanjainn/aio",
-      "liveUrl": "http://cortex.raycode.tech/",
+      "liveUrl": "https://aio.raycode.tech",
       "image": "",
       "accent": "#2dd4bf",
       "featured": true,
@@ -500,7 +500,7 @@
       "year": "2025",
       "started": "2025-02",
       "githubUrl": "https://github.com/rayanjainn/draw-app",
-      "liveUrl": "https://wdraw.iamray.xyz",
+      "liveUrl": "",
       "image": "",
       "accent": "#38bdf8",
       "featured": false
@@ -528,7 +528,7 @@
       "year": "2025",
       "started": "2025-04",
       "githubUrl": "https://github.com/rayanjainn/chess",
-      "liveUrl": "https://chess.iamray.xyz",
+      "liveUrl": "",
       "image": "",
       "accent": "#a3e635",
       "featured": false
@@ -557,7 +557,7 @@
       "year": "2025",
       "started": "2025-07",
       "githubUrl": "https://github.com/rayanjainn/stackit",
-      "liveUrl": "https://stackit.iamray.xyz",
+      "liveUrl": "",
       "image": "",
       "accent": "#f472b6",
       "featured": false
