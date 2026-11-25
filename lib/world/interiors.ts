@@ -1,7 +1,12 @@
 // Walkable interiors for every building, plus the mine dungeon.
-import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalSheet, type Rect } from "@/lib/na"
+import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, type Rect } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
 import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
+import { buildTownHall } from "./interiors-village"
+import { buildTavern } from "./interiors-village-tavern"
+import { buildForge } from "./interiors-village-forge"
+import { buildAcademy } from "./interiors-village-academy"
+import { buildRavenPost } from "./interiors-village-post"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -89,25 +94,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
   const out: Record<string, Scene> = {}
   const first = content.profile.name.split(" ")[0]
 
-  // ── TOWN HALL ───────────────────────────────────────────────
-  {
-    const R = room("townhall", "Town Hall", { w: 15, h: 11, wall: "beige", floor: "tan" })
-    // runner carpet
-    for (let r = 3; r < 10; r++) { R.g.fillStyle = "#9c2f2f"; R.g.fillRect(6 * TS + 4, r * TS, TS * 3 - 8, TS); R.g.fillStyle = "#c9a14a"; R.g.fillRect(6 * TS + 6, r * TS, 1, TS); R.g.fillRect(9 * TS - 7, r * TS, 1, TS) }
-    R.put("bookshelf", 1, 1); R.put("bookshelf", 3, 1); R.put("bigShelf", 10, 1); R.put("bookshelf", 12, 1)
-    R.put("longTable", 6, 3); R.put("candles", 6, 2, undefined, false); R.put("scrolls", 8, 2, undefined, false)
-    R.put("bannerRed", 5, 1); R.put("bannerTeal", 9, 1)
-    R.put("pottedPlant", 1, 8); R.put("pottedPlant", 13, 8); R.put("catStatue", 13, 4); R.put("chest", 1, 5)
-    R.put("frogStatue", 1, 4); R.put("plantPot", 4, 8); R.put("plantPot", 10, 8); R.put("dresser", 12, 6); R.put("jar", 2, 6)
-    R.actors.push(npc(CHARS.mayor, 7 * TS + 8, 2 * TS + 14, {
-      id: "mayor", name: "Mayor Hiro",
-      lines: [`Welcome to the Town Hall, traveller!`, `This village was built by ${content.profile.name}, ${content.profile.title.toLowerCase()}.`, `Our records hold the whole story. Have a look!`],
-      action: { type: "section", id: "townhall" },
-    }))
-    R.spot("chronicle", 7 * TS + 8, 4 * TS + 10, "READ THE CHRONICLE", { type: "section", id: "townhall" }, true, 7 * TS + 8, 2 * TS - 12)
-    R.lights.push({ x: 7 * TS, y: 3 * TS, r: 60, color: "255,210,140", flicker: 1 })
-    out.townhall = R.finish({})
-  }
+  out.townhall = buildTownHall(content)
 
   // ── GALLERY: a museum hall ──────────────────────────────────
   // Back wall: the masterpieces (featured work). Below it, free-standing hanging walls in rows, two per row, with a
@@ -269,105 +256,13 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
     out.gallery = R.finish({ dark: 0.5 })
   }
 
-  // ── TAVERN ──────────────────────────────────────────────────
-  {
-    const R = room("tavern", "Tavern", { w: 15, h: 11, wall: "brown", floor: "wood" })
-    R.put("longTable", 2, 3); R.put("longTable", 5, 3)
-    R.put("barrel", 1, 1); R.put("barrel", 2, 1); R.put("jar", 3, 1); R.put("pot", 4, 1); R.put("crate", 7, 1)
-    R.put("redSign", 10, 1)
-    R.put("redTable", 4, 6); R.put("stool", 3, 6, undefined, false); R.put("stool", 5, 6, undefined, false)
-    R.put("redTable", 10, 6); R.put("stool", 9, 6, undefined, false); R.put("stool", 11, 6, undefined, false)
-    R.put("redTable", 7, 8); R.put("stool", 6, 8, undefined, false); R.put("stool", 8, 8, undefined, false)
-    R.put("candles", 4, 5, undefined, false); R.put("candles", 10, 5, undefined, false)
-    R.put("barrel", 13, 8); R.put("barrel", 13, 9)
-    R.actors.push({ id: "dog", kind: "animal", sheet: animalSheet("dog"), x: 8 * TS, y: 9 * TS, wander: 30, speed: 12 })
-    R.actors.push(npc(CHARS.barkeep, 4 * TS + 8, 2 * TS + 14, {
-      id: "barkeep", name: "Barkeep Taro",
-      lines: [`Pull up a stool, friend!`, `Folks here swap tales of ${first}'s past quests.`, `The quest board on the wall has them all.`],
-      action: { type: "section", id: "tavern" },
-    }))
-    R.actors.push(npc("Villager2", 3 * TS + 8, 6 * TS + 14, { id: "patron1", facing: "right", bark: ["Another round!"] }))
-    R.actors.push(npc("Monk", 11 * TS + 8, 6 * TS + 14, { id: "patron2", facing: "left", bark: ["Heard about the hackathons?"] }))
-    R.spot("board", 10 * TS + 8, 2 * TS + 12, "READ QUEST BOARD", { type: "section", id: "tavern" }, true, 10 * TS + 8, TS - 6)
-    for (const [x, y] of [[4, 5], [10, 5]]) R.lights.push({ x: x * TS + 8, y: y * TS + 4, r: 56, color: "255,180,90", flicker: 1 })
-    out.tavern = R.finish({ dark: 0.35 })
-  }
+  out.tavern = buildTavern(content)
 
-  // ── FORGE ───────────────────────────────────────────────────
-  {
-    // one rack per skill group, 4 tiles apart; the room widens to fit them all
-    const R = room("forge", "Forge", { w: Math.max(13, content.skills.length * 4 + 3), h: 10, wall: "brown", floor: "dark" })
-    R.put("oven", 2, 1); R.put("oven", 3, 1); R.put("cauldron", 9, 1); R.put("logs", 10, 1); R.put("crate", 11, 1)
-    R.put("brazier", 3, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
-    // a wide forge (one rack per skill group) gets a second work bay so the back wall is not bare
-    const FW = Math.max(13, content.skills.length * 4 + 3)
-    if (FW > 16) {
-      const m = Math.floor(FW / 2) + 3
-      R.put("oven", m, 1); R.put("oven", m + 1, 1); R.put("cauldron", FW - 4, 1); R.put("logs", FW - 3, 1)
-      R.put("brazier", m + 1, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
-      R.lights.push({ x: (m + 1) * TS + 8, y: 3 * TS + 6, r: 110, color: "255,120,50", flicker: 1.5 })
-    }
-    const groups = content.skills
-    const RACKS: [string, number, number][][] = [
-      [["Katana", 6, 14], ["Sword", 6, 17], ["Rapier", 10, 15]],
-      [["Hammer", 9, 16], ["Axe", 11, 13], ["Sai", 7, 13]],
-      [["Lance", 6, 23], ["Pickaxe", 11, 13], ["BigSword", 7, 16]],
-    ]
-    groups.forEach((gr, i) => {
-      const c = 2 + i * 4
-      const rack = R.put("stall", c - 1, 5, undefined, true)
-      RACKS[i % RACKS.length].forEach(([name, ww, wh], k) => {
-        R.sprites.push({ kind: "sprite", src: img(`/na/weapons/${name}.png`), rect: [0, 0, ww, wh], x: (c - 1) * TS + 12 + k * 11 - ww / 2 + 3, y: 5 * TS + 22 - wh, baseY: rack.baseY + 1 })
-      })
-      R.spot(`skills-${i}`, c * TS + 8, 7 * TS + 6, `INSPECT ${gr.group.toUpperCase()}`, { type: "section", id: "forge", focus: gr.group }, true, c * TS + 8, 5 * TS - 4)
-    })
-    R.actors.push(npc(CHARS.smith, 6 * TS + 8, 2 * TS + 12, {
-      id: "smith", name: "Smith Kenji",
-      lines: [`Hot work in here!`, `These racks hold ${first}'s weapons of choice.`, `Rust, TypeScript, Kubernetes... all tempered by shipping.`],
-      action: { type: "section", id: "forge" },
-    }))
-    R.lights.push({ x: 3 * TS + 8, y: 3 * TS + 6, r: 110, color: "255,120,50", flicker: 1.5 }, { x: 3 * TS, y: 2 * TS, r: 60, color: "255,150,60", flicker: 1 })
-    out.forge = R.finish({ dark: 0.5 })
-  }
+  out.forge = buildForge(content)
 
-  // ── ACADEMY ─────────────────────────────────────────────────
-  {
-    const R = room("academy", "Academy", { w: 15, h: 11, wall: "green", floor: "beige" })
-    for (const c of [1, 3, 9, 11]) R.put(c === 9 ? "bigShelf" : "bookshelf", c, 1)
-    R.put("scrolls", 6, 1, undefined, false); R.put("candles", 7, 1, undefined, false)
-    for (const [c, r] of [[3, 5], [6, 5], [9, 5], [3, 7], [6, 7], [9, 7]]) { R.put("redTable", c, r); R.put("stool", c, r + 1, undefined, false) }
-    R.put("pottedPlant", 13, 8); R.put("pottedPlant", 1, 8); R.put("bearStatue", 13, 4)
-    R.actors.push(npc(CHARS.teacher, 7 * TS + 8, 3 * TS + 6, {
-      id: "teacher", name: "Master Sora",
-      lines: [`Ah, a curious mind!`, `${first} studied and earned honours here.`, `The scrolls and the trophy shelf tell the story.`],
-      action: { type: "section", id: "academy" },
-    }))
-    R.spot("diploma", 6 * TS + 8, 2 * TS + 14, "READ THE SCROLLS", { type: "section", id: "academy" }, true, 6 * TS + 8, TS - 4)
-    R.spot("trophies", 10 * TS, 3 * TS + 10, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 10 * TS, TS - 6)
-    R.lights.push({ x: 7 * TS, y: 2 * TS, r: 70, color: "255,230,170" })
-    out.academy = R.finish({})
-  }
+  out.academy = buildAcademy(content)
 
-  // ── RAVEN POST (contact) ────────────────────────────────────
-  {
-    const R = room("wizard", "Raven Post", { w: 13, h: 10, wall: "orange", floor: "tan" })
-    R.put("longTable", 4, 3)
-    R.put("scrolls", 4, 2, undefined, false); R.put("candles", 6, 2, undefined, false)
-    R.put("crate", 1, 1); R.put("crate", 2, 1); R.put("dresser", 10, 1); R.put("bigShelf", 8, 1)
-    R.put("orbStatue", 10, 5)
-    R.put("pottedPlant", 1, 7); R.put("plantPot", 11, 7)
-    R.put("scrolls", 2, 4, undefined, false); R.put("crate", 1, 5); R.put("jar", 2, 5); R.put("bookshelf", 10, 1)
-    R.actors.push({ id: "cat", kind: "animal", sheet: animalSheet("cat"), x: 3 * TS, y: 7 * TS, wander: 24, speed: 10 })
-    R.actors.push(npc(CHARS.postmaster, 5 * TS + 8, 2 * TS + 12, {
-      id: "postmaster", name: "Postmaster Ito",
-      lines: [`Raven Post, how can I help?`, `Need to reach ${first}? Our ravens fly straight to ${content.socials.email}.`, `Write your letter and I'll send it off.`],
-      action: { type: "section", id: "wizard" },
-    }))
-    R.spot("letter", 5 * TS + 8, 4 * TS + 12, "WRITE A LETTER", { type: "section", id: "wizard" }, true, 5 * TS + 8, 2 * TS - 12)
-    R.spot("orb", 11 * TS, 7 * TS + 4, "GAZE INTO THE ORB", { type: "section", id: "wizard" }, true, 11 * TS, 5 * TS - 6)
-    R.lights.push({ x: 11 * TS, y: 5 * TS + 8, r: 60, color: "130,170,255", flicker: 0.5 })
-    out.wizard = R.finish({ dark: 0.2 })
-  }
+  out.wizard = buildRavenPost(content)
 
   // ── OLD MINE: arcade dungeon ───────────────────────────────
   {
