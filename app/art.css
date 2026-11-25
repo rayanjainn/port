@@ -108,7 +108,7 @@ html {
     &[data-v="cta"] { border-image-source: var(--i-btn-gold); color: var(--a-cta-ink); font-size: 9px; padding: 0 10px; }
     &[data-v="cta"]:active { border-image-source: var(--i-btn-gold-down); }
     &[data-v="accent"] { border-image-source: var(--i-btn-gold); color: var(--a-cta-ink); text-shadow: 0 1px 0 rgba(255, 255, 255, .5); }
-    &[data-v="key"] { border-image-source: var(--i-btn-wood); color: var(--a-onwood); text-shadow: 0 2px 0 var(--a-edge); }
+    &[data-v="key"] { border-image-source: var(--i-btn-wood); color: var(--a-key-ink); text-shadow: 0 2px 0 var(--a-edge); }
     &[data-v="key"]:active { border-image-source: var(--i-btn-wood-down); }
     &[data-v="danger"] { border-image-source: var(--i-btn-red); color: var(--a-onwood); text-shadow: 0 2px 0 #5a1610; }
     &[data-v="ghost"] { border-image-source: var(--i-btn-cream); opacity: .85; }
@@ -178,7 +178,7 @@ html {
   .cs-quest { display: grid; grid-template-columns: auto 1fr auto; gap: 18px; align-items: center; padding: 14px 18px; background: linear-gradient(180deg, rgba(255, 255, 255, .12), transparent 30px), var(--i-wood); background-size: auto, 96px 96px; box-shadow: 0 0 0 3px var(--a-edge), 0 0 0 6px var(--a-trim), 0 0 0 8px var(--a-edge), 0 6px 0 8px rgba(30, 14, 4, .5); margin: 4px 8px 6px; image-rendering: pixelated; }
   .cs-quest > * { image-rendering: auto; }
   .cs-quest__ic { width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; background: var(--a-chip2); box-shadow: 0 0 0 2px var(--a-edge), 0 0 0 4px var(--a-gold), inset 0 -4px 0 var(--a-lo); }
-  .cs-quest__k { font-family: var(--font-head); font-size: 8px; letter-spacing: 2px; color: var(--a-hi); margin-bottom: 8px; text-shadow: 0 2px 0 var(--a-edge); }
+  .cs-quest__k { font-family: var(--font-head); font-size: 8px; letter-spacing: 2px; color: color-mix(in srgb, var(--a-hi) 70%, #fff); margin-bottom: 8px; text-shadow: 0 2px 0 var(--a-edge); }
   .cs-quest__txt p { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 1.5; color: var(--a-onwood); max-width: 52ch; }
   .cs-creed { max-width: 220px; padding-left: 18px; border-left: 3px dashed rgba(255, 215, 106, .5); font-family: var(--ff-vt), monospace; font-size: 24px; line-height: 1; color: var(--a-onwood); }
   .cs-links { display: flex; flex-wrap: wrap; gap: 14px; padding: 6px 8px 0; }

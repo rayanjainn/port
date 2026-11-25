@@ -1,0 +1,20 @@
+/* Phone pass (390px): reclaim the width the modal frame eats so content gets ~310px, keep tap targets >= 40px. */
+@media (max-width: 600px) {
+  html .k-panel[data-v="modal"] { border-width: 20px; }
+  html .modal-panel { padding: 0; }
+  html .modal-backdrop { padding: 44px 6px 10px; }
+  html .bm-body, html .bm-inner { border-width: 10px; }
+  html .bm-body { overflow-x: hidden; }
+  html .bm-close { top: -44px; right: 0; width: 44px; height: 44px; }
+  .sk, .hn, .ct { padding: 10px 6px 20px; }
+  .rack-grid { grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; padding: 8px 8px 2px; }
+  .slot { min-height: 84px; padding: 8px 3px 6px; } .slot b { font-size: 13px; }
+  .rack { margin: 6px 4px 12px; }
+  .ledger-pages, .grim-pages { columns: 1; }
+  .lrow b { font-size: 14px; }
+  .shelf-gold, .idols { grid-template-columns: repeat(2, 1fr); }
+  .lanterns-1, .lanterns-2 { grid-template-columns: 1fr 1fr; }
+  .diploma { margin: 6px 14px 22px; }
+  .ct-actions .k-btn { flex: 1 1 100%; justify-content: center; }
+  .ch-t b { font-size: 14px; }
+}

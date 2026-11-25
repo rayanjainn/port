@@ -1,0 +1,27 @@
+/* Accessibility finishing: visible two-tone focus ring in every world, calmer motion when asked. */
+html {
+  --a-focus: #ffd60a; --a-focus-halo: #1d1006;
+}
+html[data-world="city"] { --a-focus: #ffe94d; --a-focus-halo: #05040f; }
+html[data-world="desert"] { --a-focus: #ffd60a; --a-focus-halo: #1a0d04; }
+html[data-world="ruins"] { --a-focus: #ffe27a; --a-focus-halo: #050c0e; }
+
+/* a dark halo sits in the offset gap, the bright ring outside it: legible on parchment, wood, glass and slate */
+html :where(a[href], button, input, textarea, select, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid var(--a-focus); outline-offset: 2px; box-shadow: 0 0 0 2px var(--a-focus-halo); position: relative; z-index: 2;
+}
+html .bm-body:focus-visible { outline-offset: -6px; box-shadow: none; }
+html .bm-body:focus { outline: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  .modal-in, .k-panel[data-v="modal"] { animation: none !important; }
+  .k-fx, .cs-flame, .inv-spark, .bb-lights, .jar-mote, .jar-shine, .idp-holo, .cs-face::after { animation: none !important; }
+}
+
+/* text that sits straight on the world backdrop gets its own dark plate */
+.title-keys, .title-enter { background: rgba(14, 8, 3, .78); padding: 8px 14px; box-shadow: 0 0 0 2px rgba(0, 0, 0, .5); }
+.title-enter { display: inline-block; }
+/* tab chips on the HUD cards: darker fill so light type clears 4.5:1 */
+.hud-mini__tab { background: color-mix(in srgb, var(--u-accent) 72%, #000); }
+html[data-world="desert"] { --a-muted: #4d3314; }
