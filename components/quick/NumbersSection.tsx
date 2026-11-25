@@ -93,7 +93,6 @@ function Recent({ stats }: { stats: QuickStats }) {
                 {r.language && <><span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: LANG_COLORS[r.language] ?? "#888" }} /><span className="truncate">{r.language}</span></>}
               </span>
               <span className={`${mono} whitespace-nowrap text-right text-xs text-[#ffb547]`}>{r.ago}</span>
-              {r.description && <p className="col-span-full hidden min-w-0 truncate text-sm text-white/45 sm:block">{r.description}</p>}
             </li>
           )
         })}
