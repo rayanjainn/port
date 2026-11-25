@@ -141,12 +141,14 @@ export class World {
       if (best) attach.set(s, { parent: best, dx: cx, dyPx: best.y + best.rect[3] - cyb })
     }
     this.attach = attach
-    for (const [src, list] of staticMap) {
+    // many small generated canvases share atlases, so the scene needs a handful of batches (and shadow meshes) instead of one per canvas
+    const atlased = this.packAtlases(staticMap)
+    for (const [src, list] of atlased) {
       const tex = makeTexture(src), { w: tw, h: th } = srcSize(src)
-      const n = list.reduce((a, s) => a + this.layersOf(s), 0)
+      const n = list.reduce((a, e) => a + this.layersOf(e.s), 0)
       const b = new CardBatch(this.sh, tex, n, "opaque", true, false, !!sc.emissive)
       let at = 0
-      for (const s of list) at += this.place(b, at, s, tw, th)
+      for (const e of list) at += this.place(b, at, e.s, tw, th, e.ox, e.oy)
       b.flush(n)
       this.batches.push(b)
       for (const o of b.objects) this.group.add(o)
@@ -165,6 +167,38 @@ export class World {
   }
   private attach = new Map<Sprite, Attached>()
 
+  /** groups static sprites by texture; small canvases are shelf-packed into shared atlases (offsets returned per sprite) */
+  private packAtlases(staticMap: Map<CanvasImageSource, Sprite[]>) {
+    const MAX = 2048, GAP = 2
+    const out = new Map<CanvasImageSource, { s: Sprite; ox: number; oy: number }[]>()
+    const small: { src: HTMLCanvasElement; w: number; h: number; list: Sprite[] }[] = []
+    for (const [src, list] of staticMap) {
+      const { w, h } = srcSize(src)
+      if (src instanceof HTMLCanvasElement && w <= 512 && h <= 512) small.push({ src, w, h, list })
+      else out.set(src, list.map((s) => ({ s, ox: 0, oy: 0 })))
+    }
+    small.sort((a, b) => b.h - a.h)
+    type Atlas = { cv: HTMLCanvasElement; ctx: CanvasRenderingContext2D; x: number; y: number; rowH: number; items: { s: Sprite; ox: number; oy: number }[] }
+    const atlases: Atlas[] = []
+    const fresh = (): Atlas => { const cv = document.createElement("canvas"); cv.width = cv.height = MAX; const ctx = cv.getContext("2d")!; ctx.imageSmoothingEnabled = false; const a = { cv, ctx, x: 0, y: 0, rowH: 0, items: [] }; atlases.push(a); return a }
+    let cur: Atlas | null = null
+    for (const e of small) {
+      if (!cur) cur = fresh()
+      if (cur.x + e.w > MAX) { cur.y += cur.rowH + GAP; cur.x = 0; cur.rowH = 0 }
+      if (cur.y + e.h > MAX) { cur = fresh() }
+      cur.ctx.drawImage(e.src, cur.x, cur.y)
+      for (const s of e.list) cur.items.push({ s, ox: cur.x, oy: cur.y })
+      cur.x += e.w + GAP; cur.rowH = Math.max(cur.rowH, e.h)
+    }
+    for (const a of atlases) {
+      // trim the canvas to what was used so the texture is no bigger than needed
+      const h = Math.min(MAX, Math.max(16, 1 << Math.ceil(Math.log2(a.y + a.rowH))))
+      if (h < MAX) { const t = document.createElement("canvas"); t.width = MAX; t.height = h; t.getContext("2d")!.drawImage(a.cv, 0, 0); a.cv = t }
+      out.set(a.cv, a.items)
+    }
+    return out
+  }
+
   /** thickness (optional): buildings ~10px deep, mid props 6, small props 3; never trees, characters, thin/tall posts, wall hangings or riders */
   private layersOf(s: Sprite) {
     if (!fx.thickness.on) return 1
@@ -181,8 +215,9 @@ export class World {
   private thick = new Map<Sprite, number>()
 
   /** writes one sprite card (plus its thickness layers) at index i0; returns how many instances it used */
-  private place(b: CardBatch, i0: number, s: Sprite, tw: number, th: number) {
-    const [rx, ry, rw, rh] = s.rect
+  private place(b: CardBatch, i0: number, s: Sprite, tw: number, th: number, ox = 0, oy = 0) {
+    const [rx0, ry0, rw, rh] = s.rect
+    const rx = rx0 + ox, ry = ry0 + oy
     const at = this.attach.get(s)
     const gy = (x: number, z: number) => this.terrain.heightAt(x, z)
     let x = (s.x + rw / 2) * P, y = gy((s.x + rw / 2) * P, s.baseY * P), z = s.baseY * P, dz = 0

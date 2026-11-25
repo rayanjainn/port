@@ -33,6 +33,7 @@ function spring(pos: number, vel: number, target: number, omega: number, dt: num
 const sp = [0, 0] as [number, number]
 const v3 = new THREE.Vector3()
 const shift = { x: 0, y: 0 }
+const frameCount = { n: 0 }
 const frames = new Float32Array(120)
 let frameN = 0
 
@@ -80,7 +81,7 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
   // dev-only readout behind ?stats: fps, draw calls, triangles, instance counts
   const stat = useRef({ el: null as HTMLDivElement | null, n: 0, t: 0 })
   useEffect(() => {
-    if (process.env.NODE_ENV === "production" || !new URLSearchParams(window.location.search).has("stats")) return
+    if (!new URLSearchParams(window.location.search).has("stats")) return
     const el = document.createElement("div")
     el.style.cssText = "position:fixed;left:8px;bottom:56px;z-index:200;font:11px monospace;color:#9f9;background:rgba(0,0,0,.7);padding:4px 6px;pointer-events:none;white-space:pre"
     document.body.appendChild(el)
@@ -110,6 +111,7 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
   useFrame((state, dtRaw) => {
     const w = world.current, S = engine.state
     if (!w || !S) return
+    if (frameCount.n < 4) { frameCount.n++; const t0 = performance.now(); requestAnimationFrame(() => { const b = (window as unknown as { __perf?: Record<string, number> }).__perf; if (b) b[`3d.frame${frameCount.n}`] = performance.now() - t0 }) }
     const dt = Math.min(dtRaw, 0.05)
     const sc = rt.scene, H = S.hero
     const cam3 = camera as THREE.PerspectiveCamera

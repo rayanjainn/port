@@ -179,7 +179,16 @@ export default function GameCanvas() {
       useLoading.setState({ progress: 1 })
       setTimeout(() => useLoading.setState({ done: true }), Math.max(350, 1400 - (performance.now() - bootStart)))
       // the other worlds stream in quietly once the title is up
-      setTimeout(() => { OPEN_WORLDS.filter((o) => o.id !== startWorld).reduce((p, o) => p.then(() => ensureWorld(o.id).then(() => undefined)), Promise.resolve()) }, 2500)
+      // (one at a time, each in an idle slot, never while the tab is hidden, so a build never lands in the middle of a walk)
+      const idle = (fn: () => void) => ("requestIdleCallback" in window ? window.requestIdleCallback(fn, { timeout: 4000 }) : setTimeout(fn, 200))
+      const queue = OPEN_WORLDS.filter((o) => o.id !== startWorld).map((o) => o.id)
+      const pump = () => {
+        const id = queue.shift()
+        if (!id || cancelled) return
+        if (document.hidden) { queue.unshift(id); setTimeout(pump, 1500); return }
+        idle(() => { void ensureWorld(id).then(() => setTimeout(pump, 400)) })
+      }
+      setTimeout(pump, 2500)
       if (process.env.NODE_ENV !== "production") {
         // dev-only hooks for automated screenshots
         (window as unknown as { __rw: unknown }).__rw = {

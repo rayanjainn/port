@@ -178,7 +178,8 @@ export interface SceneSign { x: number; y: number; label: string; sub?: string; 
 export function canvas(w: number, h: number) {
   const c = document.createElement("canvas")
   c.width = w; c.height = h
-  const ctx = c.getContext("2d")!
+  // generated art is read back a lot (outlines, palette swaps): keep these canvases CPU-backed so the readbacks do not stall a GPU canvas
+  const ctx = c.getContext("2d", { willReadFrequently: true })!
   ctx.imageSmoothingEnabled = false
   return { c, ctx }
 }
