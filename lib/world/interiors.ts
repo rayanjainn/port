@@ -1,11 +1,12 @@
 // Walkable interiors for every building, plus the mine dungeon.
-import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalSheet, type Rect } from "@/lib/na"
+import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, type Rect } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
 import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
 import { buildTownHall } from "./interiors-village"
 import { buildTavern } from "./interiors-village-tavern"
 import { buildForge } from "./interiors-village-forge"
 import { buildAcademy } from "./interiors-village-academy"
+import { buildRavenPost } from "./interiors-village-post"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -261,26 +262,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
 
   out.academy = buildAcademy(content)
 
-  // ── RAVEN POST (contact) ────────────────────────────────────
-  {
-    const R = room("wizard", "Raven Post", { w: 13, h: 10, wall: "orange", floor: "tan" })
-    R.put("longTable", 4, 3)
-    R.put("scrolls", 4, 2, undefined, false); R.put("candles", 6, 2, undefined, false)
-    R.put("crate", 1, 1); R.put("crate", 2, 1); R.put("dresser", 10, 1); R.put("bigShelf", 8, 1)
-    R.put("orbStatue", 10, 5)
-    R.put("pottedPlant", 1, 7); R.put("plantPot", 11, 7)
-    R.put("scrolls", 2, 4, undefined, false); R.put("crate", 1, 5); R.put("jar", 2, 5); R.put("bookshelf", 10, 1)
-    R.actors.push({ id: "cat", kind: "animal", sheet: animalSheet("cat"), x: 3 * TS, y: 7 * TS, wander: 24, speed: 10 })
-    R.actors.push(npc(CHARS.postmaster, 5 * TS + 8, 2 * TS + 12, {
-      id: "postmaster", name: "Postmaster Ito",
-      lines: [`Raven Post, how can I help?`, `Need to reach ${first}? Our ravens fly straight to ${content.socials.email}.`, `Write your letter and I'll send it off.`],
-      action: { type: "section", id: "wizard" },
-    }))
-    R.spot("letter", 5 * TS + 8, 4 * TS + 12, "WRITE A LETTER", { type: "section", id: "wizard" }, true, 5 * TS + 8, 2 * TS - 12)
-    R.spot("orb", 11 * TS, 7 * TS + 4, "GAZE INTO THE ORB", { type: "section", id: "wizard" }, true, 11 * TS, 5 * TS - 6)
-    R.lights.push({ x: 11 * TS, y: 5 * TS + 8, r: 60, color: "130,170,255", flicker: 0.5 })
-    out.wizard = R.finish({ dark: 0.2 })
-  }
+  out.wizard = buildRavenPost(content)
 
   // ── OLD MINE: arcade dungeon ───────────────────────────────
   {
