@@ -295,9 +295,18 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
 
   // ── FORGE ───────────────────────────────────────────────────
   {
-    const R = room("forge", "Forge", { w: 13, h: 10, wall: "brown", floor: "dark" })
+    // one rack per skill group, 4 tiles apart; the room widens to fit them all
+    const R = room("forge", "Forge", { w: Math.max(13, content.skills.length * 4 + 3), h: 10, wall: "brown", floor: "dark" })
     R.put("oven", 2, 1); R.put("oven", 3, 1); R.put("cauldron", 9, 1); R.put("logs", 10, 1); R.put("crate", 11, 1)
     R.put("brazier", 3, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
+    // a wide forge (one rack per skill group) gets a second work bay so the back wall is not bare
+    const FW = Math.max(13, content.skills.length * 4 + 3)
+    if (FW > 16) {
+      const m = Math.floor(FW / 2) + 3
+      R.put("oven", m, 1); R.put("oven", m + 1, 1); R.put("cauldron", FW - 4, 1); R.put("logs", FW - 3, 1)
+      R.put("brazier", m + 1, 3, { glow: { x: 8, y: 6, r: 40, color: "255,120,50" } })
+      R.lights.push({ x: (m + 1) * TS + 8, y: 3 * TS + 6, r: 110, color: "255,120,50", flicker: 1.5 })
+    }
     const groups = content.skills
     const RACKS: [string, number, number][][] = [
       [["Katana", 6, 14], ["Sword", 6, 17], ["Rapier", 10, 15]],

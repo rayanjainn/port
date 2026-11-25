@@ -548,7 +548,7 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     // honours: a glowing cabinet
     const ch = pen(70, 62); shadow(ch, 1, 60, 68); box(ch, 0, 0, 70, 59, "#3a2818"); ch.r(1, 1, 68, 1, "#6a4a2c"); ch.r(3, 4, 64, 51, "#0a0c14"); ch.x.fillStyle = "rgba(130,255,215,.10)"; ch.x.fillRect(3, 4, 64, 51)
     for (let s = 0; s < 3; s++) { const y = 4 + s * 17; ch.r(3, y + 15, 64, 2, "#6a4a2c"); for (let k = 0; k < 4; k++) { const i = s * 4 + k; if (i >= Math.min(11, ach.length + 3)) continue; const x = 9 + k * 15, by = y + 15; if (i % 2) { ch.r(x, by - 4, 9, 4, "#4a3a28"); ch.r(x + 1, by - 11, 7, 7, "#d8e8e0"); ch.r(x + 2, by - 9, 5, 1, "#2a6a5a"); ch.r(x + 2, by - 7, 5, 1, VIOLET) } else { ch.r(x + 3, by - 3, 2, 3, "#8a7a3a"); ch.r(x, by - 10, 8, 7, "#e8d070"); ch.r(x + 1, by - 9, 2, 4, "#fff6c0") } } }
-    R.add(ch.c, 18 * TS, 15 * TS + 4, { solid: [66, 10] }); R.light(18 * TS, 13 * TS, 80, "130,255,215", 0.9)
+    R.add(ch.c, 18 * TS, 13 * TS + 4, { solid: [66, 10] }); R.light(18 * TS, 11 * TS, 80, "130,255,215", 0.9)
     R.add(plant(), 1 * TS + 8, 14 * TS + 8)
     brazier(R, 4 * TS, 14 * TS + 4, 70)
     R.actors.push(folk("hex", "Apprentice Hex", RUINS_CHARS.apprentice, W / 2 + 26, (NW + 5) * TS, {
@@ -556,7 +556,7 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
       action: { type: "section", id: "academy" },
     }))
     R.spot("tomes", W / 2, (NW + 6) * TS, "READ THE TOMES", { type: "section", id: "academy" }, true, W / 2, (NW + 1) * TS)
-    R.spot("trophies", 18 * TS, 15 * TS + 12, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 18 * TS, 11 * TS + 8)
+    R.spot("trophies", 18 * TS, 13 * TS + 12, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 18 * TS, 9 * TS + 8)
     const m = addMotes(R, 22, [TS * 2, TS * (NW + 1), W - TS * 2, TS * 14], "#cdb8ff")
     out["ruins:academy"] = withTick(R, m)
   }

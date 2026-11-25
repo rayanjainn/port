@@ -579,8 +579,8 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
     R.light(W / 2 - 34, (NW + 1) * TS, 100, "130,190,255", 0.6)
     R.add(orreryStrip(), W / 2 + 36, (NW + 3) * TS + 4, { anim: { frames: 8, fps: 5, dx: 44 }, solid: [26, 8] })
     R.light(W / 2 + 36, (NW + 2) * TS, 70, "255,220,140", 0.8)
-    R.add(honourShelf(Math.min(12, ach.length + 3)), 16 * TS + 8, 15 * TS + 4, { solid: [74, 10] })
-    R.light(16 * TS + 8, 13 * TS, 100, "255,220,150", 0.7)
+    R.add(honourShelf(Math.min(12, ach.length + 3)), 16 * TS + 8, 13 * TS + 4, { solid: [74, 10] })
+    R.light(16 * TS + 8, 11 * TS, 100, "255,220,150", 0.7)
     R.add(deskWax(50), 4 * TS + 8, 14 * TS + 6, { solid: [46, 8] })
     R.add(scrollPile(), 6.5 * TS, 14 * TS + 2, { solid: false })
     R.add(cushion("#2a5a8a"), 8.5 * TS, 11 * TS + 8, { solid: false }); R.add(cushion(TERRA), 12.5 * TS, 11 * TS + 10, { solid: false })
@@ -591,7 +591,7 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
       action: { type: "section", id: "academy" },
     }))
     R.spot("chart", W / 2, (NW + 6) * TS + 8, "STUDY THE STAR CHARTS", { type: "section", id: "academy" }, true, W / 2, (NW + 2) * TS - 6)
-    R.spot("trophies", 16 * TS + 8, 15 * TS + 12, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 16 * TS + 8, 11 * TS + 4)
+    R.spot("trophies", 16 * TS + 8, 13 * TS + 12, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 16 * TS + 8, 9 * TS + 4)
     out["desert:academy"] = R.finish()
   }
 
