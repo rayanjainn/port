@@ -46,8 +46,10 @@
 .map-grid { display: grid; grid-template-columns: minmax(0, 1fr) 250px; gap: 14px; }
 .map-frame { position: relative; line-height: 0; border: 3px solid var(--u-border); }
 .map-fx { position: absolute; inset: 0; pointer-events: none; }
-.map-pin { position: absolute; transform: translate(-50%, -100%); min-height: 28px; padding: 6px 8px; font-size: 8px; line-height: 1; letter-spacing: 1px; transition: transform .12s ease; }
-.map-pin:hover, .map-pin[data-hot] { transform: translate(-50%, -100%) scale(1.12); filter: none; }
+/* anchor with `translate` so themed button hover/press transforms compose instead of replacing the anchor */
+.map-pin { position: absolute; translate: -50% -100%; transform-origin: 50% 100%; min-height: 28px; padding: 6px 8px; font-size: 8px; line-height: 1; letter-spacing: 1px; transition: scale .12s ease, transform .08s ease, filter .12s ease; z-index: 1; }
+.map-pin:hover, .map-pin[data-hot], .map-pin:focus-visible { scale: 1.12; z-index: 2; }
+@media (prefers-reduced-motion: reduce) { .map-pin { transition: none; } }
 .map-list { display: flex; flex-direction: column; gap: 8px; }
 .map-note { font-family: var(--font-body); font-size: 15px; color: var(--u-body); margin-bottom: 2px; }
 .map-row { justify-content: flex-start; text-align: left; padding: 9px 10px; min-height: 48px; font-size: 8px; white-space: normal; width: 100%; }
