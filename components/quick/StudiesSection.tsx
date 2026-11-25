@@ -146,7 +146,7 @@ export default function StudiesSection() {
               {school.map((e) => (
                 <div key={e.id} className="flex items-center gap-3 bg-[#0d0b13] px-5 py-4">
                   <School size={17} className="shrink-0 text-white/40" />
-                  <div className="min-w-0 flex-1"><div className="truncate text-[15px] text-white/85"><b className="font-semibold">{e.degree}</b> · {e.school}</div></div>
+                  <div className="min-w-0 flex-1"><div className="text-[15px] leading-snug text-white/85"><b className="font-semibold">{e.degree}</b> · {e.school}</div></div>
                   <span className={`${mono} shrink-0 text-xs text-white/45`}>{dates(e)}</span>
                 </div>
               ))}

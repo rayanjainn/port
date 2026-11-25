@@ -43,7 +43,7 @@ function Lanes({ items }: { items: Experience[] }) {
               <div key={e.id} className="relative h-9">
                 <div className={`absolute inset-y-0 flex items-center overflow-hidden rounded-lg px-2.5 text-[12.5px] font-medium sm:px-3 ${lead ? "bg-[#ffb547] text-[#1a0d06]" : "border border-[#ffb547]/55 bg-[#ffb547]/[0.1] text-[#f3ede2]"}`}
                   style={{ left: `${pct(ymIndex(s.a))}%`, width: `${pct(ymIndex(s.b) + 1) - pct(ymIndex(s.a))}%` }}>
-                  <span className="truncate">{e.org}<span className="hidden sm:inline"> · {e.role}</span></span>
+                  <span className="truncate">{e.org}{pct(ymIndex(s.b) + 1) - pct(ymIndex(s.a)) >= 30 && <span className="hidden sm:inline"> · {e.role}</span>}</span>
                 </div>
               </div>
             )
@@ -79,7 +79,7 @@ export default function ExperienceSection() {
         {c.experience.map((e, i) => {
           const now = e.end.toLowerCase() === "present"
           const sp = span(e)
-          const showHl = !e.shipped?.length && e.highlights.length > 0
+          const showHl = e.highlights.length > 0
           return (
             <Reveal key={e.id} delay={i * 0.04} className="relative pb-12 last:pb-0">
               <span className="absolute -left-8 top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-white/20 bg-[#0b0a10] sm:-left-12 sm:h-6 sm:w-6">
@@ -104,7 +104,7 @@ export default function ExperienceSection() {
                       <div className="flex flex-wrap gap-2">{e.shipped.map((it) => <Chip key={it.label} it={it} />)}</div>
                     </div>
                   )}
-                  {showHl && <div className="mt-4 flex flex-wrap gap-2">{e.highlights.map((hl) => <span key={hl} className="qv-chip text-white/75">{hl}</span>)}</div>}
+                  {showHl && <ul className="mt-4 max-w-2xl space-y-2 text-[15px] leading-relaxed text-white/70">{e.highlights.map((hl) => <li key={hl} className="relative pl-5 before:absolute before:left-0 before:top-[0.7em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-[#ffb547]/70">{hl}</li>)}</ul>}
                 </div>
               </div>
             </Reveal>
