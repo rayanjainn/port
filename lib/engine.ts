@@ -47,7 +47,7 @@ export interface EngineState {
   fade: { a: number; dir: 1 | -1; then: (() => void) | null }
   near: Hotspot | null
   nearNpc: ActorRT | null
-  returnTo: { x: number; y: number } | null
+  returnTo: { x: number; y: number; scene?: string } | null
   chests: Set<string>
   ready: boolean
   last: number

@@ -220,7 +220,7 @@ export default function GameCanvas() {
         const world = worldById(useGameStore.getState().world)
         if (id !== world.scene) {
           const b = BUILDINGS.find((x) => x.id === id)
-          useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? "", true)
+          useGameStore.getState().showArea(rt.scene.title.toUpperCase(), b?.section ?? runtime.landmarks.find((l) => l.id === id.split(":").pop())?.sub ?? "", true)
           useGameStore.getState().markVisited(id)
         } else useGameStore.getState().showArea(world.id === "village" ? "THE VILLAGE" : world.name.toUpperCase(), "WELCOME BACK")
       },
@@ -232,11 +232,12 @@ export default function GameCanvas() {
     const S = st.current
     if (a.type === "door") {
       playSound("open")
-      S.returnTo = runtime.doors[a.to] ?? { x: S.hero.x, y: S.hero.y + 12 }
+      // interiors of other worlds are named "<world>:<landmark>"; remember the scene we came from so the doormat leads back to it
+      S.returnTo = { ...(runtime.doors[a.to.split(":").pop()!] ?? { x: S.hero.x, y: S.hero.y + 12 }), scene: S.scene }
       goTo(a.to)
     } else if (a.type === "exit") {
       playSound("close")
-      goTo(worldById(store.world).scene, S.returnTo ? { ...S.returnTo, facing: "down" } : undefined)
+      goTo(S.returnTo?.scene ?? worldById(store.world).scene, S.returnTo ? { x: S.returnTo.x, y: S.returnTo.y, facing: "down" } : undefined)
     } else if (a.type === "section") {
       playSound("open")
       store.openBuilding(a.id as BuildingId, a.focus ?? null, store.world)
