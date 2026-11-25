@@ -471,7 +471,6 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
       R.spot(`art-${p.id}`, cx, base + 14, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - st.height - 8)
     })
     for (let r = 0; r < rows; r++) for (const x of [13.9, 17.1]) { R.add(brazier(), x * TS, (NW + 4 + r * 5) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.light(x * TS, (NW + 4 + r * 5) * TS - 8, 80, "255,150,60", 1.5) }
-    R.add(brazier(), 13.9 * TS, (NW + 2) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.add(brazier(), 17.1 * TS, (NW + 2) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] })
     R.light(13.9 * TS, (NW + 2) * TS - 8, 80, "255,150,60", 1.5); R.light(17.1 * TS, (NW + 2) * TS - 8, 80, "255,150,60", 1.5)
     for (const x of [1, 29]) { R.add(pillar(80), x * TS + 8, (NW + 3) * TS + 8, { solid: [14, 8] }); R.add(pillar(80), x * TS + 8, (h - 3) * TS + 8, { solid: [14, 8] }) }
     R.add(palmPot(), 15.5 * TS, (h - 2) * TS + 4, { solid: false })
