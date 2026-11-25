@@ -2,6 +2,7 @@
 import { PROPS, HOUSE_PROPS, CHARS, charSheet, charFace, monsterSheet, animalSheet, type Rect } from "@/lib/na"
 import type { Portfolio } from "@/lib/content"
 import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PRELOAD, type ExProject } from "./exhibits"
+import { buildTownHall } from "./interiors-village"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -89,25 +90,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
   const out: Record<string, Scene> = {}
   const first = content.profile.name.split(" ")[0]
 
-  // ── TOWN HALL ───────────────────────────────────────────────
-  {
-    const R = room("townhall", "Town Hall", { w: 15, h: 11, wall: "beige", floor: "tan" })
-    // runner carpet
-    for (let r = 3; r < 10; r++) { R.g.fillStyle = "#9c2f2f"; R.g.fillRect(6 * TS + 4, r * TS, TS * 3 - 8, TS); R.g.fillStyle = "#c9a14a"; R.g.fillRect(6 * TS + 6, r * TS, 1, TS); R.g.fillRect(9 * TS - 7, r * TS, 1, TS) }
-    R.put("bookshelf", 1, 1); R.put("bookshelf", 3, 1); R.put("bigShelf", 10, 1); R.put("bookshelf", 12, 1)
-    R.put("longTable", 6, 3); R.put("candles", 6, 2, undefined, false); R.put("scrolls", 8, 2, undefined, false)
-    R.put("bannerRed", 5, 1); R.put("bannerTeal", 9, 1)
-    R.put("pottedPlant", 1, 8); R.put("pottedPlant", 13, 8); R.put("catStatue", 13, 4); R.put("chest", 1, 5)
-    R.put("frogStatue", 1, 4); R.put("plantPot", 4, 8); R.put("plantPot", 10, 8); R.put("dresser", 12, 6); R.put("jar", 2, 6)
-    R.actors.push(npc(CHARS.mayor, 7 * TS + 8, 2 * TS + 14, {
-      id: "mayor", name: "Mayor Hiro",
-      lines: [`Welcome to the Town Hall, traveller!`, `This village was built by ${content.profile.name}, ${content.profile.title.toLowerCase()}.`, `Our records hold the whole story. Have a look!`],
-      action: { type: "section", id: "townhall" },
-    }))
-    R.spot("chronicle", 7 * TS + 8, 4 * TS + 10, "READ THE CHRONICLE", { type: "section", id: "townhall" }, true, 7 * TS + 8, 2 * TS - 12)
-    R.lights.push({ x: 7 * TS, y: 3 * TS, r: 60, color: "255,210,140", flicker: 1 })
-    out.townhall = R.finish({})
-  }
+  out.townhall = buildTownHall(content)
 
   // ── GALLERY: a museum hall ──────────────────────────────────
   // Back wall: the masterpieces (featured work). Below it, free-standing hanging walls in rows, two per row, with a
