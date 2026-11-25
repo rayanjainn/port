@@ -233,12 +233,12 @@ export function plankSign(label: string, w: number, col = "#f4e4b4", wood = WOOD
   return P.c
 }
 /** a small arched window onto an evening sky: curtains and a sill */
-export function windowEvening(w: number, h: number, seed = 1, sky: [string, string, string] = ["#2a2a6a", "#6a4a8a", "#e8905a"]) {
+export function windowEvening(w: number, h: number, seed = 1, sky: [string, string, string] = ["#2a2a6a", "#6a4a8a", "#e8905a"], stars = true) {
   const P = pen(w, h)
   P.r(0, 0, w, h, INK); P.r(1, 1, w - 2, h - 2, WOOD_L); P.r(1, 1, w - 2, 1, WOOD_LL)
   const iw = w - 8, ih = h - 12
   for (let y = 0; y < ih; y++) { const t = y / ih; P.r(4, 4 + y, iw, 1, t < 0.5 ? sky[0] : t < 0.75 ? sky[1] : sky[2]) }
-  for (let i = 0; i < 5; i++) P.p(5 + ((seed * 13 + i * 9) % (iw - 2)), 5 + ((seed * 7 + i * 5) % Math.max(3, ih / 2)), "#fff4cf")
+  for (let i = 0; i < (stars ? 5 : 0); i++) P.p(5 + ((seed * 13 + i * 9) % (iw - 2)), 5 + ((seed * 7 + i * 5) % Math.max(3, ih / 2)), "#fff4cf")
   P.poly([[4, 4 + ih], [4, 4 + ih - 6], [4 + iw * 0.3, 4 + ih - 9], [4 + iw * 0.6, 4 + ih - 5], [4 + iw, 4 + ih - 8], [4 + iw, 4 + ih]], "#1c1030")
   P.r(4 + Math.floor(iw / 2), 4, 1, ih, INK); P.r(4, 4 + Math.floor(ih / 2), iw, 1, INK)
   P.r(0, h - 6, w, 3, WOOD_D); P.r(0, h - 6, w, 1, WOOD_LL); P.r(1, h - 3, w - 2, 3, INK)

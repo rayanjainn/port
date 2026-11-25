@@ -5,6 +5,7 @@ import { ordered, exhibitArt, frameAround, plaque, sculpture, matted, FRAME_PREL
 import { buildTownHall } from "./interiors-village"
 import { buildTavern } from "./interiors-village-tavern"
 import { buildForge } from "./interiors-village-forge"
+import { buildAcademy } from "./interiors-village-academy"
 import { TS, G, sheet, img, blit, hash, canvas, type Scene, type Sprite, type Hotspot, type ActorDef, type Light } from "./core"
 
 type WallVariant = "beige" | "orange" | "brown" | "green"
@@ -258,23 +259,7 @@ export function buildInteriors(content: Portfolio): Record<string, Scene> {
 
   out.forge = buildForge(content)
 
-  // ── ACADEMY ─────────────────────────────────────────────────
-  {
-    const R = room("academy", "Academy", { w: 15, h: 11, wall: "green", floor: "beige" })
-    for (const c of [1, 3, 9, 11]) R.put(c === 9 ? "bigShelf" : "bookshelf", c, 1)
-    R.put("scrolls", 6, 1, undefined, false); R.put("candles", 7, 1, undefined, false)
-    for (const [c, r] of [[3, 5], [6, 5], [9, 5], [3, 7], [6, 7], [9, 7]]) { R.put("redTable", c, r); R.put("stool", c, r + 1, undefined, false) }
-    R.put("pottedPlant", 13, 8); R.put("pottedPlant", 1, 8); R.put("bearStatue", 13, 4)
-    R.actors.push(npc(CHARS.teacher, 7 * TS + 8, 3 * TS + 6, {
-      id: "teacher", name: "Master Sora",
-      lines: [`Ah, a curious mind!`, `${first} studied and earned honours here.`, `The scrolls and the trophy shelf tell the story.`],
-      action: { type: "section", id: "academy" },
-    }))
-    R.spot("diploma", 6 * TS + 8, 2 * TS + 14, "READ THE SCROLLS", { type: "section", id: "academy" }, true, 6 * TS + 8, TS - 4)
-    R.spot("trophies", 10 * TS, 3 * TS + 10, "VIEW HONOURS", { type: "section", id: "academy", focus: "honours" }, true, 10 * TS, TS - 6)
-    R.lights.push({ x: 7 * TS, y: 2 * TS, r: 70, color: "255,230,170" })
-    out.academy = R.finish({})
-  }
+  out.academy = buildAcademy(content)
 
   // ── RAVEN POST (contact) ────────────────────────────────────
   {
