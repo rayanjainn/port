@@ -90,11 +90,14 @@ export function tickIntro(dt: number, S: EngineState, rt: SceneRT) {
     I.said = true
     S.hero.path = []
     const w = worldById(useGameStore.getState().world)
-    const guide = rt.actors
-      .filter((a) => a.def.kind === "npc" && (a.def.lines || a.def.bark))
+    // each world's own greeter by id, else the nearest NPC with a real name, else "<world> guide"
+    const GUIDE: Record<string, string> = { village: "ferryman", city: "priya", desert: "sahar", ruins: "elder" }
+    const named = (a: { def: { kind: string; name?: string } }) => a.def.kind === "npc" && !!a.def.name && !/^(villager|guide|npc)\b/i.test(a.def.name)
+    const guide = rt.actors.find((a) => a.def.id === GUIDE[w.id] && named(a)) ?? rt.actors
+      .filter((a) => named(a) && (a.def.lines || a.def.bark))
       .sort((a, b) => Math.hypot(a.x - I.spawn.x, a.y - I.spawn.y) - Math.hypot(b.x - I.spawn.x, b.y - I.spawn.y))[0]
     useGameStore.getState().say({
-      name: guide?.def.name ?? "Guide", face: guide?.def.face,
+      name: guide?.def.name ?? `${w.name} guide`, face: guide?.def.face,
       lines: [`Welcome to ${w.name}, traveller. Every building here is a chapter of Rayan's story.`],
     })
     end(S)
