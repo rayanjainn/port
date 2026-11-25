@@ -499,7 +499,7 @@ export function buildCityInteriors(content: Portfolio): Record<string, Scene> {
     R.add(desk, W / 2, 8 * TS + 12)
     R.add(monitorOnly(null, NEON), W / 2 - 22, 8 * TS - 20, { solid: false })
     R.add(monitorOnly(exhibitArt(content.projects[0]), NEON), W / 2 + 22, 8 * TS - 20, { solid: false })
-    R.wall(bubbleSign("RECEPTION", 54, "#10142a", CYAN, CYAN), W / 2, 4)
+    R.add(bubbleSign("RECEPTION", 54, "#10142a", CYAN, CYAN), W / 2, 8 * TS + 6, { solid: false, baseOff: 2 })
     // lounge
     R.add(sofa(42, "#3a4a85"), 3 * TS + 8, 11 * TS + 12); R.add(sofa(42, "#3a4a85"), 21 * TS + 8, 11 * TS + 12, { flip: true })
     R.add(plant(34), 1 * TS + 10, 7 * TS + 12); R.add(plant(34), 23 * TS + 6, 7 * TS + 12)
@@ -546,8 +546,8 @@ export function buildCityInteriors(content: Portfolio): Record<string, Scene> {
       R.add(chair(), cx + 17, base + 12, { solid: false })
       R.light(cx, base - 18, 40, "170,200,255", 0.3)
       R.spot(`art-${p.id}`, cx - 6, base + 18, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - 46)
-      const nm = fitTitle(p, 30), tag = pen(34, 7); tag.r(0, 0, 34, 7, "#10142a"); tag.r(0, 6, 34, 1, palOf(p.accent).a)
-      if (nm.micro) drawMicro(tag.x, nm.s, Math.round((34 - nm.w) / 2), 1, "#fff"); else drawText(tag.x, nm.s, Math.round((34 - nm.w) / 2), 0, "#fff")
+      const nm = fitTitle(p, 44), tag = pen(48, 7); tag.r(0, 0, 48, 7, "#10142a"); tag.r(0, 6, 48, 1, palOf(p.accent).a)
+      if (nm.micro) drawMicro(tag.x, nm.s, Math.round((48 - nm.w) / 2), 1, "#fff"); else drawText(tag.x, nm.s, Math.round((48 - nm.w) / 2), 0, "#fff")
       R.add(tag.c, cx - 6, base + 2, { solid: false, baseOff: 1 })
     })
     for (const x of [1, 29]) { R.add(plant(34), x * TS + 8, (NW + 2) * TS + 12); R.add(plant(34), x * TS + 8, (h - 3) * TS + 12) }
@@ -564,7 +564,7 @@ export function buildCityInteriors(content: Portfolio): Record<string, Scene> {
   // ── ROOFTOP CAFE: co-work hub ─────────────────────────────────
   {
     const R = makeRoom("city:tavern", "Rooftop Cafe", { w: 19, h: 14, wallH: 5, world: "city", theme: cityTheme("wood", "#2a1f3a", "#e09a3a", { dark: 0.45 }) })
-    win(R, 48, 2, 44, 36); win(R, 128, 5, 44, 36)
+    win(R, 36, 2, 44, 36); win(R, 140, 5, 44, 36)
     R.wall(neonSign("OPEN LATE", "#e09a3a"), 88, 3)
     const cb = chalkboard("PAST ROLES", content.experience.map((e) => ({ l: `${e.org}`.toUpperCase().slice(0, 12), r: `${e.start.slice(-4)}` })), 104, 52 + Math.max(0, content.experience.length - 3) * 8)
     R.wallLow(cb, 15 * TS, 2)
@@ -664,7 +664,7 @@ export function buildCityInteriors(content: Portfolio): Record<string, Scene> {
     const W = R.w * TS
     win(R, 40, 14, 40, 36); win(R, W - 40, 6, 40, 36)
     R.wallLow(pigeonholes(7, 3, 2), W / 2, 6)
-    R.wall(bubbleSign("POST OFFICE", 70, "#10142a", "#ffffff", "#8e66e8"), W / 2, 3)
+    R.add(bubbleSign("POST OFFICE", 70, "#10142a", "#ffffff", "#8e66e8"), 5 * TS + 8, 7 * TS - 14, { solid: false, baseOff: 2 })
     R.wall(bubbleSign("PARCELS", 36, "#10142a", "#ffd76a", "#ffd76a"), 15 * TS, 30)
     R.light(W / 2, 3 * TS, 100, "255,230,190")
     R.add(counter(96, "#ebe3d0", "#5a3a8a", "#8e66e8"), 5 * TS + 8, 7 * TS + 2)

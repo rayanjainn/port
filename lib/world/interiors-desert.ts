@@ -412,7 +412,7 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
 
   // ── CARAVANSERAI: the chief's courtyard hall ──────────────────
   {
-    const R = makeRoom("desert:townhall", "Caravanserai", { w: 25, h: 15, wallH: 5, world: "desert", theme: sandTheme({ dark: 0.4 }) })
+    const R = makeRoom("desert:townhall", "Caravanserai", { w: 25, h: 15, wallH: 5, world: "desert", theme: sandTheme({ dark: 0.32 }) })
     const W = R.w * TS
     R.decal((g) => { rug(g, 6 * TS, 7 * TS - 4, 13 * TS, 6 * TS + 4, "#8e2a22", "#e8c860", TEAL); rug(g, 2 * TS, 8 * TS, 3 * TS + 8, 4 * TS, "#2a6a74", "#e8c860", TERRA); rug(g, 20 * TS + 8, 8 * TS, 3 * TS + 8, 4 * TS, "#2a6a74", "#e8c860", TERRA) })
     R.pool(W / 2, 9 * TS, 110, 40, "255,190,100", 0.14)
@@ -458,7 +458,6 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
       R.spot(`art-${p.id}`, cx, NW * TS + 14, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, NW * TS - st.height - 12)
       if (i < top.length - 1) torch(R, cx + pitch / 2, NW * TS - 14 - 34 - 20, 74)
     })
-    R.wall(plaqueSign("HALL OF RELICS", 84), W / 2, 12)
     const podCols = [3, 7.4, 11.8, 19.2, 23.6, 28]
     rest.forEach((p, i) => {
       const row = Math.floor(i / PER), col = i % PER
@@ -603,7 +602,6 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
     R.pool(W / 2, 10 * TS, 90, 30, "255,200,120", 0.13)
     arch(R, 2 * TS + 8, 2, 30, 42); arch(R, W - 2 * TS - 8, 7, 30, 42)
     R.wallLow(cubbies(7, 2), W / 2, 6)
-    R.wall(plaqueSign("FALCON POST", 74), W / 2, 6)
     lantern(R, 6 * TS - 4, 6); lantern(R, W - 6 * TS + 4, 6)
     // perches
     ;[[4, 8.2], [8, 7.4], [11, 7.6], [15, 8.4]].forEach(([c, r], i) => { R.add(falconStrip(), c * TS + 8, r * TS + 12, { anim: { frames: 4, fps: 1.4 + i * 0.3, dx: 24 }, solid: [10, 6] }) })

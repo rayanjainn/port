@@ -395,7 +395,6 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     const W = w * TS
     R.decal((g) => { g.fillStyle = "#0a1020"; g.fillRect(13 * TS, NW * TS, 5 * TS, (h - 1 - NW) * TS); g.fillStyle = "#16284a"; g.fillRect(13 * TS + 2, NW * TS, 5 * TS - 4, (h - 1 - NW) * TS); g.fillStyle = "rgba(120,255,210,.5)"; g.fillRect(13 * TS + 4, NW * TS, 1, (h - 1 - NW) * TS); g.fillRect(18 * TS - 5, NW * TS, 1, (h - 1 - NW) * TS); for (let y = NW * TS + 10; y < (h - 1) * TS; y += 26) { g.fillStyle = "rgba(120,255,210,.35)"; g.fillRect(15 * TS + 5, y, 6, 6); g.fillStyle = "#0a1020"; g.fillRect(15 * TS + 7, y + 2, 2, 2) } })
     // crypt niches along the north wall with skulls and glowing jars
-    R.wall(plate("MEMORY VAULT", 84, VIOLET), W / 2, 12)
     for (let i = 0; i < 8; i++) { const cx = 2.5 * TS + i * 3.4 * TS + (i > 3 ? 4.6 * TS : 0); if (cx > 12.4 * TS && cx < 18.8 * TS) continue; R.wallLow(skull(), cx, 6) }
     const span = W - 2 * TS, pitch = span / top.length
     const ticks: ((t: number) => void)[] = []
@@ -439,7 +438,6 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     const bd = board("QUEST BOARD", roles, 104, 24 + roles.length * 11)
     R.wallLow(bd, 12 * TS, 6)
     R.light(12 * TS, 3 * TS, 70, "255,200,120", 0.8)
-    R.wall(plate("THE LAST LANTERN", 100, CANDLE), 12 * TS, 4)
     for (const x of [8, 16]) { R.wall(lanternStrip(), x * TS, 18, { anim: { frames: 3, fps: 3, dx: 16 } }); R.light(x * TS, 3 * TS + 6, 70, "255,190,100", 1) }
     // bar
     R.add(bar(100), 15 * TS, 7 * TS + 2, { solid: [96, 8] }); R.add(barrel(), 19 * TS + 8, 6 * TS + 10, { solid: [14, 8] }); R.add(barrel(), 1 * TS + 8, 9 * TS + 6, { solid: [14, 8] })
@@ -538,7 +536,6 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     arch(R, W / 2, 6, 40, 60)
     R.light(W / 2, 4 * TS, 110, "120,160,255", 0.8)
     for (const x of [5.6, W / TS - 5.6]) { R.wall(lanternStrip(), x * TS, 10, { anim: { frames: 3, fps: 3, dx: 16 } }); R.light(x * TS, 3 * TS, 60, "130,255,215", 0.8) }
-    R.wall(plate("THE FORGOTTEN LIBRARY", 124, VIOLET), W / 2, 4)
     // floating books
     const fb: [number, number, number][] = [[9, 9, 1], [13, 8, 2], [11, 12, 3], [6, 11, 4], [17, 11, 5], [14, 13, 6]]
     for (const [c, r, s] of fb) { R.add(floatBooks(s), c * TS, r * TS, { anim: { frames: 6, fps: 3 + (s % 3), dx: 24 }, solid: false, baseOff: 40 }); R.light(c * TS, r * TS - 12, 40, "130,255,215", 0.8) }
@@ -570,7 +567,6 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     R.pool(W / 2, 9 * TS, 80, 36, "110,255,210", 0.14)
     arch(R, 2 * TS, 3, 26, 40); arch(R, W - 2 * TS, 8, 26, 40)
     R.wallLow(mailRack(6, 3), 5.8 * TS, 6); R.wallLow(mailRack(4, 3), W - 4.6 * TS, 6)
-    R.wall(plate("WHISPER POST", 80, TEAL), W / 2, 2)
     R.add(whisperLantern(), W / 2, 8 * TS + 4, { anim: { frames: 6, fps: 4, dx: 40 }, solid: [28, 10] })
     R.light(W / 2, 6 * TS, 140, "110,255,210", 1.2); R.light(W / 2, 8 * TS, 80, "200,255,240", 0.6)
     R.add(whisperHorn(), W / 2 + 34, 8 * TS + 6, { solid: [16, 8] })
