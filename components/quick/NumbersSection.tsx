@@ -83,16 +83,17 @@ function Recent({ stats }: { stats: QuickStats }) {
       <ol className="mt-4 divide-y divide-white/[0.07]">
         {stats.recent.map((r) => {
           const p = c.projects.find((x) => x.repo.toLowerCase() === r.name.toLowerCase())
-          const inner = <>{r.name}<ArrowUpRight size={13} className="text-white/35" /></>
-          const cls = "inline-flex min-h-9 items-center gap-1 font-medium text-[#f3ede2] hover:text-[#ffb547]"
+          const label = p?.title ?? r.name
+          const inner = <><span className="truncate">{label}</span><ArrowUpRight size={13} className="shrink-0 text-white/35" /></>
+          const cls = "inline-flex min-h-9 max-w-full items-center gap-1 font-medium text-[#f3ede2] hover:text-[#ffb547]"
           return (
-            <li key={r.name} className="grid grid-cols-[1fr_auto] items-center gap-x-4 py-2.5 sm:grid-cols-[minmax(0,15rem)_1fr_auto]">
+            <li key={r.name} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 py-2.5 sm:grid-cols-[minmax(0,1fr)_8rem_6.5rem]">
               <div className="min-w-0">{p && STATIC_IDS.has(p.id) ? <Link href={`/quick/${p.id}`} className={cls}>{inner}</Link> : <a href={r.url} target="_blank" rel="noreferrer" className={cls}>{inner}</a>}</div>
-              <span className={`${mono} order-3 col-span-2 flex items-center gap-2 text-xs text-white/45 sm:order-none sm:col-span-1`}>
-                {r.language && <><span className="inline-block h-2 w-2 rounded-full" style={{ background: LANG_COLORS[r.language] ?? "#888" }} />{r.language}</>}
-                {r.description && <span className="hidden min-w-0 flex-1 truncate font-sans text-sm text-white/45 lg:inline">· {r.description}</span>}
+              <span className={`${mono} order-3 col-span-2 flex min-w-0 items-center gap-2 text-xs text-white/45 sm:order-none sm:col-span-1`}>
+                {r.language && <><span className="inline-block h-2 w-2 shrink-0 rounded-full" style={{ background: LANG_COLORS[r.language] ?? "#888" }} /><span className="truncate">{r.language}</span></>}
               </span>
-              <span className={`${mono} text-right text-xs text-[#ffb547]`}>{r.ago}</span>
+              <span className={`${mono} whitespace-nowrap text-right text-xs text-[#ffb547]`}>{r.ago}</span>
+              {r.description && <p className="col-span-full hidden min-w-0 truncate text-sm text-white/45 sm:block">{r.description}</p>}
             </li>
           )
         })}
