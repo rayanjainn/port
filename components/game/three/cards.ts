@@ -65,14 +65,18 @@ export class CardBatch {
   set(i: number, x: number, y: number, z: number, w: number, h: number, rx: number, ry: number, rw: number, rh: number, tw: number, th: number, flip = false, anim?: { frames: number; fps: number; dx: number }, sway = 0, dz = 0) {
     const e = 0.02
     let u0 = (rx + e) / tw, u1 = (rx + rw - e) / tw
-    if (flip) [u0, u1] = [u1, u0]
-    this.foot.set([x, y, z], i * 3)
-    this.size.set([w, h], i * 2)
-    this.rect.set([u0, (ry + e) / th, u1, (ry + rh - e) / th], i * 4)
-    this.anim.set([anim ? anim.frames : 0, anim ? anim.fps : 0, anim ? anim.dx / tw : 0, sway], i * 4)
+    if (flip) { const t = u0; u0 = u1; u1 = t }
+    // written straight into the typed arrays: this runs for every card every frame, so no temporary arrays
+    let o = i * 3
+    this.foot[o] = x; this.foot[o + 1] = y; this.foot[o + 2] = z
+    o = i * 2
+    this.size[o] = w; this.size[o + 1] = h
+    o = i * 4
+    this.rect[o] = u0; this.rect[o + 1] = (ry + e) / th; this.rect[o + 2] = u1; this.rect[o + 3] = (ry + rh - e) / th
+    this.anim[o] = anim ? anim.frames : 0; this.anim[o + 1] = anim ? anim.fps : 0; this.anim[o + 2] = anim ? anim.dx / tw : 0; this.anim[o + 3] = sway
     this.dz[i] = dz
   }
-  setTint(i: number, r: number, g: number, b: number, a: number) { this.tint.set([r, g, b, a], i * 4) }
+  setTint(i: number, r: number, g: number, b: number, a: number) { const o = i * 4; this.tint[o] = r; this.tint[o + 1] = g; this.tint[o + 2] = b; this.tint[o + 3] = a }
   /** thickness layer: offset in tiles behind the front face and its colour shade (front = 0, 1) */
   setLayer(i: number, off: number, shade: number) { this.layer[i * 2] = off; this.layer[i * 2 + 1] = shade }
   /** 1 = stands vertical (no lean): wall-mounted things such as a waterfall on its cliff face */

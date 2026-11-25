@@ -10,6 +10,7 @@ import { buildTerrain, type Terrain } from "./terrain"
 import { isOutdoor } from "./bus"
 import { fx } from "./fx"
 import { stopwatch } from "@/lib/perf"
+import { weather, P as WP, R as WR, MIST, CAP as WCAP, kindOffset } from "@/lib/weather"
 
 const COS = Math.cos(TILT), SIN = Math.sin(TILT)
 const P = 1 / TS
@@ -42,6 +43,8 @@ export class World {
   private life!: CardBatch
   private glow!: CardBatch
   private slash!: CardBatch
+  private wx!: CardBatch
+  private mistB!: CardBatch
   res = new THREE.Vector2(1, 1)
   /** the camera's texel grid (world units): moving sprites snap to it. ux = 0 means no snapping yet */
   snap = { x: 0, z: 0, ux: 0, uz: 0 }
@@ -285,6 +288,9 @@ export class World {
     gr.addColorStop(0, "rgba(255,255,255,1)"); gr.addColorStop(0.25, "rgba(255,255,255,.5)"); gr.addColorStop(0.6, "rgba(255,255,255,.14)"); gr.addColorStop(1, "rgba(255,255,255,0)")
     g.fillStyle = gr; g.fillRect(0, 0, 64, 64)
     this.glow = new CardBatch(this.sh, makeTexture(gc), Math.max(1, this.rt.scene.lights.length), "add", false, true)
+    // weather: every drop / petal / grain / mote / ripple is one card of the same 2x2 white texel; fog banks are big soft glows
+    this.wx = new CardBatch(this.sh, makeTexture(one), WP.x.length + WCAP.ripples, "blend", false, true)
+    this.mistB = new CardBatch(this.sh, makeTexture(gc), WCAP.mist, "blend", false, true)
     // slash arcs: one cell per facing (right, down, left, up)
     const sc2 = document.createElement("canvas"); sc2.width = 128; sc2.height = 32
     const s = sc2.getContext("2d")!
@@ -294,7 +300,7 @@ export class World {
     })
     this.slash = new CardBatch(this.sh, makeTexture(sc2), 1, "blend", false, true)
     this.slash.mats[0].depthTest = false
-    for (const b of [this.parts, this.life, this.glow, this.slash]) for (const ob of b.objects) this.group.add(ob)
+    for (const b of [this.parts, this.life, this.glow, this.slash, this.wx, this.mistB]) for (const ob of b.objects) this.group.add(ob)
     const sm = img(SHEETS.smoke)
     if (ready(sm)) { this.smoke = new CardBatch(this.sh, makeTexture(sm), 32, "blend", false, true); for (const ob of this.smoke.objects) this.group.add(ob) }
   }
@@ -489,18 +495,58 @@ export class World {
       }
     }
     this.life.flush(ln)
+    this.updateWeather(now, night)
+  }
+
+  /** weather cards: rain, petals, sand, motes, puddle rings and fog banks, from the shared pool in lib/weather */
+  private updateWeather(now: number, night: number) {
+    const W = weather
+    let n = 0
+    const put = (x: number, y: number, h: number, w: number, hh: number, r: number, g: number, b: number, a: number) => {
+      const gy = this.terrain.heightAt(x * P, y * P)
+      this.wx.set(n, this.sx(x * P), gy + h * P * COS, this.sz(y * P) - h * P * SIN, w * P, hh * P, 0, 0, 2, 2, 2, 2)
+      this.wx.setTint(n, r, g, b, a)
+      n++
+    }
+    const lim = WP.x.length
+    let o = kindOffset(0), c = WP.live[0]
+    for (let j = 0; j < c && n < lim; j++) { const i = o + j; put(WP.x[i], WP.y[i], WP.h[i], 1, 4, 0.78, 0.86, 0.95, 0.6) }
+    o = kindOffset(1); c = WP.live[1]
+    for (let j = 0; j < c && n < lim; j++) { const i = o + j; const s = WP.s[i]; put(WP.x[i], WP.y[i], WP.h[i], 2, 2, 1, s < 0.5 ? 0.77 : s < 0.8 ? 0.9 : 0.62, s < 0.5 ? 0.85 : s < 0.8 ? 0.94 : 0.75, 0.95) }
+    o = kindOffset(2); c = WP.live[2]
+    for (let j = 0; j < c && n < lim; j++) { const i = o + j; put(WP.x[i], WP.y[i], WP.h[i], WP.s[i] > 0.6 ? 3 : 2, 1, 0.91, 0.77, 0.53, 0.55) }
+    o = kindOffset(3); c = WP.live[3]
+    for (let j = 0; j < c && n < lim; j++) { const i = o + j; const s = WP.s[i]; put(WP.x[i], WP.y[i], WP.h[i], 1.5, 1.5, s < 0.5 ? 0.62 : 0.78, s < 0.5 ? 0.94 : 0.7, s < 0.5 ? 0.82 : 1, (0.35 + 0.65 * Math.abs(Math.sin(now * 1.3 + s * 50))) * 0.85) }
+    if (W.rain > 0.02) for (let q = 0; q < WCAP.ripples; q++) { const t = WR.t[q]; if (t < 1) put(WR.x[q], WR.y[q], 0.3, 2 + t * 10, 1 + t * 3, 0.8, 0.88, 0.96, (1 - t) * 0.5) }
+    this.wx.flush(n)
+    // fog banks drift across the view; the scene fog also thickens a little
+    let m = 0
+    if (W.fog > 0.02) {
+      const cx = W.cx, cy = W.cy
+      for (let i = 0; i < WCAP.mist; i++) {
+        const w = W.w * 1.1 * MIST.r[i] * P, h = W.h * 0.55 * MIST.r[i] * P
+        const x = (cx + ((MIST.x[i] - 0.2) * 1.25 - 0.5) * W.w) * P, z = (cy + (MIST.y[i] - 0.5) * W.h) * P
+        this.mistB.set(m, this.sx(x), this.terrain.heightAt(x, z) + 0.15, this.sz(z), w, h, 0, 0, 64, 64, 64, 64)
+        this.mistB.setTint(m, 0.72, 0.9, 0.88, 0.22 * W.fog)
+        m++
+      }
+    }
+    this.mistB.flush(m)
+    // wet ground: lamp halos pick up a little more glow; the extra darkening is handled in the lighting above
+    this.sh.uFog.value.z = Math.min(0.95, this.sh.uFog.value.z + W.fog * 0.12 + W.rain * 0.08)
+    void night
   }
 
   /** dev stats: instance and batch counts */
   counts() {
     let inst = 0
-    const all = [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, ...(this.smoke ? [this.smoke] : [])]
+    const all = [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, this.wx, this.mistB, ...(this.smoke ? [this.smoke] : [])]
     for (const b of all) inst += b.geo.instanceCount
     return { batches: all.length, instances: inst }
   }
 
   dispose() {
-    for (const b of [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, ...(this.smoke ? [this.smoke] : [])]) b.dispose()
+    for (const b of [...this.batches, ...this.actorGroups.map((g) => g.b), this.parts, this.life, this.glow, this.slash, this.wx, this.mistB, ...(this.smoke ? [this.smoke] : [])]) b.dispose()
     this.emisTex?.dispose()
     this.terrain.dispose(); this.sky.geometry.dispose(); this.skyMat.dispose()
     this.group.clear()

@@ -15,6 +15,9 @@ import { OPEN_WORLDS, loaderFor, worldById, visitKey } from "@/lib/world/worlds"
 import TitleScreen from "@/components/ui/TitleScreen"
 import { useLoading, bootStart } from "@/lib/loading"
 import { stopwatch } from "@/lib/perf"
+import { updateWeather, type WeatherProfile } from "@/lib/weather"
+import { drawWeather } from "@/lib/weatherDraw"
+import { initAmbience } from "@/lib/ambience"
 import HUD from "@/components/ui/HUD"
 import AchievementToast from "@/components/ui/AchievementToast"
 import BuildingModal from "@/components/ui/BuildingModal"
@@ -151,6 +154,7 @@ export default function GameCanvas() {
   useEffect(() => {
     let cancelled = false
     engine.state = st.current
+    initAmbience()
     engine.scenes = scenes.current
     engine.ensureWorld = ensureWorld
     engine.enterWorld = enterWorld
@@ -205,6 +209,7 @@ export default function GameCanvas() {
   }, [])
 
   function prepare(scene: Scene): SceneRT {
+    if (scene.world && scene.id === scene.world) scene.weather = scene.world   // each world entry scene has weather
     const solids = new SolidIndex(scene.w)
     for (let r = 0; r < scene.h; r++)
       for (let c = 0; c < scene.w; c++) if (scene.blocked[r * scene.w + c]) solids.add({ x: c * TS, y: r * TS, w: TS, h: TS })
@@ -581,6 +586,7 @@ export default function GameCanvas() {
 
       // the 3D view draws itself; keep the shared particles ticking and skip all 2D drawing
       if (store.view === "3d") {
+        updateWeather((sc.weather as WeatherProfile) ?? null, dt, H.x, H.y, 460, 300, runtime.night, paused)
         for (const p of S.particles) { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += p.kind === "smoke" ? 0 : 60 * dt }
         S.particles = S.particles.filter((p) => p.life > 0)
         S.cam.init = false
@@ -690,6 +696,9 @@ export default function GameCanvas() {
       }
       fctx.globalAlpha = 1
       S.particles = S.particles.filter((p) => p.life > 0)
+
+      updateWeather((sc.weather as WeatherProfile) ?? null, dt, camX + vw / 2, camY + vh / 2, vw + 24, vh + 24, runtime.night, paused)
+      drawWeather(fctx, camX, camY, vw, vh, now, sc.outdoor ? runtime.night : 0, sc.lights)
 
       // ambient life: butterflies by day, fireflies at night / in the mine
       const nightAmt = sc.outdoor ? runtime.night : 0

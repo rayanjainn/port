@@ -165,6 +165,7 @@ export interface Scene {
   world?: string                 // id of the world this scene belongs to (interiors inherit their world's)
   landmarks?: Landmark[]         // the world's checklist (entry scene only)
   arrive?: { x: number; y: number; facing: Facing }   // where travellers land (the dock, the metro platform...); spawn if absent
+  weather?: string               // weather profile (lib/weather.ts), set on each world entry scene
   ambient?: "meadow" | "cave"    // drifting butterflies / fireflies
   /** night-time tuning for the 2D light pass; omitted = the village defaults */
   lighting?: { dark?: number; holeStrength?: number; heroRadius?: number; radiusScale?: number; glow?: number; tint?: string }
