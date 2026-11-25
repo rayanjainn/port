@@ -1,7 +1,7 @@
 // Neon Harbor interiors: six modern rooms, one behind each landmark door. Night light pours in through the windows.
 import type { Portfolio } from "@/lib/content"
 import { PEOPLE, personSheet, personFace } from "@/lib/kenney"
-import { drawText, drawMicro, fitTitle, textW, microW, ordered, exhibitArt, shrink, projectIcon, palOf, mix, wrapMicro, type ExProject } from "./exhibits"
+import { drawText, drawMicro, nameplate, fitTitle, textW, microW, ordered, exhibitArt, shrink, projectIcon, palOf, mix, wrapMicro, type ExProject } from "./exhibits"
 import { TS, canvas, type Scene } from "./core"
 import { makeRoom, npc as mkNpc, pen, shadow, shade, strip, type Theme, type Room, type Pen } from "./interiors-kit"
 
@@ -545,10 +545,8 @@ export function buildCityInteriors(content: Portfolio): Record<string, Scene> {
       R.add(deskPod(exhibitArt(p), p.accent), cx, base, { solid: [48, 14] })
       R.add(chair(), cx + 17, base + 12, { solid: false })
       R.light(cx, base - 18, 40, "170,200,255", 0.3)
-      R.spot(`art-${p.id}`, cx - 6, base + 18, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - 46)
-      const nm = fitTitle(p, 44), tag = pen(48, 7); tag.r(0, 0, 48, 7, "#10142a"); tag.r(0, 6, 48, 1, palOf(p.accent).a)
-      if (nm.micro) drawMicro(tag.x, nm.s, Math.round((48 - nm.w) / 2), 1, "#fff"); else drawText(tag.x, nm.s, Math.round((48 - nm.w) / 2), 0, "#fff")
-      R.add(tag.c, cx - 6, base + 2, { solid: false, baseOff: 1 })
+      R.spot(`art-${p.id}`, cx, base + 22, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - 46)
+      R.add(nameplate(p, 60, { bg: "#10142a", edge: "#05060d", text: "#ffffff", shadow: "#05060d" }), cx, base + 25, { solid: false })
     })
     for (const x of [1, 29]) { R.add(plant(34), x * TS + 8, (NW + 2) * TS + 12); R.add(plant(34), x * TS + 8, (h - 3) * TS + 12) }
     R.light(W / 2, (NW + 3) * TS, 140, "200,190,255")

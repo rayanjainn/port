@@ -1,7 +1,7 @@
 // Hollow Reach interiors: six cold rooms behind the landmark doors. Darkness, strong local light, drifting motes.
 import type { Portfolio } from "@/lib/content"
 import { charSheet, charFace, RUINS_CHARS } from "@/lib/na"
-import { drawText, drawMicro, fitTitle, textW, microW, ordered, memoryPane, memoryTome } from "./exhibits"
+import { drawText, drawMicro, fitTitle, textW, microW, ordered, memoryPane, memoryTome, nameplate } from "./exhibits"
 import { TS, canvas, type Scene, type Sprite } from "./core"
 import { makeRoom, npc as mkNpc, pen, shadow, shade, strip, type Theme, type Room, type Pen } from "./interiors-kit"
 
@@ -390,31 +390,34 @@ export function buildRuinsInteriors(content: Portfolio): Record<string, Scene> {
     const top = list.slice(0, 6), rest = list.slice(6)
     const PER = 6, NW = 6
     const rows = Math.max(1, Math.ceil(rest.length / PER))
-    const w = 31, h = NW + 7 + rows * 5 + 3
+    const w = 31, h = NW + 8 + rows * 5 + 3
     const R = makeRoom("ruins:gallery", "Memory Vault", { w, h, wallH: NW, world: "ruins", theme: coldTheme({ dark: 0.7, wall: "#323e52", floor: "slate", tint: "2,6,28" }) })
     const W = w * TS
     R.decal((g) => { g.fillStyle = "#0a1020"; g.fillRect(13 * TS, NW * TS, 5 * TS, (h - 1 - NW) * TS); g.fillStyle = "#16284a"; g.fillRect(13 * TS + 2, NW * TS, 5 * TS - 4, (h - 1 - NW) * TS); g.fillStyle = "rgba(120,255,210,.5)"; g.fillRect(13 * TS + 4, NW * TS, 1, (h - 1 - NW) * TS); g.fillRect(18 * TS - 5, NW * TS, 1, (h - 1 - NW) * TS); for (let y = NW * TS + 10; y < (h - 1) * TS; y += 26) { g.fillStyle = "rgba(120,255,210,.35)"; g.fillRect(15 * TS + 5, y, 6, 6); g.fillStyle = "#0a1020"; g.fillRect(15 * TS + 7, y + 2, 2, 2) } })
     // crypt niches along the north wall with skulls and glowing jars
     for (let i = 0; i < 8; i++) { const cx = 2.5 * TS + i * 3.4 * TS + (i > 3 ? 4.6 * TS : 0); if (cx > 12.4 * TS && cx < 18.8 * TS) continue; R.wallLow(skull(), cx, 6) }
     const span = W - 2 * TS, pitch = span / top.length
+    const tone = { bg: "#0a1822", edge: "#3c6270", text: "#bff7ec", shadow: "#03080c" }
     const ticks: ((t: number) => void)[] = []
     top.forEach((p, i) => {
       const cx = TS + pitch * (i + 0.5)
       const m = memoryPane(p, 4, 0.92)
       R.add(m.cv, cx, (NW + 4) * TS, { anim: { frames: 4, fps: 4, dx: m.w }, solid: [34, 8] })
+      R.add(nameplate(p, 66, tone), cx, (NW + 4) * TS + 14, { solid: false })
       R.light(cx, (NW + 2) * TS, 78, "130,255,225", 0.9); R.pool(cx, (NW + 4) * TS + 4, 40, 10, "120,255,220", 0.22)
       R.spot(`art-${p.id}`, cx, (NW + 4) * TS + 14, `RECALL ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, (NW + 4) * TS - m.h - 8)
     })
-    const podCols = [3, 7.4, 11.8, 19.2, 23.6, 28]
+    const podCols = [3, 7, 10.8, 20.2, 24.2, 28]
     rest.forEach((p, i) => {
       const row = Math.floor(i / PER), col = i % PER
-      const cx = podCols[col] * TS + 8, base = (NW + 8 + row * 5) * TS
-      const m = memoryTome(p, 3, 1)
+      const cx = podCols[col] * TS + 8, base = (NW + 9 + row * 5) * TS
+      const m = memoryTome(p, 3, 1, true)
       R.add(m.cv, cx, base, { anim: { frames: 3, fps: 3, dx: m.w }, solid: [26, 8] })
+      R.add(nameplate(p, 58, tone), cx, base + 14, { solid: false })
       R.light(cx, base - 24, 50, "140,220,255", 0.9)
       R.spot(`art-${p.id}`, cx, base + 14, `RECALL ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - m.h - 6)
     })
-    for (const x of [12.5, 17.5]) for (let r = 0; r <= rows; r++) brazier(R, x * TS, (NW + 3 + r * 5) * TS + 12, 76)
+    for (const x of [13.9, 17.1]) for (let r = 0; r <= rows; r++) brazier(R, x * TS, (NW + 5 + r * 5) * TS + 12, 76)
     for (const x of [1, 29]) { R.add(jar(VIOLET, 22), x * TS + 8, (NW + 2) * TS + 8, { anim: { frames: 4, fps: 3, dx: 14 }, solid: [10, 6] }); R.light(x * TS + 8, (NW + 2) * TS - 2, 40, "170,150,255", 0.8) }
     R.add(plant(), 15.5 * TS, (h - 2) * TS, { solid: false })
     R.actors.push(folk("hobb", "Gravekeeper Hobb", RUINS_CHARS.gravekeeper, 15 * TS + 8, (NW + 2) * TS + 4, {

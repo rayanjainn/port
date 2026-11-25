@@ -133,6 +133,48 @@ export function fitTitle(src: string | { id?: string; title: string; short?: str
   return { s: first.slice(0, 1), micro: true, w: 3 }
 }
 
+/** a nameplate layout for a plate `max` px wide: whole title in the 5x7 face, else the 3x5 face on one line, else two balanced 3x5 lines;
+ *  only when none of those fit does it fall back to fitTitle's abbreviations */
+export function fitPlate(src: string | { id?: string; title: string; short?: string }, max: number): { lines: string[]; micro: boolean; w: number } {
+  const title = typeof src === "string" ? src : src.title
+  const short = typeof src === "string" ? undefined : src.short ?? (src.id ? SHORT[src.id] : undefined)
+  const forms = [title]
+  if (short) forms.push(short)
+  for (const form of forms) {
+    const ws = splitWords(form.replace(/[^A-Za-z0-9 \/_]/g, " ")).map((w) => w.toUpperCase())
+    if (!ws.length) continue
+    const one = ws.join(" ")
+    if (textW(one) <= max) return { lines: [one], micro: false, w: textW(one) }
+    if (microW(one) <= max) return { lines: [one], micro: true, w: microW(one) }
+    let best: string[] | null = null, bw = 1e9
+    for (let k = 1; k < ws.length; k++) {
+      const a = ws.slice(0, k).join(" "), b = ws.slice(k).join(" ")
+      const w = Math.max(microW(a), microW(b))
+      if (w <= max && w < bw) { best = [a, b]; bw = w }
+    }
+    if (best) return { lines: best, micro: true, w: bw }
+  }
+  const f = fitTitle(src, max)
+  return { lines: [f.s], micro: f.micro, w: f.w }
+}
+
+export interface PlateTone { bg: string; edge: string; text: string; shadow?: string; accent?: string }
+/** a separate nameplate for an exhibit: as wide as the cell (not the art), one or two lines, drawn crisp at 1:1 */
+export function nameplate(p: ExProject, w: number, tone: PlateTone): HTMLCanvasElement {
+  const f = fitPlate(p, w - 6)
+  const lh = f.micro ? 6 : 8
+  const h = f.lines.length * lh + 4
+  const { c, ctx } = canvas(w, h)
+  ctx.fillStyle = tone.edge; ctx.fillRect(0, 0, w, h)
+  ctx.fillStyle = tone.bg; ctx.fillRect(1, 1, w - 2, h - 2)
+  ctx.fillStyle = tone.accent ?? p.accent; ctx.fillRect(1, h - 2, w - 2, 1)
+  f.lines.forEach((l, i) => {
+    const tw = f.micro ? microW(l) : textW(l), x = Math.round((w - tw) / 2)
+    if (f.micro) drawMicro(ctx, l, x, 2 + i * lh, tone.text, tone.shadow); else drawText(ctx, l, x, 2 + i * lh, tone.text, tone.shadow)
+  })
+  return c
+}
+
 // ── pen: crisp, integer-only drawing ───────────────────────────
 export class Pen {
   readonly c: HTMLCanvasElement
@@ -1074,7 +1116,7 @@ function slabSet(P: Pen, x: number, y: number, w: number, h: number, arch: boole
   }
 }
 /** a carved sandstone stele: gold-inlaid title, the project art in relief (great ones add an arch, tagline and glyph frieze) */
-export function stele(p: ExProject, kind: "great" | "tablet" = "tablet", k = 1): HTMLCanvasElement {
+export function stele(p: ExProject, kind: "great" | "tablet" = "tablet", k = 1, plain = false): HTMLCanvasElement {
   const art = carve(exhibitArt(p), p.accent)
   const great = kind === "great"
   const W = great ? 84 : 76, H = great ? 82 : 72
@@ -1087,8 +1129,9 @@ export function stele(p: ExProject, kind: "great" | "tablet" = "tablet", k = 1):
   for (let i = 0; i < 24; i++) { const hx = hashStr(p.id + "s" + i); P.p(sx + 6 + (hx % (sw - 12)), gy + 4 + ((hx >> 8) % (H - 30)), i % 3 ? SAND.d : SAND.l) }
   const ty = great ? 13 : 7
   const title = (T: Pen, bx: number, by: number, bw: number, tw: number) => {
-    const f = fitTitle(p, tw)
     T.r(bx, by - 3, bw, 12, SAND.ink); T.r(bx + 1, by - 2, bw - 2, 10, SAND.d)
+    if (plain) { const mx = Math.round(T.w / 2); T.r(mx - 1, by, 3, 3, "#ffd84a"); T.r(mx - 8, by + 1, 1, 1, "#ffd84a"); T.r(mx + 8, by + 1, 1, 1, "#ffd84a"); return }
+    const f = fitTitle(p, tw)
     const tx = Math.round((T.w - f.w) / 2)
     if (f.micro) drawMicro(T.x, f.s, tx, by + 1, "#ffd84a", SAND.ink); else drawText(T.x, f.s, tx, by, "#ffd84a", SAND.ink)
   }
@@ -1181,7 +1224,7 @@ export function memoryPane(p: ExProject, frames = 4, k = 1): { cv: HTMLCanvasEle
   return { cv: c, w: FW, h: FH, frames }
 }
 /** a tome on a lectern with a faint hologram of the art above it: strip of `frames` cells of 44 x 62 */
-export function memoryTome(p: ExProject, frames = 3, k = 1): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
+export function memoryTome(p: ExProject, frames = 3, k = 1, plain = false): { cv: HTMLCanvasElement; w: number; h: number; frames: number } {
   const sp = spectral(exhibitArt(p), p.accent, frames)
   const FW = 44, FH = 62
   const { c, ctx } = canvas(FW * frames, FH)
@@ -1201,10 +1244,12 @@ export function memoryTome(p: ExProject, frames = 3, k = 1): { cv: HTMLCanvasEle
     ctx.fillStyle = "#0a1822"; ctx.fillRect(ox + 8, 32, 28, 6)
     ctx.fillStyle = "#bff7ec"; ctx.fillRect(ox + 9, 33, 12, 4); ctx.fillRect(ox + 23, 33, 12, 4); ctx.fillStyle = "#6edcc4"; ctx.fillRect(ox + 21, 32, 2, 6)
     const tx = ox + 5 + Math.round((34 - f0.w) / 2)
-    if (k === 1) { if (f0.micro) drawMicro(ctx, f0.s, tx, 46, "#a8f0e0"); else drawText(ctx, f0.s, tx, 44, "#a8f0e0") }
+    if (plain) { ctx.fillStyle = "#6edcc4"; ctx.fillRect(ox + 20, 47, 4, 1); ctx.fillRect(ox + 21, 46, 2, 3) }
+    else if (k === 1) { if (f0.micro) drawMicro(ctx, f0.s, tx, 46, "#a8f0e0"); else drawText(ctx, f0.s, tx, 44, "#a8f0e0") }
   }
   if (k !== 1) {
     const r = shrinkStrip(c, frames, k)
+    if (plain) return { cv: r.cv, w: r.w, h: r.h, frames }
     const ctx2 = r.cv.getContext("2d")!
     // lettering is drawn after scaling so it stays crisp
     const f1 = fitTitle(p, Math.round(34 * k) - 2)

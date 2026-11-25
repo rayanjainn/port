@@ -1,7 +1,7 @@
 // Sunscar Oasis interiors: six sandstone rooms behind the landmark doors, lit by lanterns, torches and a kiln.
 import type { Portfolio } from "@/lib/content"
 import { charSheet, charFace } from "@/lib/na"
-import { drawText, drawMicro, fitTitle, textW, microW, ordered, stele, palOf, shrink, wrapMicro } from "./exhibits"
+import { drawText, drawMicro, fitTitle, textW, microW, ordered, stele, nameplate, palOf, shrink, wrapMicro } from "./exhibits"
 import { TS, type Scene } from "./core"
 import { makeRoom, npc as mkNpc, pen, shadow, shade, strip, type Theme, type Room, type Pen } from "./interiors-kit"
 
@@ -450,26 +450,29 @@ export function buildDesertInteriors(content: Portfolio): Record<string, Scene> 
     const W = w * TS
     R.decal((g) => { g.fillStyle = "#2a0e08"; g.fillRect(13 * TS, NW * TS, 5 * TS, (h - 1 - NW) * TS); g.fillStyle = "#8e2a22"; g.fillRect(13 * TS + 2, NW * TS, 5 * TS - 4, (h - 1 - NW) * TS); g.fillStyle = GOLD; g.fillRect(13 * TS + 4, NW * TS, 1, (h - 1 - NW) * TS); g.fillRect(18 * TS - 5, NW * TS, 1, (h - 1 - NW) * TS); g.fillStyle = TEAL; for (let y = NW * TS + 8; y < (h - 1) * TS; y += 24) { g.fillRect(15 * TS + 4, y, 8, 8); g.fillStyle = GOLD; g.fillRect(15 * TS + 7, y + 3, 2, 2); g.fillStyle = TEAL } })
     const span = W - 2 * TS, pitch = span / top.length
+    const tone = { bg: "#4a2410", edge: "#1a0a04", text: "#ffe27a", shadow: "#1a0a04" }
     top.forEach((p, i) => {
       const cx = TS + pitch * (i + 0.5)
-      const st = stele(p, "great", 0.75)
+      const st = stele(p, "great", 0.75, true)
       R.wallLow(st, cx, 2)
+      R.add(nameplate(p, 66, tone), cx, NW * TS + 13, { solid: false })
       R.light(cx, NW * TS - 44, 70, "255,196,110", 0.8)
       R.spot(`art-${p.id}`, cx, NW * TS + 14, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, NW * TS - st.height - 12)
       if (i < top.length - 1) torch(R, cx + pitch / 2, NW * TS - 14 - 34 - 20, 74)
     })
-    const podCols = [3, 7.4, 11.8, 19.2, 23.6, 28]
+    const podCols = [3, 7, 10.8, 20.2, 24.2, 28]
     rest.forEach((p, i) => {
       const row = Math.floor(i / PER), col = i % PER
       const cx = podCols[col] * TS + 8, base = (NW + 4 + row * 5) * TS + 8
-      const st = stele(p, "tablet", 0.7)
+      const st = stele(p, "tablet", 0.7, true)
       R.add(st, cx, base, { solid: [st.width - 14, 10] })
+      R.add(nameplate(p, 58, tone), cx, base + 15, { solid: false })
       R.light(cx, base - 30, 56, "255,196,110", 0.9)
       R.spot(`art-${p.id}`, cx, base + 14, `VIEW ${p.title.toUpperCase()}`, { type: "section", id: "gallery", focus: p.id }, true, cx, base - st.height - 8)
     })
-    for (let r = 0; r < rows; r++) for (const x of [12.5, 17.5]) { R.add(brazier(), x * TS, (NW + 4 + r * 5) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.light(x * TS, (NW + 4 + r * 5) * TS - 8, 80, "255,150,60", 1.5) }
-    R.add(brazier(), 12.5 * TS, (NW + 1) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.add(brazier(), 17.5 * TS, (NW + 1) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] })
-    R.light(12.5 * TS, (NW + 1) * TS - 8, 80, "255,150,60", 1.5); R.light(17.5 * TS, (NW + 1) * TS - 8, 80, "255,150,60", 1.5)
+    for (let r = 0; r < rows; r++) for (const x of [13.9, 17.1]) { R.add(brazier(), x * TS, (NW + 4 + r * 5) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.light(x * TS, (NW + 4 + r * 5) * TS - 8, 80, "255,150,60", 1.5) }
+    R.add(brazier(), 13.9 * TS, (NW + 2) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] }); R.add(brazier(), 17.1 * TS, (NW + 2) * TS + 14, { anim: { frames: 4, fps: 7, dx: 20 }, solid: [10, 6] })
+    R.light(13.9 * TS, (NW + 2) * TS - 8, 80, "255,150,60", 1.5); R.light(17.1 * TS, (NW + 2) * TS - 8, 80, "255,150,60", 1.5)
     for (const x of [1, 29]) { R.add(pillar(80), x * TS + 8, (NW + 3) * TS + 8, { solid: [14, 8] }); R.add(pillar(80), x * TS + 8, (h - 3) * TS + 8, { solid: [14, 8] }) }
     R.add(palmPot(), 15.5 * TS, (h - 2) * TS + 4, { solid: false })
     R.actors.push(folk("samira", "Keeper Samira", "Princess", 15 * TS + 8, (NW + 2) * TS + 6, {
