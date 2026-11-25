@@ -14,6 +14,7 @@ import { BUILDINGS } from "@/lib/world/village"
 import { OPEN_WORLDS, loaderFor, worldById, visitKey } from "@/lib/world/worlds"
 import TitleScreen from "@/components/ui/TitleScreen"
 import { useLoading, bootStart } from "@/lib/loading"
+import { stopwatch } from "@/lib/perf"
 import HUD from "@/components/ui/HUD"
 import AchievementToast from "@/components/ui/AchievementToast"
 import BuildingModal from "@/components/ui/BuildingModal"
@@ -74,7 +75,10 @@ export default function GameCanvas() {
     useGameStore.getState().setWorldLoad(id, { state: "loading", progress: 0.02 })
     const boot = !st.current.ready
     const p = (async () => {
+      let done = stopwatch(`${id}.chunk`)
       const mod = await load()
+      done()
+      done = stopwatch(`${id}.art`)
       await loadAll(
         boot ? [...mod.preload, charSheet(CHARS.hero)] : mod.preload,
         (n, total) => {
@@ -82,10 +86,17 @@ export default function GameCanvas() {
           if (boot) useLoading.setState({ progress: 0.08 + (n / total) * 0.82 })
         },
       )
+      done()
       await new Promise((r) => setTimeout(r, 0))
+      done = stopwatch(`${id}.build`)
       const all = mod.build(useContentStore.getState().data)
+      done()
+      done = stopwatch(`${id}.prepare`)
       for (const [sid, sc] of Object.entries(all)) scenes.current[sid] = prepare(sc)
+      done()
+      done = stopwatch(`${id}.map`)
       runtime.maps[id] = makeMap(all[worldById(id).scene])
+      done()
       loaded.current[id] = true
       useGameStore.getState().setWorldLoad(id, { state: "ready", progress: 1 })
       return true

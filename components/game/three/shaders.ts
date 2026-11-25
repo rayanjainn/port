@@ -242,25 +242,26 @@ export function skyMaterial() {
     depthTest: false, depthWrite: false, transparent: true,
     uniforms: {
       uTop: { value: new THREE.Color() }, uHor: { value: new THREE.Color() }, uBand: { value: new THREE.Color() },
-      uBandAmt: { value: 0 }, uNight: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uScroll: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
+      uBandAmt: { value: 0 }, uY0: { value: 0.87 }, uSkyAmt: { value: 1 }, uNight: { value: 0 }, uTime: { value: 0 }, uAspect: { value: 1 }, uScroll: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) },
     },
     vertexShader: /* glsl */ `varying vec2 vUv; void main(){ vUv = position.xy * 0.5 + 0.5; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
     fragmentShader: /* glsl */ `
-      uniform vec3 uTop; uniform vec3 uHor; uniform vec3 uBand; uniform float uBandAmt; uniform float uNight; uniform float uTime; uniform float uAspect; uniform float uScroll; uniform vec2 uRes;
+      uniform vec3 uTop; uniform vec3 uHor; uniform vec3 uBand; uniform float uBandAmt; uniform float uY0; uniform float uSkyAmt; uniform float uNight; uniform float uTime; uniform float uAspect; uniform float uScroll; uniform vec2 uRes;
       varying vec2 vUv;
       float h21(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       float vn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(h21(i), h21(i + vec2(1.0, 0.0)), f.x), mix(h21(i + vec2(0.0, 1.0)), h21(i + vec2(1.0, 1.0)), f.x), f.y); }
       void main() {
-        const float Y0 = 0.87;                                    // the strip starts here (top 13% of the frame)
-        float k = (vUv.y - Y0) / (1.0 - Y0);
-        float a = smoothstep(0.0, 0.4, k);                        // soft fog edge into the terrain
+        float k = (vUv.y - uY0) / (1.0 - uY0);                    // 0 at the seam, 1 at the top edge
+        float a = smoothstep(0.0, 0.85, k);                       // the sky fades in from the seam colour: no edge
+        a = a * a;
         if (a <= 0.0) discard;
         // work in low-res pixel units so everything snaps to the render grid
         vec2 px = floor(vUv * uRes);
         vec2 q = px / uRes.y;                                     // height-normalised
         float t = floor(k * 7.0) / 7.0;
         vec3 c = mix(uHor, uTop, t);
+        vec3 base = c;
         c = mix(c, uBand, floor((1.0 - t) * uBandAmt * 5.0) / 5.0);
         float day = 1.0 - uNight;
         vec2 sun = vec2(0.38 * uAspect, 0.962);
@@ -288,6 +289,7 @@ export function skyMaterial() {
           lit = mix(lit, uBand * 1.1 + 0.15, uBandAmt * 0.6);
           c = mix(c, up > 0.57 ? lit * 0.84 : lit, 0.92);
         }
+        c = mix(base, c, smoothstep(0.12, 0.55, uSkyAmt));        // sun, moon, stars and clouds only show when we really see far
         gl_FragColor = vec4(c, a);
         #include <colorspace_fragment>
       }`,

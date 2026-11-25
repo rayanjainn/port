@@ -9,6 +9,7 @@ import { CardBatch, makeTexture, srcSize } from "./cards"
 import { buildTerrain, type Terrain } from "./terrain"
 import { isOutdoor } from "./bus"
 import { fx } from "./fx"
+import { stopwatch } from "@/lib/perf"
 
 const COS = Math.cos(TILT), SIN = Math.sin(TILT)
 const P = 1 / TS
@@ -22,7 +23,10 @@ function parseCss(s: string): [number, number, number, number] {
   col.set(s.startsWith("rgba") ? `rgb(${s.slice(5, -1).split(",").slice(0, 3).join(",")})` : s)
   return [col.r, col.g, col.b, a]
 }
-const rgbOf = (s: string) => s.split(",").map((v) => parseInt(v, 10) / 255)
+const rgbCache = new Map<string, number[]>()
+const rgbOf = (s: string) => { let r = rgbCache.get(s); if (!r) { r = s.split(",").map((v) => parseInt(v, 10) / 255); rgbCache.set(s, r) } return r }
+const cssCache = new Map<string, [number, number, number, number]>()
+const parseCssC = (s: string) => { let r = cssCache.get(s); if (!r) { r = [...parseCss(s)] as [number, number, number, number]; cssCache.set(s, r) } return r }
 
 interface Attached { parent: Sprite; dx: number; dyPx: number }
 
@@ -39,6 +43,14 @@ export class World {
   private glow!: CardBatch
   private slash!: CardBatch
   res = new THREE.Vector2(1, 1)
+  /** the camera's texel grid (world units): moving sprites snap to it. ux = 0 means no snapping yet */
+  snap = { x: 0, z: 0, ux: 0, uz: 0 }
+  private sx(x: number) { const g = this.snap; return g.ux > 0 ? g.x + Math.round((x - g.x) / g.ux) * g.ux : x }
+  private sz(z: number) { const g = this.snap; return g.uz > 0 ? g.z + Math.round((z - g.z) / g.uz) * g.uz : z }
+  private tmpCol = new THREE.Color()
+  /** how much sky to show, 0 (a faint haze) .. 1 (far view), and the screen fraction its strip covers; set by the stage each frame */
+  skyAmt = 0
+  skyFrac = 0.13
   private emisCv: HTMLCanvasElement | null = null
   private emisTex: THREE.Texture | null = null
   private emisT = -9
@@ -59,7 +71,9 @@ export class World {
 
   constructor(public rt: SceneRT) {
     const sc = rt.scene
+    let done = stopwatch("3d.terrain")
     this.terrain = buildTerrain(sc, this.sh)
+    done()
     for (const o of this.terrain.objects) this.group.add(o)
     this.sky = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.skyMat)
     this.sky.frustumCulled = false; this.sky.renderOrder = 100; this.sky.visible = this.terrain.outdoor   // thin strip along the top, outdoor scenes only
@@ -71,9 +85,13 @@ export class World {
       this.sh.uEmis.value = this.emisTex
       this.sh.uEmisInfo.value.set(sc.w * TS, sc.h * TS, 0)
     }
+    done = stopwatch("3d.sprites")
     this.buildSprites()
+    done()
     this.buildActors()
+    done = stopwatch("3d.fx")
     this.buildFx()
+    done()
   }
 
   // ── static / dynamic sprites ───────────────────────────────────
@@ -308,10 +326,10 @@ export class World {
     this.hor.copy(this.c.dayHor).lerp(this.c.nightHor, night).lerp(this.c.duskHor, dusk * 0.7)
     const sm = this.skyMat.uniforms
     sm.uTop.value.copy(this.top); sm.uHor.value.copy(this.hor); sm.uBand.value.copy(this.c.duskBand)
-    sm.uBandAmt.value = dusk; sm.uNight.value = night; sm.uTime.value = now
+    sm.uBandAmt.value = dusk; sm.uY0.value = 1 - this.skyFrac; sm.uSkyAmt.value = this.skyAmt; sm.uNight.value = night; sm.uTime.value = now
     sm.uScroll.value = target.x * 6; sm.uRes.value.copy(this.res); sm.uAspect.value = this.res.x / this.res.y
-    sh.uFogColor.value.copy(this.terrain.outdoor ? this.fogDay.clone().lerp(this.fogNight, night).lerp(this.c.duskHor, dusk * 0.3) : this.terrain.bg)
-    sh.uFog.value.z = 0.75
+    sh.uFogColor.value.copy(this.terrain.outdoor ? this.tmpCol.copy(this.fogDay).lerp(this.fogNight, night).lerp(this.c.duskHor, dusk * 0.3).lerp(this.hor, 0.35 + 0.5 * this.skyAmt) : this.terrain.bg)
+    sh.uFog.value.z = 0.75 + (this.terrain.outdoor ? 0.15 * this.skyAmt : 0)
     // self-lit window panes / neon: re-rasterise the scene's emissive layer a couple of times a second while it is dark
     if (this.emisCv && sc.emissive) {
       sh.uEmisInfo.value.z = night
@@ -360,7 +378,7 @@ export class World {
         if (e.a === "hero") {
           if (H.hurtT > 0 && Math.floor(now * 16) % 2) { hide(); return }
           const row = H.attackT > 0 ? 4 : H.moving ? Math.floor(H.animT * 9) % 4 : 0
-          put(i, H.x * P, this.terrain.heightAt(H.x * P, H.y * P), (H.y + 1) * P, DIR_COL[H.facing] * 16, row * 16, false, 1, 1, 1)
+          put(i, this.sx(H.x * P), this.terrain.heightAt(H.x * P, H.y * P), this.sz((H.y + 1) * P), DIR_COL[H.facing] * 16, row * 16, false, 1, 1, 1)
           return
         }
         const a = e.a
@@ -369,13 +387,13 @@ export class World {
         const gy = this.terrain.heightAt(a.x * P, a.y * P)
         if (kind === "animal") {
           const f = a.moving ? Math.floor(a.animT * 6) % 2 : Math.floor(now * 1.5 + a.def.x) % 2
-          put(i, a.x * P, gy, (a.y + 2) * P, f * 16, 0, a.facing === "right", 1, 1, 1)
+          put(i, this.sx(a.x * P), gy, this.sz((a.y + 2) * P), f * 16, 0, a.facing === "right", 1, 1, 1)
           return
         }
         const row = a.moving ? Math.floor(a.animT * 8) % 4 : 0
         const bob = kind === "monster" ? Math.round(Math.sin(now * 5 + a.def.x)) : 0
         const hurt = a.hurt > 0
-        put(i, a.x * P, gy - bob * P, (a.y + 1) * P, DIR_COL[a.facing] * 16, row * 16, false, hurt ? 1.5 : 1, hurt ? 0.7 : 1, hurt ? 0.7 : 1)
+        put(i, this.sx(a.x * P), gy - bob * P, this.sz((a.y + 1) * P), DIR_COL[a.facing] * 16, row * 16, false, hurt ? 1.5 : 1, hurt ? 0.7 : 1, hurt ? 0.7 : 1)
       })
       g.b.flush(g.list.length)
     }
@@ -384,7 +402,7 @@ export class World {
     if (H.attackT > 0) {
       const p = 1 - H.attackT / 0.28
       const k2 = { right: 0, down: 1, left: 2, up: 3 }[H.facing]
-      this.slash.set(0, H.x * P, 7 * P - 1 + 0.0, (H.y + 8) * P, 2, 2, k2 * 32, 0, 32, 32, 128, 32)
+      this.slash.set(0, this.sx(H.x * P), 7 * P - 1 + 0.0, this.sz((H.y + 8) * P), 2, 2, k2 * 32, 0, 32, 32, 128, 32)
       this.slash.setTint(0, 1, 1, 1, 1 - p)
       this.slash.flush(1)
     } else this.slash.flush(0)
@@ -404,9 +422,9 @@ export class World {
         continue
       }
       if (pn >= 512) break
-      const [r, g, b, a] = parseCss(p.col)
+      const [r, g, b, a] = parseCssC(p.col)
       const s = Math.max(1, p.size) * P
-      this.parts.set(pn, p.x * P, (hgt * COS) * P, gy * P - hgt * P * SIN, s, s, 0, 0, 2, 2, 2, 2)
+      this.parts.set(pn, this.sx(p.x * P), (hgt * COS) * P, this.sz(gy * P) - hgt * P * SIN, s, s, 0, 0, 2, 2, 2, 2)
       this.parts.setTint(pn, r, g, b, a * k3)
       pn++
     }
