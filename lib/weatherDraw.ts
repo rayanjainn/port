@@ -88,7 +88,7 @@ export function drawWeather(ctx: CanvasRenderingContext2D, camX: number, camY: n
   // fog banks
   if (W.fog > 0.02) {
     const m = mist()
-    ctx.globalAlpha = 0.34 * W.fog
+    ctx.globalAlpha = 0.5 * W.fog
     for (let i = 0; i < CAP.mist; i++) {
       const w = vw * 0.9 * MIST.r[i], h = vh * 0.34 * MIST.r[i]
       ctx.drawImage(m, Math.round((MIST.x[i] - 0.2) * vw * 1.25 - w / 2), Math.round(MIST.y[i] * vh - h / 2), Math.round(w), Math.round(h))

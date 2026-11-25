@@ -61,6 +61,8 @@ export const engine = {
   scenes: {} as Record<string, SceneRT>,
   /** seconds, simulation clock of the last frame */
   now: 0,
+  /** while set (the first-visit intro), both views aim the camera here (scene px) instead of at the hero */
+  introFocus: null as { x: number; y: number } | null,
   /** true while a dialog / map / fade freezes the world */
   paused: false,
   /** click-to-walk / click-to-interact at a scene-px position */

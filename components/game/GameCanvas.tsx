@@ -18,6 +18,7 @@ import { stopwatch } from "@/lib/perf"
 import { updateWeather, type WeatherProfile } from "@/lib/weather"
 import { drawWeather } from "@/lib/weatherDraw"
 import { initAmbience } from "@/lib/ambience"
+import { maybeStartIntro, tickIntro } from "./Intro"
 import HUD from "@/components/ui/HUD"
 import AchievementToast from "@/components/ui/AchievementToast"
 import BuildingModal from "@/components/ui/BuildingModal"
@@ -189,7 +190,8 @@ export default function GameCanvas() {
       const pump = () => {
         const id = queue.shift()
         if (!id || cancelled) return
-        if (document.hidden) { queue.unshift(id); setTimeout(pump, 1500); return }
+        const g = useGameStore.getState()
+        if (document.hidden || g.travel || g.worldSelect) { queue.unshift(id); setTimeout(pump, 1500); return }
         idle(() => { void ensureWorld(id).then(() => setTimeout(pump, 400)) })
       }
       setTimeout(pump, 2500)
@@ -449,6 +451,7 @@ export default function GameCanvas() {
     window.addEventListener("resize", resize)
     const S = st.current
     playMusic(scenes.current[S.scene]?.scene.music ?? "village")
+    maybeStartIntro(S, scenes.current[S.scene])
     const heroImg = img(charSheet(CHARS.hero))
     const smoke = img(SHEETS.smoke)
 
@@ -484,6 +487,8 @@ export default function GameCanvas() {
         }
       }
 
+
+      tickIntro(dt, S, rt)
 
       // ── hero movement
       let dx = 0, dy = 0
@@ -601,7 +606,8 @@ export default function GameCanvas() {
       const vw = Math.ceil(cw / scale), vh = Math.ceil(ch / scale)
       if (frame.width !== vw || frame.height !== vh) { frame.width = vw; frame.height = vh; light.width = vw; light.height = vh }
       const sw = sc.w * TS, sh = sc.h * TS
-      let tx = H.x - vw / 2, ty = H.y - 8 - vh / 2
+      const fo = engine.introFocus
+      let tx = (fo ? fo.x : H.x) - vw / 2, ty = (fo ? fo.y : H.y) - 8 - vh / 2
       tx = sw <= vw ? (sw - vw) / 2 : Math.max(0, Math.min(sw - vw, tx))
       ty = sh <= vh ? (sh - vh) / 2 - 6 : Math.max(0, Math.min(sh - vh, ty))
       if (!S.cam.init) { S.cam.x = tx; S.cam.y = ty; S.cam.init = true }

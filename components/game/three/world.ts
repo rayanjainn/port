@@ -527,7 +527,7 @@ export class World {
         const w = W.w * 1.1 * MIST.r[i] * P, h = W.h * 0.55 * MIST.r[i] * P
         const x = (cx + ((MIST.x[i] - 0.2) * 1.25 - 0.5) * W.w) * P, z = (cy + (MIST.y[i] - 0.5) * W.h) * P
         this.mistB.set(m, this.sx(x), this.terrain.heightAt(x, z) + 0.15, this.sz(z), w, h, 0, 0, 64, 64, 64, 64)
-        this.mistB.setTint(m, 0.72, 0.9, 0.88, 0.22 * W.fog)
+        this.mistB.setTint(m, 0.72, 0.9, 0.88, 0.4 * W.fog)
         m++
       }
     }

@@ -136,7 +136,8 @@ function Stage({ rt, px }: { rt: SceneRT; px: number }) {
     const halfH = dist * tanH * (visH / size.height)
     const halfW = halfH * aspect, halfD = halfH / Math.sin(PITCH)
 
-    let tx = H.x * P, tz = (H.y - 8) * P
+    const fo = engine.introFocus
+    let tx = (fo ? fo.x : H.x) * P, tz = ((fo ? fo.y : H.y) - 8) * P
     tx = clampAxis(tx, halfW, sc.w, 2)
     tz = clampAxis(tz, halfD * 1.05, sc.h, 1)
     if (!C.init) { C.x = tx; C.z = tz; C.vx = 0; C.vz = 0; C.init = true }
